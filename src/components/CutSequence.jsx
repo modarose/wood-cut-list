@@ -50,7 +50,7 @@ export default function CutSequence({ result, unit }) {
                   const isDone = completedSteps.has(stepKey);
 
                   const cutTypeLabel = cut.type === 'vertical' ? 'VERTICAL CROSS-CUT' : 'HORIZONTAL RIP-CUT';
-                  const positionVal = cut.type === 'vertical' ? cut.x : cut.y;
+                  const fenceVal = cut.cutSize || (cut.type === 'vertical' ? cut.x : cut.y);
                   const lengthVal = cut.type === 'vertical' ? (cut.y2 - cut.y1) : (cut.x2 - cut.x1);
 
                   return (
@@ -86,7 +86,7 @@ export default function CutSequence({ result, unit }) {
                             PASS #{cutIdx + 1}: {cutTypeLabel}
                           </div>
                           <div className="num-tabular" style={{ fontSize: '0.75rem', color: 'var(--ram-text-muted)' }}>
-                            Set table saw fence to <strong>{formatDimension(positionVal, unit)}</strong> (Cut distance length: {formatDimension(lengthVal, unit)})
+                            Set table saw fence to <strong>{formatDimension(fenceVal, unit)}</strong> (Cut stroke length: {formatDimension(lengthVal, unit)})
                           </div>
                         </div>
                       </div>

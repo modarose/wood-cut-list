@@ -281,13 +281,14 @@ function splitFreeRectangle(free, w, h, kerf, cutPref, cuts) {
       });
     }
 
-    // Track cut lines
+    // Track cut lines with relative fence measurement cutSize
     if (rightW > 0) {
       cuts.push({
         type: 'vertical',
         x: free.x + w,
         y1: free.y,
         y2: free.y + h,
+        cutSize: w,
       });
     }
     if (bottomH > 0) {
@@ -296,6 +297,7 @@ function splitFreeRectangle(free, w, h, kerf, cutPref, cuts) {
         y: free.y + h,
         x1: free.x,
         x2: free.x + free.width,
+        cutSize: h,
       });
     }
 
@@ -319,13 +321,14 @@ function splitFreeRectangle(free, w, h, kerf, cutPref, cuts) {
       });
     }
 
-    // Track cut lines
+    // Track cut lines with relative fence measurement cutSize
     if (bottomH > 0) {
       cuts.push({
         type: 'horizontal',
         y: free.y + h,
         x1: free.x,
         x2: free.x + w,
+        cutSize: h,
       });
     }
     if (rightW > 0) {
@@ -334,6 +337,7 @@ function splitFreeRectangle(free, w, h, kerf, cutPref, cuts) {
         x: free.x + w,
         y1: free.y,
         y2: free.y + free.height,
+        cutSize: w,
       });
     }
   }
