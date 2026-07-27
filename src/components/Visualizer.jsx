@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { formatDimension, UNITS } from '../utils/unitConverter';
 import { ZoomIn, ZoomOut, RotateCcw, Eye, Layers, RotateCw } from 'lucide-react';
 
@@ -31,8 +31,8 @@ export default function Visualizer({ result, unit, stock }) {
   const viewBoxH = sheetH + svgPadding * 2;
 
   // Zoom / Pan handlers
-  const handleZoomIn = () => setZoom(z => Math.min(z + 0.25, 3));
-  const handleZoomOut = () => setZoom(z => Math.max(z - 0.25, 0.5));
+  const handleZoomIn = () => setZoom(z => Math.min(z + 0.25, 6));
+  const handleZoomOut = () => setZoom(z => Math.max(z - 0.25, 0.25));
   const handleReset = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
@@ -52,6 +52,38 @@ export default function Visualizer({ result, unit, stock }) {
   };
 
   const handleMouseUp = () => setIsDragging(false);
+
+  // Mouse wheel zoom centered on cursor position
+  const handleWheel = useCallback((e) => {
+    e.preventDefault();
+    const container = containerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    // Cursor position relative to container center
+    const cursorX = e.clientX - rect.left - rect.width / 2;
+    const cursorY = e.clientY - rect.top - rect.height / 2;
+
+    const zoomFactor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+
+    setZoom(prevZoom => {
+      const newZoom = Math.min(Math.max(prevZoom * zoomFactor, 0.25), 6);
+      // Adjust pan so zoom centres on the cursor
+      setPan(prevPan => ({
+        x: cursorX - (cursorX - prevPan.x) * (newZoom / prevZoom),
+        y: cursorY - (cursorY - prevPan.y) * (newZoom / prevZoom),
+      }));
+      return newZoom;
+    });
+  }, []);
+
+  // Attach wheel listener as non-passive to allow preventDefault
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
 
   return (
     <div className="ram-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -113,7 +145,7 @@ export default function Visualizer({ result, unit, stock }) {
           overflow: 'hidden',
           display: 'flex',
           alignItems: 'center',
-          justify: 'center'
+          justifyContent: 'center'
         }}
       >
         
