@@ -9,7 +9,7 @@
   --ram-surface-elevated: #FFFFFF;
   --ram-dark-surface: #1E2022;
   --ram-dark-panel: #2A2D30;
-  
+
   --ram-border-light: #D6D2C8;
   --ram-border-medium: #B8B3A6;
   --ram-border-dark: #3A3D40;
@@ -20,27 +20,33 @@
   --ram-text-on-dark: #F2F2F0;
 
   /* Braun Accent Colors */
-  --ram-orange: #FF4500;        /* Braun ET66 Orange Button */
+  --ram-orange: #FF4500;
+  /* Braun ET66 Orange Button */
   --ram-orange-hover: #E03D00;
-  --ram-yellow: #F0A500;        /* Warning / Offcut Scrap */
-  --ram-green: #2E7D32;         /* Success / Efficiency */
+  --ram-yellow: #F0A500;
+  /* Warning / Offcut Scrap */
+  --ram-green: #2E7D32;
+  /* Success / Efficiency */
   --ram-green-dark: #1B5E20;
-  --ram-red: #D32F2F;           /* Error / Delete */
+  --ram-red: #D32F2F;
+  /* Error / Delete */
 
   /* LCD Readout Display Tokens */
   --ram-lcd-bg: #141716;
   --ram-lcd-border: #2B302D;
-  --ram-lcd-text: #4EED80;       /* Digital Green Glow */
-  --ram-lcd-amber: #FFB74D;      /* Digital Amber */
+  --ram-lcd-text: #4EED80;
+  /* Digital Green Glow */
+  --ram-lcd-amber: #FFB74D;
+  /* Digital Amber */
 
   /* Typography */
   --ram-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --ram-font-mono: 'JetBrains Mono', monospace;
 
   /* Shadows & Elevation */
-  --ram-shadow-tactile: 0 2px 0 0 #B5B0A2, 0 3px 6px rgba(0,0,0,0.06);
-  --ram-shadow-pressed: inset 0 2px 4px rgba(0,0,0,0.15);
-  --ram-shadow-dark-tactile: 0 2px 0 0 #121314, 0 3px 6px rgba(0,0,0,0.3);
+  --ram-shadow-tactile: 0 2px 0 0 #B5B0A2, 0 3px 6px rgba(0, 0, 0, 0.06);
+  --ram-shadow-pressed: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  --ram-shadow-dark-tactile: 0 2px 0 0 #121314, 0 3px 6px rgba(0, 0, 0, 0.3);
   --ram-radius-sm: 3px;
   --ram-radius-md: 6px;
   --ram-radius-lg: 10px;
@@ -63,7 +69,9 @@ body {
 }
 
 /* Tabular numbers for numerical precision */
-.num-tabular, input[type="number"], .stat-value {
+.num-tabular,
+input[type="number"],
+.stat-value {
   font-family: var(--ram-font-mono);
   font-variant-numeric: tabular-nums;
 }
@@ -150,7 +158,8 @@ body {
   color: var(--ram-text-muted);
 }
 
-.ram-input, .ram-select {
+.ram-input,
+.ram-select {
   font-family: var(--ram-font-mono);
   font-size: 0.9rem;
   padding: 0.5rem 0.75rem;
@@ -163,16 +172,18 @@ body {
 }
 
 /* Hide number input spin buttons to prevent text clipping */
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
-  -webkit-appearance: none; 
-  margin: 0; 
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
+
 input[type=number] {
   -moz-appearance: textfield;
 }
 
-.ram-input:focus, .ram-select:focus {
+.ram-input:focus,
+.ram-select:focus {
   border-color: var(--ram-orange);
   box-shadow: 0 0 0 2px rgba(255, 69, 0, 0.15);
 }
@@ -186,7 +197,7 @@ input[type=number] {
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 .ram-lcd-label {
@@ -223,7 +234,7 @@ input[type=number] {
   border: 1px solid var(--ram-border-light);
   border-radius: var(--ram-radius-md);
   padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 .ram-card-header {
@@ -276,7 +287,7 @@ input[type=number] {
   background-color: var(--ram-border-medium);
   border-radius: 12px;
   transition: 0.2s ease;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .ram-toggle-slider:before {
@@ -289,14 +300,14 @@ input[type=number] {
   background-color: var(--ram-surface-elevated);
   border-radius: 50%;
   transition: 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.ram-toggle input:checked + .ram-toggle-slider {
+.ram-toggle input:checked+.ram-toggle-slider {
   background-color: var(--ram-orange);
 }
 
-.ram-toggle input:checked + .ram-toggle-slider:before {
+.ram-toggle input:checked+.ram-toggle-slider:before {
   transform: translateX(20px);
 }
 
@@ -305,32 +316,64 @@ input[type=number] {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--ram-bg-subtle);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--ram-border-medium);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--ram-text-muted);
 }
 
 /* Printable layout styling */
+.print-only {
+  display: none;
+}
+
 @media print {
   body {
     background: #ffffff !important;
     color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
+
   .no-print {
     display: none !important;
   }
+
   .print-only {
     display: block !important;
+    width: 100%;
   }
+
+  .print-page {
+    page-break-after: always;
+    break-after: page;
+    padding: 2cm;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .print-page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  /* Reset card styling for print if needed, but Visualizer is now wrapped in no-print or print-only */
   .ram-card {
-    border: 1px solid #000000 !important;
+    border: none !important;
+    padding: 0 !important;
     box-shadow: none !important;
-    break-inside: avoid;
+    background: none !important;
   }
 }

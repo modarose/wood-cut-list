@@ -101,7 +101,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      
+
       {/* Header Bar */}
       <Header
         unit={unit}
@@ -116,16 +116,18 @@ export default function App() {
 
       {/* Main Layout Grid */}
       <main style={{ maxWidth: '1440px', width: '100%', margin: '0 auto', padding: '0 1.5rem 3rem 1.5rem', flex: 1 }}>
-        
+
         {/* Dieter Rams LCD Stat Indicators */}
-        <SummaryStats
-          result={optimizationResult}
-          totalRequestedParts={totalRequestedPartsCount}
-        />
+        <div className="no-print">
+          <SummaryStats
+            result={optimizationResult}
+            totalRequestedParts={totalRequestedPartsCount}
+          />
+        </div>
 
         {/* Row 1: Section 1 & Section 2 side-by-side */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem', alignItems: 'stretch' }}>
-          
+        <div className="no-print" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem', alignItems: 'stretch' }}>
+
           {/* Section 1: Sheet & Saw Parameters */}
           <SheetSettings
             stock={stock}
@@ -154,10 +156,12 @@ export default function App() {
         </div>
 
         {/* Row 3: Full-Width Shop Floor Cutting Sequence Guide */}
-        <CutSequence
-          result={optimizationResult}
-          unit={unit}
-        />
+        <div className="no-print">
+          <CutSequence
+            result={optimizationResult}
+            unit={unit}
+          />
+        </div>
 
       </main>
 

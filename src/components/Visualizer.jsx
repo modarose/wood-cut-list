@@ -2,6 +2,212 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { formatDimension, UNITS } from '../utils/unitConverter';
 import { ZoomIn, ZoomOut, RotateCcw, Eye, Layers, RotateCw } from 'lucide-react';
 
+const SheetDiagram = ({ sheet, unit, svgPadding = 40, isPrint = false }) => {
+  const { width: sheetW, height: sheetH, margin, kerf, placements, freeRects, cuts } = sheet;
+  const viewBoxW = sheetW + svgPadding * 2;
+  const viewBoxH = sheetH + svgPadding * 2;
+
+  return (
+    <svg
+      width="100%"
+      height={isPrint ? "auto" : "100%"}
+      viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
+      preserveAspectRatio="xMidYMid meet"
+      style={!isPrint ? {
+        transition: 'transform 0.15s ease-out'
+      } : { maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto' }}
+    >
+      <defs>
+        {/* Minimalist Scrap Hatch Pattern */}
+        <pattern id={`scrapHatch${isPrint ? '_print' : ''}`} width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="12" stroke="#CBD2D0" strokeWidth="2" />
+        </pattern>
+        {/* Grid Pattern */}
+        <pattern id={`sheetGrid${isPrint ? '_print' : ''}`} width={unit === UNITS.MM ? 100 : 12} height={unit === UNITS.MM ? 100 : 12} patternUnits="userSpaceOnUse">
+          <path d={`M ${unit === UNITS.MM ? 100 : 12} 0 L 0 0 0 ${unit === UNITS.MM ? 100 : 12}`} fill="none" stroke="#E2DEC" strokeWidth="0.5" />
+        </pattern>
+      </defs>
+
+      <g transform={`translate(${svgPadding}, ${svgPadding})`}>
+
+        {/* Outer Stock Sheet Background */}
+        <rect
+          x="0"
+          y="0"
+          width={sheetW}
+          height={sheetH}
+          fill="#FFFFFF"
+          stroke="#242526"
+          strokeWidth="2"
+        />
+        {/* Inner Grid */}
+        <rect
+          x="0"
+          y="0"
+          width={sheetW}
+          height={sheetH}
+          fill={`url(#sheetGrid${isPrint ? '_print' : ''})`}
+        />
+
+        {/* Edge Trim Margin Line */}
+        {margin > 0 && (
+          <rect
+            x={margin}
+            y={margin}
+            width={sheetW - margin * 2}
+            height={sheetH - margin * 2}
+            fill="none"
+            stroke="#FF4500"
+            strokeWidth="1"
+            strokeDasharray="4,4"
+          />
+        )}
+
+        {/* Offcut Scrap Areas */}
+        {freeRects.map((free, idx) => (
+          <g key={`free_${idx}`}>
+            <rect
+              x={free.x}
+              y={free.y}
+              width={free.width}
+              height={free.height}
+              fill={`url(#scrapHatch${isPrint ? '_print' : ''})`}
+              stroke="#A8B0AD"
+              strokeWidth="1"
+              strokeDasharray="2,2"
+            />
+            {/* Scrap Label if big enough */}
+            {free.width > (sheetW * 0.1) && free.height > (sheetH * 0.1) && (
+              <text
+                x={free.x + free.width / 2}
+                y={free.y + free.height / 2}
+                fill="#788280"
+                fontSize={Math.min(free.width, free.height) * 0.15}
+                fontWeight="600"
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontFamily="var(--ram-font-mono)"
+              >
+                SCRAP ({formatDimension(free.width, unit, false)} × {formatDimension(free.height, unit, false)})
+              </text>
+            )}
+          </g>
+        ))}
+
+        {/* Blade Cut Lines */}
+        {cuts.map((cut, idx) => (
+          cut.type === 'vertical' ? (
+            <line
+              key={`cut_${idx}`}
+              x={cut.x}
+              y1={cut.y1}
+              x2={cut.x}
+              y2={cut.y2}
+              stroke="#FF4500"
+              strokeWidth={Math.max(1.5, kerf)}
+              strokeOpacity="0.8"
+            />
+          ) : (
+            <line
+              key={`cut_${idx}`}
+              x1={cut.x1}
+              y1={cut.y}
+              x2={cut.x2}
+              y2={cut.y}
+              stroke="#FF4500"
+              strokeWidth={Math.max(1.5, kerf)}
+              strokeOpacity="0.8"
+            />
+          )
+        ))}
+
+        {/* Placed Parts */}
+        {placements.map((p) => {
+          const textFitW = p.width > 40;
+          const textFitH = p.height > 25;
+
+          return (
+            <g key={p.id}>
+              {/* Part Block */}
+              <rect
+                x={p.x}
+                y={p.y}
+                width={p.width}
+                height={p.height}
+                fill={p.color || '#3B82F6'}
+                fillOpacity="0.85"
+                stroke="#1E2022"
+                strokeWidth="1.5"
+                rx="2"
+              />
+
+              {/* Part Text & Dimension Overlays */}
+              {textFitW && textFitH && (
+                <g pointerEvents="none">
+                  {/* Name */}
+                  <text
+                    x={p.x + p.width / 2}
+                    y={p.y + p.height / 2 - 4}
+                    fill="#FFFFFF"
+                    fontSize={Math.max(10, Math.min(16, p.width * 0.08))}
+                    fontWeight="700"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontFamily="var(--ram-font-sans)"
+                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}
+                  >
+                    {p.name}
+                  </text>
+
+                  {/* Dimensions */}
+                  <text
+                    x={p.x + p.width / 2}
+                    y={p.y + p.height / 2 + 12}
+                    fill="rgba(255,255,255,0.95)"
+                    fontSize={Math.max(8, Math.min(12, p.width * 0.06))}
+                    fontWeight="600"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontFamily="var(--ram-font-mono)"
+                    style={{ textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}
+                  >
+                    {formatDimension(p.width, unit)} × {formatDimension(p.height, unit)}
+                  </text>
+
+                  {/* Rotation Icon Tag */}
+                  {p.rotated && (
+                    <text
+                      x={p.x + p.width - 12}
+                      y={p.y + 12}
+                      fill="#FF4500"
+                      fontSize="10"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                    >
+                      ↻
+                    </text>
+                  )}
+                </g>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Sheet Dimension Outer Labels */}
+        {/* Top Width Ruler */}
+        <text x={sheetW / 2} y="-12" fill="#1C1D1F" fontSize="12" fontWeight="700" textAnchor="middle" fontFamily="var(--ram-font-mono)">
+          {formatDimension(sheetW, unit)}
+        </text>
+        {/* Left Height Ruler */}
+        <text x="-12" y={sheetH / 2} fill="#1C1D1F" fontSize="12" fontWeight="700" textAnchor="middle" transform={`rotate(-90, -12, ${sheetH / 2})`} fontFamily="var(--ram-font-mono)">
+          {formatDimension(sheetH, unit)}
+        </text>
+
+      </g>
+    </svg>
+  );
+};
+
 export default function Visualizer({ result, unit, stock }) {
   const [activeSheetIdx, setActiveSheetIdx] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -23,12 +229,10 @@ export default function Visualizer({ result, unit, stock }) {
   }
 
   const currentSheet = result.sheets[activeSheetIdx] || result.sheets[0];
-  const { width: sheetW, height: sheetH, margin, kerf, placements, freeRects, cuts } = currentSheet;
+  const { placements } = currentSheet;
 
   // SVG viewBox aspect setup
   const svgPadding = 40;
-  const viewBoxW = sheetW + svgPadding * 2;
-  const viewBoxH = sheetH + svgPadding * 2;
 
   // Zoom / Pan handlers
   const handleZoomIn = () => setZoom(z => Math.min(z + 0.25, 6));
@@ -87,7 +291,7 @@ export default function Visualizer({ result, unit, stock }) {
 
   return (
     <div className="ram-card" style={{ padding: 0, overflow: 'hidden' }}>
-      
+
       {/* Visualizer Top Bar / Sheet Tabs */}
       <div className="no-print" style={{
         display: 'flex',
@@ -99,7 +303,7 @@ export default function Visualizer({ result, unit, stock }) {
         flexWrap: 'wrap',
         gap: '0.5rem'
       }}>
-        
+
         {/* Sheet Tabs */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', overflowX: 'auto' }}>
           {result.sheets.map((s, idx) => (
@@ -136,6 +340,7 @@ export default function Visualizer({ result, unit, stock }) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        className="no-print"
         style={{
           width: '100%',
           height: '660px',
@@ -148,212 +353,16 @@ export default function Visualizer({ result, unit, stock }) {
           justifyContent: 'center'
         }}
       >
-        
-        <svg
-          width="100%"
-          height="100%"
-          viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
-          preserveAspectRatio="xMidYMid meet"
-          style={{
-            transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-            transition: isDragging ? 'none' : 'transform 0.15s ease-out'
-          }}
-        >
-          <defs>
-            {/* Minimalist Scrap Hatch Pattern */}
-            <pattern id="scrapHatch" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-              <line x1="0" y1="0" x2="0" y2="12" stroke="#CBD2D0" strokeWidth="2" />
-            </pattern>
-            {/* Grid Pattern */}
-            <pattern id="sheetGrid" width={unit === UNITS.MM ? 100 : 12} height={unit === UNITS.MM ? 100 : 12} patternUnits="userSpaceOnUse">
-              <path d={`M ${unit === UNITS.MM ? 100 : 12} 0 L 0 0 0 ${unit === UNITS.MM ? 100 : 12}`} fill="none" stroke="#E2DEC" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-
-          <g transform={`translate(${svgPadding}, ${svgPadding})`}>
-            
-            {/* Outer Stock Sheet Background */}
-            <rect
-              x="0"
-              y="0"
-              width={sheetW}
-              height={sheetH}
-              fill="#FFFFFF"
-              stroke="#242526"
-              strokeWidth="2"
-            />
-            {/* Inner Grid */}
-            <rect
-              x="0"
-              y="0"
-              width={sheetW}
-              height={sheetH}
-              fill="url(#sheetGrid)"
-            />
-
-            {/* Edge Trim Margin Line */}
-            {margin > 0 && (
-              <rect
-                x={margin}
-                y={margin}
-                width={sheetW - margin * 2}
-                height={sheetH - margin * 2}
-                fill="none"
-                stroke="#FF4500"
-                strokeWidth="1"
-                strokeDasharray="4,4"
-              />
-            )}
-
-            {/* Offcut Scrap Areas */}
-            {freeRects.map((free, idx) => (
-              <g key={`free_${idx}`}>
-                <rect
-                  x={free.x}
-                  y={free.y}
-                  width={free.width}
-                  height={free.height}
-                  fill="url(#scrapHatch)"
-                  stroke="#A8B0AD"
-                  strokeWidth="1"
-                  strokeDasharray="2,2"
-                />
-                {/* Scrap Label if big enough */}
-                {free.width > (sheetW * 0.1) && free.height > (sheetH * 0.1) && (
-                  <text
-                    x={free.x + free.width / 2}
-                    y={free.y + free.height / 2}
-                    fill="#788280"
-                    fontSize={Math.min(free.width, free.height) * 0.15}
-                    fontWeight="600"
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fontFamily="var(--ram-font-mono)"
-                  >
-                    SCRAP ({formatDimension(free.width, unit, false)} × {formatDimension(free.height, unit, false)})
-                  </text>
-                )}
-              </g>
-            ))}
-
-            {/* Blade Cut Lines */}
-            {cuts.map((cut, idx) => (
-              cut.type === 'vertical' ? (
-                <line
-                  key={`cut_${idx}`}
-                  x1={cut.x}
-                  y1={cut.y1}
-                  x2={cut.x}
-                  y2={cut.y2}
-                  stroke="#FF4500"
-                  strokeWidth={Math.max(1.5, kerf)}
-                  strokeOpacity="0.8"
-                />
-              ) : (
-                <line
-                  key={`cut_${idx}`}
-                  x1={cut.x1}
-                  y1={cut.y}
-                  x2={cut.x2}
-                  y2={cut.y}
-                  stroke="#FF4500"
-                  strokeWidth={Math.max(1.5, kerf)}
-                  strokeOpacity="0.8"
-                />
-              )
-            ))}
-
-            {/* Placed Parts */}
-            {placements.map((p) => {
-              const isHovered = hoveredPart?.id === p.id;
-              const textFitW = p.width > 40;
-              const textFitH = p.height > 25;
-
-              return (
-                <g
-                  key={p.id}
-                  onMouseEnter={() => setHoveredPart(p)}
-                  onMouseLeave={() => setHoveredPart(null)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {/* Part Block */}
-                  <rect
-                    x={p.x}
-                    y={p.y}
-                    width={p.width}
-                    height={p.height}
-                    fill={p.color || '#3B82F6'}
-                    fillOpacity={isHovered ? '0.95' : '0.85'}
-                    stroke={isHovered ? '#1C1D1F' : '#1E2022'}
-                    strokeWidth={isHovered ? '2.5' : '1.5'}
-                    rx="2"
-                  />
-
-                  {/* Part Text & Dimension Overlays */}
-                  {textFitW && textFitH && (
-                    <g pointerEvents="none">
-                      {/* Name */}
-                      <text
-                        x={p.x + p.width / 2}
-                        y={p.y + p.height / 2 - 4}
-                        fill="#FFFFFF"
-                        fontSize={Math.max(10, Math.min(16, p.width * 0.08))}
-                        fontWeight="700"
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fontFamily="var(--ram-font-sans)"
-                        style={{ textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}
-                      >
-                        {p.name}
-                      </text>
-
-                      {/* Dimensions */}
-                      <text
-                        x={p.x + p.width / 2}
-                        y={p.y + p.height / 2 + 12}
-                        fill="rgba(255,255,255,0.95)"
-                        fontSize={Math.max(8, Math.min(12, p.width * 0.06))}
-                        fontWeight="600"
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fontFamily="var(--ram-font-mono)"
-                        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}
-                      >
-                        {formatDimension(p.width, unit)} × {formatDimension(p.height, unit)}
-                      </text>
-
-                      {/* Rotation Icon Tag */}
-                      {p.rotated && (
-                        <text
-                          x={p.x + p.width - 12}
-                          y={p.y + 12}
-                          fill="#FF4500"
-                          fontSize="10"
-                          fontWeight="bold"
-                          textAnchor="middle"
-                        >
-                          ↻
-                        </text>
-                      )}
-                    </g>
-                  )}
-
-                </g>
-              );
-            })}
-
-            {/* Sheet Dimension Outer Labels */}
-            {/* Top Width Ruler */}
-            <text x={sheetW / 2} y="-12" fill="#1C1D1F" fontSize="12" fontWeight="700" textAnchor="middle" fontFamily="var(--ram-font-mono)">
-              {formatDimension(sheetW, unit)}
-            </text>
-            {/* Left Height Ruler */}
-            <text x="-12" y={sheetH / 2} fill="#1C1D1F" fontSize="12" fontWeight="700" textAnchor="middle" transform={`rotate(-90, -12, ${sheetH / 2})`} fontFamily="var(--ram-font-mono)">
-              {formatDimension(sheetH, unit)}
-            </text>
-
-          </g>
-        </svg>
+        <div style={{
+          transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <SheetDiagram sheet={currentSheet} unit={unit} svgPadding={svgPadding} />
+        </div>
 
         {/* Hover Tooltip Overlay */}
         {hoveredPart && (
@@ -409,6 +418,28 @@ export default function Visualizer({ result, unit, stock }) {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="print-only">
+        {result.sheets.map((s, idx) => (
+          <div key={idx} className="print-page">
+            <h2 style={{ textAlign: 'center', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              Timber Sheet {idx + 1}
+            </h2>
+            <SheetDiagram sheet={s} unit={unit} svgPadding={svgPadding} isPrint={true} />
+            <div style={{ marginTop: '2rem' }}>
+              <div className="ram-label" style={{ marginBottom: '0.5rem' }}>PARTS ON SHEET {idx + 1}:</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                {s.placements.map((p, pi) => (
+                  <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: p.color || '#3B82F6' }} />
+                    <strong>{p.name}:</strong> {formatDimension(p.width, unit)} × {formatDimension(p.height, unit)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
     </div>
