@@ -1,0 +1,336 @@
+/* Dieter Rams / Braun Design System for Wood Cut List Estimator */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* Dieter Rams Color Palette (Braun ET66 / SK4 inspired) */
+  --ram-bg: #EFECE6;
+  --ram-bg-subtle: #E6E3DB;
+  --ram-surface: #F8F7F4;
+  --ram-surface-elevated: #FFFFFF;
+  --ram-dark-surface: #1E2022;
+  --ram-dark-panel: #2A2D30;
+  
+  --ram-border-light: #D6D2C8;
+  --ram-border-medium: #B8B3A6;
+  --ram-border-dark: #3A3D40;
+
+  --ram-text-main: #1C1D1F;
+  --ram-text-muted: #65676B;
+  --ram-text-dim: #8E9094;
+  --ram-text-on-dark: #F2F2F0;
+
+  /* Braun Accent Colors */
+  --ram-orange: #FF4500;        /* Braun ET66 Orange Button */
+  --ram-orange-hover: #E03D00;
+  --ram-yellow: #F0A500;        /* Warning / Offcut Scrap */
+  --ram-green: #2E7D32;         /* Success / Efficiency */
+  --ram-green-dark: #1B5E20;
+  --ram-red: #D32F2F;           /* Error / Delete */
+
+  /* LCD Readout Display Tokens */
+  --ram-lcd-bg: #141716;
+  --ram-lcd-border: #2B302D;
+  --ram-lcd-text: #4EED80;       /* Digital Green Glow */
+  --ram-lcd-amber: #FFB74D;      /* Digital Amber */
+
+  /* Typography */
+  --ram-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ram-font-mono: 'JetBrains Mono', monospace;
+
+  /* Shadows & Elevation */
+  --ram-shadow-tactile: 0 2px 0 0 #B5B0A2, 0 3px 6px rgba(0,0,0,0.06);
+  --ram-shadow-pressed: inset 0 2px 4px rgba(0,0,0,0.15);
+  --ram-shadow-dark-tactile: 0 2px 0 0 #121314, 0 3px 6px rgba(0,0,0,0.3);
+  --ram-radius-sm: 3px;
+  --ram-radius-md: 6px;
+  --ram-radius-lg: 10px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--ram-font-sans);
+  background-color: var(--ram-bg);
+  color: var(--ram-text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* Tabular numbers for numerical precision */
+.num-tabular, input[type="number"], .stat-value {
+  font-family: var(--ram-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tactical Braun Buttons */
+.ram-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--ram-font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.55rem 1.1rem;
+  border-radius: var(--ram-radius-sm);
+  border: 1px solid var(--ram-border-medium);
+  background: var(--ram-surface);
+  color: var(--ram-text-main);
+  cursor: pointer;
+  box-shadow: var(--ram-shadow-tactile);
+  transition: all 0.1s ease;
+  user-select: none;
+  text-transform: uppercase;
+}
+
+.ram-btn:hover {
+  background: #FFFFFF;
+  border-color: var(--ram-text-main);
+}
+
+.ram-btn:active {
+  transform: translateY(2px);
+  box-shadow: var(--ram-shadow-pressed);
+}
+
+.ram-btn-orange {
+  background: var(--ram-orange);
+  color: #FFFFFF;
+  border-color: #D13800;
+  box-shadow: 0 2px 0 0 #B33000, 0 3px 6px rgba(255, 69, 0, 0.25);
+}
+
+.ram-btn-orange:hover {
+  background: var(--ram-orange-hover);
+  border-color: #B33000;
+  color: #FFFFFF;
+}
+
+.ram-btn-dark {
+  background: var(--ram-dark-panel);
+  color: var(--ram-text-on-dark);
+  border-color: var(--ram-border-dark);
+  box-shadow: var(--ram-shadow-dark-tactile);
+}
+
+.ram-btn-dark:hover {
+  background: #34383C;
+  color: #FFFFFF;
+}
+
+.ram-btn-sm {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+.ram-btn-icon {
+  padding: 0.55rem;
+  aspect-ratio: 1;
+}
+
+/* Form Controls & Inputs */
+.ram-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ram-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ram-text-muted);
+}
+
+.ram-input, .ram-select {
+  font-family: var(--ram-font-mono);
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--ram-radius-sm);
+  border: 1px solid var(--ram-border-medium);
+  background: var(--ram-surface-elevated);
+  color: var(--ram-text-main);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Hide number input spin buttons to prevent text clipping */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.ram-input:focus, .ram-select:focus {
+  border-color: var(--ram-orange);
+  box-shadow: 0 0 0 2px rgba(255, 69, 0, 0.15);
+}
+
+/* Summary Gauge Displays (Clean Dieter Rams Instrument Panel) */
+.ram-lcd-box {
+  background: var(--ram-surface-elevated);
+  border: 1px solid var(--ram-border-medium);
+  border-radius: var(--ram-radius-md);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.ram-lcd-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ram-text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.ram-lcd-value {
+  font-family: var(--ram-font-mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--ram-text-main);
+  letter-spacing: -0.02em;
+}
+
+.ram-lcd-value.amber {
+  color: #D97706;
+}
+
+.ram-lcd-unit {
+  font-size: 0.75rem;
+  color: var(--ram-text-muted);
+  margin-left: 0.25rem;
+  font-weight: 500;
+}
+
+/* Card / Panel styling */
+.ram-card {
+  background: var(--ram-surface);
+  border: 1px solid var(--ram-border-light);
+  border-radius: var(--ram-radius-md);
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.ram-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.85rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--ram-bg-subtle);
+}
+
+.ram-card-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ram-text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ram-card-title::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: var(--ram-orange);
+  border-radius: 50%;
+}
+
+/* Custom Toggle Switch (Braun mechanical switch style) */
+.ram-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.ram-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ram-toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background-color: var(--ram-border-medium);
+  border-radius: 12px;
+  transition: 0.2s ease;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.ram-toggle-slider:before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--ram-surface-elevated);
+  border-radius: 50%;
+  transition: 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.ram-toggle input:checked + .ram-toggle-slider {
+  background-color: var(--ram-orange);
+}
+
+.ram-toggle input:checked + .ram-toggle-slider:before {
+  transform: translateX(20px);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--ram-bg-subtle);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ram-border-medium);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ram-text-muted);
+}
+
+/* Printable layout styling */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .ram-card {
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}
