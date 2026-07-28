@@ -1,4 +1,4 @@
-# CUT // LIST 8000 — Woodworking 2D Cut Estimator
+\# CUT // LIST 8000 — Woodworking 2D Cut Estimator
 
 > A minimalist, high-performance 2D Guillotine cutting stock optimizer and sheet visualizer for woodworkers, cabinet makers, and DIYers. Designed with a clean, functional aesthetic inspired by Dieter Rams & Braun ("Less, but better").
 

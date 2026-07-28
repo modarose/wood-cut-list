@@ -1,110 +1,97 @@
 import React, { useState } from 'react';
-import { formatDimension, UNITS } from '../utils/unitConverter';
-import { ListOrdered, ChevronRight, CheckSquare, Square, Wrench } from 'lucide-react';
+import { formatDimension } from '../utils/unitConverter';
+import { ListOrdered, CheckCircle2, Circle } from 'lucide-react';
 
 export default function CutSequence({ result, unit }) {
   const [completedSteps, setCompletedSteps] = useState(new Set());
 
-  if (!result || !result.sheets || result.sheets.length === 0) {
-    return null;
-  }
+  if (!result || !result.sheets || result.sheets.length === 0) return null;
 
-  const toggleStep = (stepKey) => {
+  const toggleStep = (key) => {
     const next = new Set(completedSteps);
-    if (next.has(stepKey)) {
-      next.delete(stepKey);
-    } else {
-      next.add(stepKey);
-    }
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
     setCompletedSteps(next);
   };
 
   return (
-    <div className="ram-card no-print" style={{ marginTop: '1.5rem' }}>
-      <div className="ram-card-header">
-        <div className="ram-card-title">
-          3. SHOP FLOOR CUTTING SEQUENCE GUIDE
+    <section className="ws-card no-print">
+      <div className="ws-card-header">
+        <div className="ws-card-title">
+          <ListOrdered size={18} />
+          Cut Sequence
         </div>
-        <span className="ram-label" style={{ fontSize: '0.68rem', color: '#2E7D32' }}>
-          WORKSHOP INSTRUCTIONS
-        </span>
+        <span className="ws-card-badge">Workshop Instructions</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        {result.sheets.map((sheet, sheetIdx) => (
-          <div key={sheetIdx} style={{ background: '#FFFFFF', padding: '1rem', borderRadius: '4px', border: '1px solid var(--ram-border-medium)' }}>
-            
-            <div style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1C1D1F' }}>
-              <Wrench size={16} color="#FF4500" />
-              SHEET #{sheetIdx + 1} CUT STEPS ({sheet.cuts.length} CUT PASSES)
-            </div>
+      <div style={{ paddingTop: 'var(--ws-space-md)', paddingBottom: 'var(--ws-space-sm)' }}>
+        {result.sheets.map((sheet, sheetIdx) => {
+          if (!sheet.cuts || sheet.cuts.length === 0) return null;
 
-            {sheet.cuts.length === 0 ? (
-              <div style={{ fontSize: '0.8rem', color: 'var(--ram-text-muted)' }}>
-                Single panel placement without splits needed.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          return (
+            <div key={sheetIdx} style={{ marginBottom: 'var(--ws-space-md)' }}>
+              {result.sheets.length > 1 && (
+                <div style={{
+                  padding: '4px var(--ws-space-md)',
+                  fontFamily: 'var(--ws-font-mono)',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ws-on-surface-variant)',
+                  marginBottom: '12px',
+                }}>
+                  Sheet #{sheetIdx + 1} — {sheet.cuts.length} cut passes
+                </div>
+              )}
+
+              <div className="ws-sequence-strip">
                 {sheet.cuts.map((cut, cutIdx) => {
-                  const stepKey = `s${sheetIdx}_c${cutIdx}`;
-                  const isDone = completedSteps.has(stepKey);
-
-                  const cutTypeLabel = cut.type === 'vertical' ? 'VERTICAL CROSS-CUT' : 'HORIZONTAL RIP-CUT';
-                  const fenceVal = cut.cutSize || (cut.type === 'vertical' ? cut.x : cut.y);
-                  const lengthVal = cut.type === 'vertical' ? (cut.y2 - cut.y1) : (cut.x2 - cut.x1);
+                  const key = `s${sheetIdx}_c${cutIdx}`;
+                  const done = completedSteps.has(key);
+                  const label = cut.type === 'vertical' ? 'Cross Cut' : 'Rip Cut';
+                  const fence = cut.cutSize || (cut.type === 'vertical' ? cut.x : cut.y);
+                  const length = cut.type === 'vertical'
+                    ? (cut.y2 - cut.y1)
+                    : (cut.x2 - cut.x1);
 
                   return (
                     <div
                       key={cutIdx}
-                      onClick={() => toggleStep(stepKey)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justify: 'space-between',
-                        padding: '0.6rem 0.85rem',
-                        background: isDone ? '#F0F9F4' : 'var(--ram-surface)',
-                        border: `1px solid ${isDone ? '#A7F3D0' : 'var(--ram-border-light)'}`,
-                        borderRadius: '3px',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        opacity: isDone ? 0.75 : 1
-                      }}
+                      className={`ws-sequence-card${done ? ' done' : ''}`}
+                      onClick={() => toggleStep(key)}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        {isDone ? (
-                          <CheckSquare size={18} color="#10B981" />
-                        ) : (
-                          <Square size={18} color="var(--ram-border-medium)" />
-                        )}
-                        <div>
-                          <div style={{
-                            fontSize: '0.8rem',
-                            fontWeight: '700',
-                            textDecoration: isDone ? 'line-through' : 'none',
-                            color: isDone ? '#065F46' : '#1C1D1F'
-                          }}>
-                            PASS #{cutIdx + 1}: {cutTypeLabel}
-                          </div>
-                          <div className="num-tabular" style={{ fontSize: '0.75rem', color: 'var(--ram-text-muted)' }}>
-                            Set table saw fence to <strong>{formatDimension(fenceVal, unit)}</strong> (Cut stroke length: {formatDimension(lengthVal, unit)})
-                          </div>
-                        </div>
+                      <div className="ws-sequence-card-num">{cutIdx + 1}</div>
+
+                      <div className="ws-sequence-card-type">{label}</div>
+
+                      <div className="ws-sequence-card-title">
+                        Fence: {formatDimension(fence, unit)}
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <span className="ram-btn ram-btn-sm" style={{ padding: '2px 6px', fontSize: '0.68rem', background: '#EAE8E1' }}>
-                          {cut.type.toUpperCase()}
+                      <div className="ws-sequence-card-desc">
+                        {cut.type === 'vertical'
+                          ? 'Cross-cut through the sheet at this position.'
+                          : 'Set table saw fence and rip the full length.'}
+                      </div>
+
+                      <div className="ws-sequence-card-footer">
+                        <span className="ws-sequence-card-data">
+                          Length: {formatDimension(length, unit)}
                         </span>
+                        {done
+                          ? <CheckCircle2 size={18} color="var(--ws-primary)" />
+                          : <Circle size={18} color="var(--ws-outline)" />
+                        }
                       </div>
                     </div>
                   );
                 })}
               </div>
-            )}
-
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
-    </div>
+    </section>
   );
 }

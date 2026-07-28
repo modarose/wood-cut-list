@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { formatDimension, UNITS } from '../utils/unitConverter';
-import { ZoomIn, ZoomOut, RotateCcw, Eye, Layers, RotateCw } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Layers } from 'lucide-react';
 
 const SheetDiagram = ({ sheet, unit, svgPadding = 40, isPrint = false }) => {
   const { width: sheetW, height: sheetH, margin, kerf, placements, freeRects, cuts } = sheet;
@@ -208,31 +208,15 @@ const SheetDiagram = ({ sheet, unit, svgPadding = 40, isPrint = false }) => {
   );
 };
 
-export default function Visualizer({ result, unit, stock }) {
+export default function Visualizer({ result, unit }) {
   const [activeSheetIdx, setActiveSheetIdx] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [hoveredPart, setHoveredPart] = useState(null);
+  const [hoveredPart] = useState(null);
 
   const containerRef = useRef(null);
-
-  if (!result || !result.sheets || result.sheets.length === 0) {
-    return (
-      <div className="ram-card" style={{ minHeight: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--ram-text-muted)', background: 'var(--ram-surface)' }}>
-        <Layers size={36} color="var(--ram-border-medium)" style={{ marginBottom: '0.75rem' }} />
-        <div style={{ fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>NO CUT LAYOUT GENERATED</div>
-        <div style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Add parts to your cut list to calculate sheet layout.</div>
-      </div>
-    );
-  }
-
-  const currentSheet = result.sheets[activeSheetIdx] || result.sheets[0];
-  const { placements } = currentSheet;
-
-  // SVG viewBox aspect setup
-  const svgPadding = 40;
 
   // Zoom / Pan handlers
   const handleZoomIn = () => setZoom(z => Math.min(z + 0.25, 6));
@@ -288,6 +272,22 @@ export default function Visualizer({ result, unit, stock }) {
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);
+
+  if (!result || !result.sheets || result.sheets.length === 0) {
+    return (
+      <div className="ram-card" style={{ minHeight: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--ram-text-muted)', background: 'var(--ram-surface)' }}>
+        <Layers size={36} color="var(--ram-border-medium)" style={{ marginBottom: '0.75rem' }} />
+        <div style={{ fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>NO CUT LAYOUT GENERATED</div>
+        <div style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Add parts to your cut list to calculate sheet layout.</div>
+      </div>
+    );
+  }
+
+  const currentSheet = result.sheets[activeSheetIdx] || result.sheets[0];
+  const { placements } = currentSheet;
+
+  // SVG viewBox aspect setup
+  const svgPadding = 40;
 
   return (
     <div className="ram-card" style={{ padding: 0, overflow: 'hidden' }}>

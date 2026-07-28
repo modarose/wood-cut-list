@@ -1,178 +1,162 @@
 import React from 'react';
 import { STOCK_PRESETS } from '../utils/presets';
 import { convertDimension, UNITS } from '../utils/unitConverter';
-import { Maximize2, Scissors, ShieldAlert } from 'lucide-react';
+import { LayoutGrid, Maximize2, Scissors, ShieldAlert } from 'lucide-react';
 
 export default function SheetSettings({
   stock,
   onStockChange,
   unit,
   cutPreference,
-  onCutPreferenceChange
+  onCutPreferenceChange,
 }) {
-  const handleWidthChange = (val) => {
-    onStockChange({ ...stock, width: parseFloat(val) || 0 });
-  };
-
-  const handleHeightChange = (val) => {
-    onStockChange({ ...stock, height: parseFloat(val) || 0 });
-  };
-
-  const handleKerfChange = (val) => {
-    onStockChange({ ...stock, kerf: parseFloat(val) || 0 });
-  };
-
-  const handleMarginChange = (val) => {
-    onStockChange({ ...stock, margin: parseFloat(val) || 0 });
-  };
+  const handleWidthChange  = val => onStockChange({ ...stock, width:  parseFloat(val) || 0 });
+  const handleHeightChange = val => onStockChange({ ...stock, height: parseFloat(val) || 0 });
+  const handleKerfChange   = val => onStockChange({ ...stock, kerf:   parseFloat(val) || 0 });
+  const handleMarginChange = val => onStockChange({ ...stock, margin: parseFloat(val) || 0 });
 
   const handlePresetSelect = (preset) => {
-    let w = preset.width;
-    let h = preset.height;
-    let k = preset.kerf;
-    let m = preset.margin;
-
-    // Convert dimensions if preset unit differs from current active unit
+    let w = preset.width, h = preset.height, k = preset.kerf, m = preset.margin;
     if (preset.unit !== unit) {
       w = convertDimension(w, preset.unit, unit);
       h = convertDimension(h, preset.unit, unit);
       k = convertDimension(k, preset.unit, unit);
       m = convertDimension(m, preset.unit, unit);
     }
-
     onStockChange({
       ...stock,
-      width: Math.round(w * 10) / 10,
+      width:  Math.round(w * 10) / 10,
       height: Math.round(h * 10) / 10,
-      kerf: Math.round(k * 100) / 100,
+      kerf:   Math.round(k * 100) / 100,
       margin: Math.round(m * 10) / 10,
     });
   };
 
+  const step = unit === UNITS.INCH ? '0.125' : '1';
+  const kerfStep = unit === UNITS.INCH ? '0.03125' : '0.5';
+
   return (
-    <div className="ram-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-      <div>
-        <div className="ram-card-header">
-          <div className="ram-card-title">
-            1. STOCK SHEET & SAW PARAMETERS
+    <section className="ws-card">
+      <div className="ws-card-header">
+        <div className="ws-card-title">
+          <LayoutGrid size={18} />
+          Stock Boards
+        </div>
+      </div>
+
+      <div className="ws-card-body">
+
+        {/* 4 dimension inputs */}
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+
+          <div className="ws-input-group" style={{ flex: '1 1 80px' }}>
+            <label className="ws-label" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <Maximize2 size={10} /> Width ({unit})
+            </label>
+            <input
+              type="number"
+              step={step}
+              value={stock.width}
+              onChange={e => handleWidthChange(e.target.value)}
+              className="ws-input"
+            />
           </div>
-          <span className="ram-label" style={{ fontSize: '0.68rem', color: '#FF4500' }}>
-            SPECIFICATION
+
+          <div className="ws-input-group" style={{ flex: '1 1 80px' }}>
+            <label className="ws-label" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <Maximize2 size={10} style={{ transform: 'rotate(90deg)' }} /> Length ({unit})
+            </label>
+            <input
+              type="number"
+              step={step}
+              value={stock.height}
+              onChange={e => handleHeightChange(e.target.value)}
+              className="ws-input"
+            />
+          </div>
+
+          <div className="ws-input-group" style={{ flex: '1 1 65px' }}>
+            <label className="ws-label" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <Scissors size={10} /> Kerf ({unit})
+            </label>
+            <input
+              type="number"
+              step={kerfStep}
+              value={stock.kerf}
+              onChange={e => handleKerfChange(e.target.value)}
+              className="ws-input"
+            />
+          </div>
+
+          <div className="ws-input-group" style={{ flex: '1 1 65px' }}>
+            <label className="ws-label" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <ShieldAlert size={10} /> Margin ({unit})
+            </label>
+            <input
+              type="number"
+              step={step}
+              value={stock.margin}
+              onChange={e => handleMarginChange(e.target.value)}
+              className="ws-input"
+            />
+          </div>
+
+        </div>
+
+        {/* Dimension summary chip */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          background: 'var(--ws-surface-container)',
+          borderRadius: 'var(--ws-radius)',
+          padding: '4px 10px',
+          marginBottom: '16px',
+          fontFamily: 'var(--ws-font-mono)',
+          fontSize: '13px',
+          fontWeight: 600,
+          color: 'var(--ws-on-surface)',
+        }}>
+          {stock.width} × {stock.height} {unit}
+          <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--ws-on-surface-variant)' }}>
+            Kerf {stock.kerf} · Margin {stock.margin}
           </span>
         </div>
 
-        {/* 4 Inputs in 1 Line */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.6rem', flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: '0.4rem', marginBottom: '0.75rem' }}>
-          
-          {/* Width (4 chars) */}
-          <div className="ram-input-group" style={{ flexShrink: 0 }}>
-            <label className="ram-label" style={{ display: 'flex', alignItems: 'center', gap: '0.15rem', fontSize: '0.65rem' }}>
-              <Maximize2 size={11} /> WIDTH ({unit})
-            </label>
-            <input
-              type="number"
-              step={unit === UNITS.INCH ? '0.125' : '1'}
-              value={stock.width}
-              onChange={(e) => handleWidthChange(e.target.value)}
-              className="ram-input num-tabular"
-              style={{ width: '4.5rem', padding: '4px 6px', fontSize: '0.85rem' }}
-              placeholder="1220"
-            />
+        {/* Preset + cut preference */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', paddingTop: '12px', borderTop: '1px solid var(--ws-outline-variant)' }}>
+
+          <div className="ws-input-group" style={{ flex: '1 1 160px' }}>
+            <label className="ws-label">Sheet Presets</label>
+            <select
+              onChange={e => {
+                if (e.target.value !== '') handlePresetSelect(STOCK_PRESETS[parseInt(e.target.value)]);
+              }}
+              defaultValue=""
+              className="ws-select"
+            >
+              <option value="" disabled>Select Preset Size…</option>
+              {STOCK_PRESETS.map((p, idx) => (
+                <option key={idx} value={idx}>{p.name}</option>
+              ))}
+            </select>
           </div>
 
-          {/* Height / Length (4 chars) */}
-          <div className="ram-input-group" style={{ flexShrink: 0 }}>
-            <label className="ram-label" style={{ display: 'flex', alignItems: 'center', gap: '0.15rem', fontSize: '0.65rem' }}>
-              <Maximize2 size={11} style={{ transform: 'rotate(90deg)' }} /> LENGTH ({unit})
-            </label>
-            <input
-              type="number"
-              step={unit === UNITS.INCH ? '0.125' : '1'}
-              value={stock.height}
-              onChange={(e) => handleHeightChange(e.target.value)}
-              className="ram-input num-tabular"
-              style={{ width: '4.5rem', padding: '4px 6px', fontSize: '0.85rem' }}
-              placeholder="2440"
-            />
+          <div className="ws-input-group" style={{ flex: '1 1 160px' }}>
+            <label className="ws-label">Cut Preference</label>
+            <select
+              value={cutPreference}
+              onChange={e => onCutPreferenceChange(e.target.value)}
+              className="ws-select"
+            >
+              <option value="rip_first">Length Rip-Cut First</option>
+              <option value="cross_first">Width Cross-Cut First</option>
+            </select>
           </div>
 
-          {/* Kerf (2 chars) */}
-          <div className="ram-input-group" style={{ flexShrink: 0 }}>
-            <label className="ram-label" style={{ display: 'flex', alignItems: 'center', gap: '0.15rem', fontSize: '0.65rem' }}>
-              <Scissors size={11} /> KERF ({unit})
-            </label>
-            <input
-              type="number"
-              step={unit === UNITS.INCH ? '0.03125' : '0.5'}
-              value={stock.kerf}
-              onChange={(e) => handleKerfChange(e.target.value)}
-              className="ram-input num-tabular"
-              style={{ width: '3.5rem', padding: '4px 6px', fontSize: '0.85rem' }}
-              placeholder="3"
-            />
-          </div>
-
-          {/* Trim Margin (2 chars) */}
-          <div className="ram-input-group" style={{ flexShrink: 0 }}>
-            <label className="ram-label" style={{ display: 'flex', alignItems: 'center', gap: '0.15rem', fontSize: '0.65rem' }}>
-              <ShieldAlert size={11} /> MARGIN ({unit})
-            </label>
-            <input
-              type="number"
-              step={unit === UNITS.INCH ? '0.125' : '1'}
-              value={stock.margin}
-              onChange={(e) => handleMarginChange(e.target.value)}
-              className="ram-input num-tabular"
-              style={{ width: '3.5rem', padding: '4px 6px', fontSize: '0.85rem' }}
-              placeholder="5"
-            />
-          </div>
-
-        </div>
-      </div>
-
-      {/* Preset Dropdown & Cut Preference */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.6rem', paddingTop: '0.65rem', borderTop: '1px dashed #D6D2C8' }}>
-        
-        {/* Preset Sizes Dropdown */}
-        <div className="ram-input-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.4rem' }}>
-          <span className="ram-label" style={{ fontSize: '0.65rem' }}>PRESETS:</span>
-          <select
-            onChange={(e) => {
-              const selectedIdx = e.target.value;
-              if (selectedIdx !== '') {
-                handlePresetSelect(STOCK_PRESETS[parseInt(selectedIdx)]);
-              }
-            }}
-            defaultValue=""
-            className="ram-select"
-            style={{ padding: '3px 6px', fontSize: '0.75rem', maxWidth: '200px' }}
-          >
-            <option value="" disabled>Select Preset Size...</option>
-            {STOCK_PRESETS.map((p, idx) => (
-              <option key={idx} value={idx}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Cut Direction Preference */}
-        <div className="ram-input-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.4rem' }}>
-          <span className="ram-label" style={{ fontSize: '0.65rem' }}>CUT PREFERENCE:</span>
-          <select
-            value={cutPreference}
-            onChange={(e) => onCutPreferenceChange(e.target.value)}
-            className="ram-select"
-            style={{ padding: '3px 6px', fontSize: '0.75rem' }}
-          >
-            <option value="rip_first">Length Rip-Cut First</option>
-            <option value="cross_first">Width Cross-Cut First</option>
-          </select>
         </div>
 
       </div>
-
-    </div>
+    </section>
   );
 }

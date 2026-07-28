@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import Header from './components/Header';
 import SheetSettings from './components/SheetSettings';
 import CutListInput from './components/CutListInput';
@@ -6,6 +6,7 @@ import SummaryStats from './components/SummaryStats';
 import Visualizer from './components/Visualizer';
 import CutSequence from './components/CutSequence';
 import PresetsModal from './components/PresetsModal';
+import { LayoutGrid, Package, FolderOpen, Wrench, Settings, HelpCircle } from 'lucide-react';
 
 import { UNITS, convertDimension } from './utils/unitConverter';
 import { optimizeCutList, STRATEGIES, CUT_PREFERENCES } from './utils/cutOptimizer';
@@ -32,22 +33,17 @@ export default function App() {
   // Handle Unit Switching (MM <-> Inches) with automatic dimension recalculation
   const handleUnitChange = (newUnit) => {
     if (newUnit === unit) return;
-
-    // Convert stock sheet parameters
     const convertedStock = {
       width: Math.round(convertDimension(stock.width, unit, newUnit) * 10) / 10,
       height: Math.round(convertDimension(stock.height, unit, newUnit) * 10) / 10,
       kerf: Math.round(convertDimension(stock.kerf, unit, newUnit) * 100) / 100,
       margin: Math.round(convertDimension(stock.margin, unit, newUnit) * 10) / 10,
     };
-
-    // Convert all parts dimensions
     const convertedParts = parts.map(p => ({
       ...p,
       width: Math.round(convertDimension(p.width, unit, newUnit) * 10) / 10,
       height: Math.round(convertDimension(p.height, unit, newUnit) * 10) / 10,
     }));
-
     setStock(convertedStock);
     setParts(convertedParts);
     setUnit(newUnit);
@@ -85,94 +81,136 @@ export default function App() {
     document.body.removeChild(link);
   };
 
-  // Print Cut Sheet Layout
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
-  // Clear All Parts
   const handleClearAll = () => {
-    if (window.confirm('Are you sure you want to clear all cut list parts?')) {
-      setParts([]);
-    }
+    if (window.confirm('Clear all cut list parts?')) setParts([]);
   };
 
   const totalRequestedPartsCount = parts.reduce((sum, p) => sum + (parseInt(p.qty) || 0), 0);
 
+  const navItems = [
+    { icon: LayoutGrid, label: 'Optimizer', active: true },
+    { icon: Package, label: 'Inventory', active: false },
+    { icon: FolderOpen, label: 'Projects', active: false },
+    { icon: Wrench, label: 'Workshop', active: false },
+  ];
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="ws-shell">
 
-      {/* Header Bar */}
-      <Header
-        unit={unit}
-        onUnitChange={handleUnitChange}
-        onOpenPresets={() => setIsPresetsOpen(true)}
-        onExportCSV={handleExportCSV}
-        onPrint={handlePrint}
-        onClearAll={handleClearAll}
-        strategy={strategy}
-        onStrategyChange={setStrategy}
-      />
-
-      {/* Main Layout Grid */}
-      <main style={{ maxWidth: '1440px', width: '100%', margin: '0 auto', padding: '0 1.5rem 3rem 1.5rem', flex: 1 }}>
-
-        {/* Dieter Rams LCD Stat Indicators */}
-        <div className="no-print">
-          <SummaryStats
-            result={optimizationResult}
-            totalRequestedParts={totalRequestedPartsCount}
-          />
+      {/* ── Sidebar ── */}
+      <aside className="ws-sidebar no-print">
+        <div className="ws-sidebar-brand">
+          <div className="ws-sidebar-title">WoodCut Studio</div>
+          <div className="ws-sidebar-subtitle">Project Alpha</div>
         </div>
 
-        {/* Row 1: Section 1 & Section 2 side-by-side */}
-        <div className="no-print" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem', alignItems: 'stretch' }}>
+        <nav className="ws-sidebar-nav">
+          {navItems.map(({ icon: Icon, label, active }) => (
+            <button key={label} className={`ws-nav-item${active ? ' active' : ''}`}>
+              <Icon size={18} />
+              {label}
+            </button>
+          ))}
+        </nav>
 
-          {/* Section 1: Sheet & Saw Parameters */}
-          <SheetSettings
-            stock={stock}
-            onStockChange={setStock}
-            unit={unit}
-            cutPreference={cutPreference}
-            onCutPreferenceChange={setCutPreference}
-          />
+        <div className="ws-sidebar-footer">
+          <button className="ws-nav-item">
+            <Settings size={18} />
+            Settings
+          </button>
+          <button className="ws-nav-item">
+            <HelpCircle size={18} />
+            Support
+          </button>
+        </div>
+      </aside>
 
-          {/* Section 2: Cut List Table */}
-          <CutListInput
-            parts={parts}
-            onPartsChange={setParts}
-            unit={unit}
-          />
+      {/* ── Main scrollable area ── */}
+      <main className="ws-main">
+
+        {/* Top App Bar */}
+        <Header
+          unit={unit}
+          onUnitChange={handleUnitChange}
+          onOpenPresets={() => setIsPresetsOpen(true)}
+          onExportCSV={handleExportCSV}
+          onPrint={handlePrint}
+          onClearAll={handleClearAll}
+          strategy={strategy}
+          onStrategyChange={setStrategy}
+          stock={stock}
+          onStockChange={setStock}
+        />
+
+        {/* Workspace content */}
+        <div className="ws-content">
+
+          {/* Metric Cards Row */}
+          <div className="no-print">
+            <SummaryStats
+              result={optimizationResult}
+              totalRequestedParts={totalRequestedPartsCount}
+            />
+          </div>
+
+          {/* Main Workspace Grid */}
+          <div className="ws-workspace-grid">
+
+            {/* Left: inputs column */}
+            <div className="ws-inputs-col no-print">
+              <SheetSettings
+                stock={stock}
+                onStockChange={setStock}
+                unit={unit}
+                cutPreference={cutPreference}
+                onCutPreferenceChange={setCutPreference}
+              />
+              <CutListInput
+                parts={parts}
+                onPartsChange={setParts}
+                unit={unit}
+              />
+            </div>
+
+            {/* Right: Visualizer */}
+            <div>
+              <Visualizer
+                result={optimizationResult}
+                unit={unit}
+                stock={stock}
+              />
+            </div>
+
+          </div>
+
+          {/* Cut Sequence */}
+          <div className="no-print">
+            <CutSequence result={optimizationResult} unit={unit} />
+          </div>
 
         </div>
 
-        {/* Row 2: Full-Width Visualized Cutting Diagram */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <Visualizer
-            result={optimizationResult}
-            unit={unit}
-            stock={stock}
-          />
-        </div>
-
-        {/* Row 3: Full-Width Shop Floor Cutting Sequence Guide */}
-        <div className="no-print">
-          <CutSequence
-            result={optimizationResult}
-            unit={unit}
-          />
-        </div>
+        {/* Footer */}
+        <footer className="ws-footer no-print">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--ws-space-md)' }}>
+            <span className="ws-footer-brand">WoodCut Studio</span>
+            <span style={{ color: 'var(--ws-outline-variant)' }}>|</span>
+            <span className="ws-footer-copy">© 2024 · Precision Workshop Tools</span>
+          </div>
+          <div style={{ display: 'flex', gap: 'var(--ws-space-lg)' }}>
+            {['Privacy', 'Terms', 'Docs'].map(l => (
+              <a key={l} href="#" style={{ fontFamily: 'var(--ws-font-mono)', fontSize: '12px', color: 'var(--ws-outline)', textDecoration: 'none' }}
+                onMouseEnter={e => e.target.style.color = 'var(--ws-primary)'}
+                onMouseLeave={e => e.target.style.color = 'var(--ws-outline)'}>
+                {l}
+              </a>
+            ))}
+          </div>
+        </footer>
 
       </main>
-
-      {/* Dieter Rams Minimalist Footer */}
-      <footer className="no-print" style={{ borderTop: '1px solid var(--ram-border-medium)', background: '#F8F7F4', padding: '1rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--ram-text-muted)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-          <span style={{ width: '6px', height: '6px', backgroundColor: '#FF4500', borderRadius: '50%' }} />
-          <strong>BRAUN // DESIGN PRINCIPLE: LESS, BUT BETTER.</strong>
-          <span>• 2D Guillotine Cut List Estimator for Woodworking</span>
-        </div>
-      </footer>
 
       {/* Presets Modal */}
       <PresetsModal
