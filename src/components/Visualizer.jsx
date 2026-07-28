@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { formatDimension, UNITS } from '../utils/unitConverter';
 import { ZoomIn, ZoomOut, RotateCcw, Layers } from 'lucide-react';
 
-const SheetDiagram = ({ sheet, unit, svgPadding = 40, isPrint = false }) => {
+const SheetDiagram = ({ sheet, unit, svgPadding = 40, isPrint = false, onPartHover }) => {
   const { width: sheetW, height: sheetH, margin, kerf, placements, freeRects, cuts } = sheet;
   const viewBoxW = sheetW + svgPadding * 2;
   const viewBoxH = sheetH + svgPadding * 2;
@@ -127,7 +127,12 @@ const SheetDiagram = ({ sheet, unit, svgPadding = 40, isPrint = false }) => {
           const textFitH = p.height > 25;
 
           return (
-            <g key={p.id}>
+            <g
+              key={p.id}
+              onMouseEnter={() => onPartHover?.(p)}
+              onMouseLeave={() => onPartHover?.(null)}
+              style={!isPrint ? { cursor: 'help' } : undefined}
+            >
               {/* Part Block */}
               <rect
                 x={p.x}
@@ -214,7 +219,7 @@ export default function Visualizer({ result, unit }) {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [hoveredPart] = useState(null);
+  const [hoveredPart, setHoveredPart] = useState(null);
 
   const containerRef = useRef(null);
 
@@ -361,7 +366,12 @@ export default function Visualizer({ result, unit }) {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <SheetDiagram sheet={currentSheet} unit={unit} svgPadding={svgPadding} />
+          <SheetDiagram
+            sheet={currentSheet}
+            unit={unit}
+            svgPadding={svgPadding}
+            onPartHover={setHoveredPart}
+          />
         </div>
 
         {/* Hover Tooltip Overlay */}
@@ -372,20 +382,22 @@ export default function Visualizer({ result, unit }) {
             left: '12px',
             background: 'var(--ram-dark-surface)',
             color: 'var(--ram-text-on-dark)',
-            padding: '8px 12px',
-            borderRadius: '4px',
-            fontSize: '0.78rem',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            fontSize: '0.9rem',
             boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
             zIndex: 10,
-            borderLeft: `4px solid ${hoveredPart.color || '#3B82F6'}`
+            borderLeft: `5px solid ${hoveredPart.color || '#3B82F6'}`,
+            pointerEvents: 'none',
+            minWidth: '220px'
           }}>
-            <div style={{ fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>
+            <div style={{ fontWeight: '700', textTransform: 'uppercase', marginBottom: '5px', fontSize: '0.95rem' }}>
               {hoveredPart.name} {hoveredPart.rotated && <span style={{ color: '#FF4500' }}>(ROTATED 90°)</span>}
             </div>
-            <div style={{ fontFamily: 'var(--ram-font-mono)', fontSize: '0.75rem', opacity: 0.9 }}>
+            <div style={{ fontFamily: 'var(--ram-font-mono)', fontSize: '0.85rem', opacity: 0.95 }}>
               Size: <strong>{formatDimension(hoveredPart.width, unit)}</strong> × <strong>{formatDimension(hoveredPart.height, unit)}</strong>
             </div>
-            <div style={{ fontFamily: 'var(--ram-font-mono)', fontSize: '0.7rem', color: '#9CA3AF', marginTop: '2px' }}>
+            <div style={{ fontFamily: 'var(--ram-font-mono)', fontSize: '0.78rem', color: '#9CA3AF', marginTop: '4px' }}>
               Position X: {formatDimension(hoveredPart.x, unit)}, Y: {formatDimension(hoveredPart.y, unit)}
             </div>
           </div>

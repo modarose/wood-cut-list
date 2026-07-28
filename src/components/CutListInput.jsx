@@ -64,8 +64,8 @@ export default function CutListInput({ parts, onPartsChange, unit }) {
             No parts yet — click <strong>Add Part</strong> or load a Preset.
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="ws-table" style={{ minWidth: '480px' }}>
+          <div className="ws-cut-table-scroll">
+            <table className="ws-table ws-cut-table" style={{ minWidth: '480px' }}>
               <thead>
                 <tr>
                   <th style={{ width: '24px' }}></th>
@@ -86,10 +86,10 @@ export default function CutListInput({ parts, onPartsChange, unit }) {
                         type="color"
                         value={part.color}
                         onChange={e => handlePartChange(part.id, 'color', e.target.value)}
+                        className="ws-part-color"
                         style={{
-                          width: '18px', height: '18px', border: 'none', borderRadius: '50%',
-                          cursor: 'pointer', background: 'none', padding: 0,
-                          display: 'block',
+                          width: '20px', height: '20px', border: 'none', borderRadius: '50%',
+                          cursor: 'pointer', background: 'none', padding: 0, display: 'block',
                         }}
                         title="Change part color"
                       />
@@ -114,8 +114,8 @@ export default function CutListInput({ parts, onPartsChange, unit }) {
                           step={unit === UNITS.INCH ? '0.125' : '1'}
                           value={part.width}
                           onChange={e => handlePartChange(part.id, 'width', parseFloat(e.target.value) || 0)}
-                          className="ws-input num-tabular"
-                          style={{ width: '60px' }}
+                          className="ws-input ws-dimension-input num-tabular"
+                          style={{ width: '4ch' }}
                         />
                         <span style={{ color: 'var(--ws-outline)', fontSize: '13px' }}>×</span>
                         <input
@@ -123,8 +123,8 @@ export default function CutListInput({ parts, onPartsChange, unit }) {
                           step={unit === UNITS.INCH ? '0.125' : '1'}
                           value={part.height}
                           onChange={e => handlePartChange(part.id, 'height', parseFloat(e.target.value) || 0)}
-                          className="ws-input num-tabular"
-                          style={{ width: '60px' }}
+                          className="ws-input ws-dimension-input num-tabular"
+                          style={{ width: '4ch' }}
                         />
                       </div>
                     </td>
@@ -136,8 +136,8 @@ export default function CutListInput({ parts, onPartsChange, unit }) {
                         min="1"
                         value={part.qty}
                         onChange={e => handlePartChange(part.id, 'qty', Math.max(1, parseInt(e.target.value) || 1))}
-                        className="ws-input num-tabular"
-                        style={{ width: '44px', textAlign: 'center', fontWeight: 600 }}
+                        className="ws-input ws-qty-input num-tabular"
+                        style={{ width: '2ch', textAlign: 'center', fontWeight: 600 }}
                       />
                     </td>
 
