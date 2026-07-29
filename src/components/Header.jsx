@@ -1,6 +1,6 @@
 import React from 'react';
 import { UNITS } from '../utils/unitConverter';
-import { Download, Printer, FolderOpen, Trash2 } from 'lucide-react';
+import { Download, Printer, FolderOpen, Trash2, Ruler } from 'lucide-react';
 
 export default function Header({
   unit,
@@ -18,8 +18,13 @@ export default function Header({
     <header className="ws-appbar no-print">
 
       <div className="ws-project-identity">
-        <div className="ws-project-title">WoodCut Studio</div>
-        <div className="ws-project-subtitle">Project Alpha</div>
+        <div className="ws-project-mark" aria-hidden="true">
+          <Ruler size={21} strokeWidth={2.4} />
+        </div>
+        <div className="ws-project-copy">
+          <div className="ws-project-title">WoodCut <span>Studio</span></div>
+          <div className="ws-project-subtitle">Plan it. Cut it. Craft it.</div>
+        </div>
       </div>
 
       {/* Left: unit pill + kerf inline */}
