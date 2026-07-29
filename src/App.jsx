@@ -6,7 +6,6 @@ import SummaryStats from './components/SummaryStats';
 import Visualizer from './components/Visualizer';
 import CutSequence from './components/CutSequence';
 import PresetsModal from './components/PresetsModal';
-import { LayoutGrid, Package, FolderOpen, Wrench, Settings, HelpCircle } from 'lucide-react';
 
 import { UNITS, convertDimension } from './utils/unitConverter';
 import { optimizeCutList, STRATEGIES, CUT_PREFERENCES } from './utils/cutOptimizer';
@@ -89,43 +88,8 @@ export default function App() {
 
   const totalRequestedPartsCount = parts.reduce((sum, p) => sum + (parseInt(p.qty) || 0), 0);
 
-  const navItems = [
-    { icon: LayoutGrid, label: 'Optimizer', active: true },
-    { icon: Package, label: 'Inventory', active: false },
-    { icon: FolderOpen, label: 'Projects', active: false },
-    { icon: Wrench, label: 'Workshop', active: false },
-  ];
-
   return (
     <div className="ws-shell">
-
-      {/* ── Sidebar ── */}
-      <aside className="ws-sidebar no-print">
-        <div className="ws-sidebar-brand">
-          <div className="ws-sidebar-title">WoodCut Studio</div>
-          <div className="ws-sidebar-subtitle">Project Alpha</div>
-        </div>
-
-        <nav className="ws-sidebar-nav">
-          {navItems.map(({ icon: Icon, label, active }) => (
-            <button key={label} className={`ws-nav-item${active ? ' active' : ''}`}>
-              <Icon size={18} />
-              {label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="ws-sidebar-footer">
-          <button className="ws-nav-item">
-            <Settings size={18} />
-            Settings
-          </button>
-          <button className="ws-nav-item">
-            <HelpCircle size={18} />
-            Support
-          </button>
-        </div>
-      </aside>
 
       {/* ── Main scrollable area ── */}
       <main className="ws-main">

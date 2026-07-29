@@ -140,7 +140,9 @@ const SheetDiagram = ({ sheet, unit, svgPadding = 40, isPrint = false, onPartHov
                 width={p.width}
                 height={p.height}
                 fill={p.color || '#3B82F6'}
-                fillOpacity="0.85"
+                // Parts must be opaque so the scrap hatch pattern underneath
+                // cannot show through as diagonal lines.
+                fillOpacity="1"
                 stroke="#1E2022"
                 strokeWidth="1.5"
                 rx="2"
@@ -406,7 +408,7 @@ export default function Visualizer({ result, unit }) {
       </div>
 
       {/* Sheet Parts Inventory Footer */}
-      <div style={{ padding: '0.85rem 1.25rem', background: '#F8F7F4', borderTop: '1px solid var(--ram-border-light)' }}>
+      <div className="no-print" style={{ padding: '0.85rem 1.25rem', background: '#F8F7F4', borderTop: '1px solid var(--ram-border-light)' }}>
         <div className="ram-label" style={{ marginBottom: '0.5rem' }}>
           PARTS ON SHEET {activeSheetIdx + 1}:
         </div>
@@ -432,25 +434,72 @@ export default function Visualizer({ result, unit }) {
         </div>
       </div>
 
-      <div className="print-only">
-        {result.sheets.map((s, idx) => (
-          <div key={idx} className="print-page">
-            <h2 style={{ textAlign: 'center', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Timber Sheet {idx + 1}
-            </h2>
-            <SheetDiagram sheet={s} unit={unit} svgPadding={svgPadding} isPrint={true} />
-            <div style={{ marginTop: '2rem' }}>
-              <div className="ram-label" style={{ marginBottom: '0.5rem' }}>PARTS ON SHEET {idx + 1}:</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-                {s.placements.map((p, pi) => (
-                  <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: p.color || '#3B82F6' }} />
-                    <strong>{p.name}:</strong> {formatDimension(p.width, unit)} × {formatDimension(p.height, unit)}
-                  </div>
-                ))}
-              </div>
-            </div>
+      <div className="print-only print-report">
+        {/* The report index is intentionally separate from the diagrams so it can
+            flow over multiple pages without splitting a diagram page. */}
+        <section className="print-summary">
+          <div className="print-report-kicker">WOODCUT STUDIO · CUT REPORT</div>
+          <h1>Cut List &amp; Sheet Schedule</h1>
+          <p className="print-report-subtitle">
+            {result.sheets.length} sheet{result.sheets.length === 1 ? '' : 's'} · {unit.toUpperCase()} ·
+            {' '}generated from the current optimized layout
+          </p>
+
+          <div className="print-summary-grid">
+            <div><span>STOCK SHEET</span><strong>{formatDimension(result.sheets[0].width, unit)} × {formatDimension(result.sheets[0].height, unit)}</strong></div>
+            <div><span>EDGE MARGIN</span><strong>{formatDimension(result.sheets[0].margin, unit)}</strong></div>
+            <div><span>KERF</span><strong>{formatDimension(result.sheets[0].kerf, unit)}</strong></div>
+            <div><span>MATERIAL YIELD</span><strong>{result.overallEfficiency.toFixed(1)}%</strong></div>
           </div>
+
+          <h2>Sheet &amp; Part Schedule</h2>
+          <table className="print-parts-table">
+            <thead>
+              <tr>
+                <th>Sheet</th>
+                <th>Part</th>
+                <th>Dimensions</th>
+                <th>Position</th>
+                <th>Orientation</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.sheets.flatMap((sheet, sheetIdx) => sheet.placements.map((p, partIdx) => (
+                <tr key={`${sheetIdx}-${p.id || partIdx}`}>
+                  <td className="print-nowrap">#{sheetIdx + 1}</td>
+                  <td><span className="print-color-dot" style={{ backgroundColor: p.color || '#3B82F6' }} />{p.name}</td>
+                  <td className="print-nowrap">{formatDimension(p.width, unit)} × {formatDimension(p.height, unit)}</td>
+                  <td className="print-nowrap">{formatDimension(p.x, unit, false)} × {formatDimension(p.y, unit, false)}</td>
+                  <td>{p.rotated ? 'Rotated 90°' : 'As entered'}</td>
+                </tr>
+              )))}
+              {result.unplacedParts?.map((p, idx) => (
+                <tr key={`unplaced-${p.id || idx}`} className="print-unplaced-row">
+                  <td>—</td>
+                  <td>{p.name}</td>
+                  <td className="print-nowrap">{formatDimension(p.width, unit)} × {formatDimension(p.height, unit)}</td>
+                  <td>—</td>
+                  <td>Not placed</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {result.unplacedParts?.length > 0 && (
+            <p className="print-warning">Unplaced parts are shown without a sheet assignment and must be reviewed before cutting.</p>
+          )}
+        </section>
+
+        {result.sheets.map((s, idx) => (
+          <section key={idx} className="print-page print-diagram-page">
+            <div className="print-diagram-header">
+              <div>
+                <div className="print-report-kicker">CUT DIAGRAM</div>
+                <h2>Sheet {idx + 1} of {result.sheets.length}</h2>
+              </div>
+              <div className="print-diagram-meta">{s.placements.length} part{s.placements.length === 1 ? '' : 's'} · {formatDimension(s.width, unit)} × {formatDimension(s.height, unit)}</div>
+            </div>
+            <SheetDiagram sheet={s} unit={unit} svgPadding={svgPadding} isPrint={true} />
+          </section>
         ))}
       </div>
 

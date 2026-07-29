@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { formatDimension } from '../utils/unitConverter';
-import { ListOrdered, CheckCircle2, Circle } from 'lucide-react';
+import { ListOrdered, CheckCircle2, Circle, ArrowRight, Ruler } from 'lucide-react';
 
 export default function CutSequence({ result, unit }) {
   const [completedSteps, setCompletedSteps] = useState(new Set());
@@ -24,26 +24,22 @@ export default function CutSequence({ result, unit }) {
         <span className="ws-card-badge">Workshop Instructions</span>
       </div>
 
-      <div style={{ paddingTop: 'var(--ws-space-md)', paddingBottom: 'var(--ws-space-sm)' }}>
+      <div className="ws-sequence-body">
         {result.sheets.map((sheet, sheetIdx) => {
           if (!sheet.cuts || sheet.cuts.length === 0) return null;
 
           return (
-            <div key={sheetIdx} style={{ marginBottom: 'var(--ws-space-md)' }}>
-              {result.sheets.length > 1 && (
-                <div style={{
-                  padding: '4px var(--ws-space-md)',
-                  fontFamily: 'var(--ws-font-mono)',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: 'var(--ws-on-surface-variant)',
-                  marginBottom: '12px',
-                }}>
-                  Sheet #{sheetIdx + 1} — {sheet.cuts.length} cut passes
+            <div className="ws-sequence-sheet" key={sheetIdx}>
+              <div className="ws-sequence-sheet-header">
+                <div>
+                  <div className="ws-sequence-sheet-label">Sheet #{sheetIdx + 1}</div>
+                  <div className="ws-sequence-sheet-count">{sheet.cuts.length} cut passes · complete in order</div>
                 </div>
-              )}
+                <div className="ws-sequence-sheet-note">
+                  <ArrowRight size={14} />
+                  Start at the trimmed edge; use each new cut edge as the next reference.
+                </div>
+              </div>
 
               <div className="ws-sequence-strip">
                 {sheet.cuts.map((cut, cutIdx) => {
@@ -51,6 +47,7 @@ export default function CutSequence({ result, unit }) {
                   const done = completedSteps.has(key);
                   const label = cut.type === 'vertical' ? 'Cross Cut' : 'Rip Cut';
                   const fence = cut.cutSize || (cut.type === 'vertical' ? cut.x : cut.y);
+                  const isFirstCut = cutIdx === 0;
                   const length = cut.type === 'vertical'
                     ? (cut.y2 - cut.y1)
                     : (cut.x2 - cut.x1);
@@ -60,25 +57,37 @@ export default function CutSequence({ result, unit }) {
                       key={cutIdx}
                       className={`ws-sequence-card${done ? ' done' : ''}`}
                       onClick={() => toggleStep(key)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          toggleStep(key);
+                        }
+                      }}
+                      aria-pressed={done}
                     >
-                      <div className="ws-sequence-card-num">{cutIdx + 1}</div>
-
-                      <div className="ws-sequence-card-type">{label}</div>
+                      <div className="ws-sequence-card-topline">
+                        <div className="ws-sequence-card-num">{cutIdx + 1}</div>
+                        <div className="ws-sequence-card-type">{isFirstCut ? 'Start here' : `Step ${cutIdx + 1}`} · {label}</div>
+                      </div>
 
                       <div className="ws-sequence-card-title">
-                        Fence: {formatDimension(fence, unit)}
+                        {cut.type === 'vertical' ? 'Cross-cut at' : 'Set rip fence to'} {formatDimension(fence, unit)}
                       </div>
 
                       <div className="ws-sequence-card-desc">
-                        {cut.type === 'vertical'
-                          ? 'Cross-cut through the sheet at this position.'
-                          : 'Set table saw fence and rip the full length.'}
+                        {isFirstCut
+                          ? (cut.type === 'vertical'
+                            ? 'Reference the trimmed sheet edge, then cross-cut through the marked section.'
+                            : 'Reference the trimmed sheet edge, set the fence, then rip through the marked section.')
+                          : (cut.type === 'vertical'
+                            ? 'Reference the edge created by the previous pass, then cross-cut this section.'
+                            : 'Move the fence from the previous setup, then rip the remaining section.')}
                       </div>
 
                       <div className="ws-sequence-card-footer">
-                        <span className="ws-sequence-card-data">
-                          Length: {formatDimension(length, unit)}
-                        </span>
+                        <span className="ws-sequence-card-data"><Ruler size={13} /> Cut travel: {formatDimension(length, unit)}</span>
                         {done
                           ? <CheckCircle2 size={18} color="var(--ws-primary)" />
                           : <Circle size={18} color="var(--ws-outline)" />

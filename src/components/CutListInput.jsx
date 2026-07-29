@@ -81,7 +81,7 @@ export default function CutListInput({ parts, onPartsChange, unit }) {
                   <tr key={part.id}>
 
                     {/* Color dot */}
-                    <td>
+                    <td style={{ paddingRight: '8px' }}>
                       <input
                         type="color"
                         value={part.color}
@@ -115,7 +115,7 @@ export default function CutListInput({ parts, onPartsChange, unit }) {
                           value={part.width}
                           onChange={e => handlePartChange(part.id, 'width', parseFloat(e.target.value) || 0)}
                           className="ws-input ws-dimension-input num-tabular"
-                          style={{ width: '4ch' }}
+                          style={{ width: '5ch' }}
                         />
                         <span style={{ color: 'var(--ws-outline)', fontSize: '13px' }}>×</span>
                         <input
@@ -124,7 +124,7 @@ export default function CutListInput({ parts, onPartsChange, unit }) {
                           value={part.height}
                           onChange={e => handlePartChange(part.id, 'height', parseFloat(e.target.value) || 0)}
                           className="ws-input ws-dimension-input num-tabular"
-                          style={{ width: '4ch' }}
+                          style={{ width: '5ch' }}
                         />
                       </div>
                     </td>
@@ -137,7 +137,7 @@ export default function CutListInput({ parts, onPartsChange, unit }) {
                         value={part.qty}
                         onChange={e => handlePartChange(part.id, 'qty', Math.max(1, parseInt(e.target.value) || 1))}
                         className="ws-input ws-qty-input num-tabular"
-                        style={{ width: '2ch', textAlign: 'center', fontWeight: 600 }}
+                        style={{ width: '3ch', textAlign: 'center', fontWeight: 600 }}
                       />
                     </td>
 

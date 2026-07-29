@@ -17,6 +17,11 @@ export default function Header({
   return (
     <header className="ws-appbar no-print">
 
+      <div className="ws-project-identity">
+        <div className="ws-project-title">WoodCut Studio</div>
+        <div className="ws-project-subtitle">Project Alpha</div>
+      </div>
+
       {/* Left: unit pill + kerf inline */}
       <div className="ws-appbar-left" style={{ flexWrap: 'wrap', gap: '12px' }}>
 

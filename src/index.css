@@ -741,28 +741,85 @@ input[type=number] {
 }
 
 .ws-qty-input {
-  width: 2ch !important;
+  width: 3ch !important;
 }
 
-/* ─── CUT SEQUENCE STRIP ────────────────────────────────── */
+/* ─── CUT SEQUENCE ──────────────────────────────────────── */
+.ws-sequence-body {
+  padding: var(--ws-space-md) 0 var(--ws-space-sm);
+}
+
+.ws-sequence-sheet {
+  padding: 0 var(--ws-space-md) var(--ws-space-md);
+}
+
+.ws-sequence-sheet+.ws-sequence-sheet {
+  padding-top: var(--ws-space-md);
+  border-top: 6px solid var(--ws-surface-container-high);
+}
+
+.ws-sequence-sheet-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ws-space-md);
+  margin-bottom: var(--ws-space-sm);
+}
+
+.ws-sequence-sheet-label,
+.ws-sequence-sheet-count,
+.ws-sequence-sheet-note {
+  font-family: var(--ws-font-mono);
+}
+
+.ws-sequence-sheet-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ws-on-surface);
+}
+
+.ws-sequence-sheet-count {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ws-on-surface-variant);
+}
+
+.ws-sequence-sheet-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 420px;
+  color: var(--ws-primary);
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: right;
+}
+
 .ws-sequence-strip {
   display: flex;
-  gap: var(--ws-space-md);
-  overflow-x: auto;
-  padding: 0 var(--ws-space-md) var(--ws-space-sm);
-  scrollbar-width: thin;
+  flex-wrap: wrap;
+  gap: var(--ws-space-sm);
 }
 
 .ws-sequence-card {
-  flex-shrink: 0;
-  width: 220px;
+  flex: 1 1 220px;
+  min-width: 210px;
   background: var(--ws-surface-container-low);
   border: 1px solid var(--ws-outline-variant);
   border-radius: var(--ws-radius-lg);
   padding: var(--ws-space-md);
   position: relative;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, opacity 0.2s;
+  transition: background 0.15s, border-color 0.15s, opacity 0.2s, transform 0.15s;
+}
+
+.ws-sequence-card:hover,
+.ws-sequence-card:focus-visible {
+  border-color: var(--ws-primary-fixed-dim);
+  outline: none;
+  transform: translateY(-1px);
 }
 
 .ws-sequence-card.done {
@@ -772,9 +829,7 @@ input[type=number] {
 }
 
 .ws-sequence-card-num {
-  position: absolute;
-  top: -12px;
-  left: -12px;
+  flex: 0 0 auto;
   width: 28px;
   height: 28px;
   border-radius: var(--ws-radius-full);
@@ -788,6 +843,13 @@ input[type=number] {
   box-shadow: var(--ws-shadow-sm);
 }
 
+.ws-sequence-card-topline {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-sm);
+  margin-bottom: var(--ws-space-sm);
+}
+
 .ws-sequence-card.done .ws-sequence-card-num {
   background: var(--ws-primary-container);
 }
@@ -799,7 +861,6 @@ input[type=number] {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ws-on-surface-variant);
-  margin-bottom: var(--ws-space-base);
 }
 
 .ws-sequence-card-title {
@@ -831,10 +892,29 @@ input[type=number] {
 }
 
 .ws-sequence-card-data {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-family: var(--ws-font-mono);
   font-size: 12px;
   color: var(--ws-primary);
   font-weight: 500;
+}
+
+@media (max-width: 700px) {
+  .ws-sequence-sheet-header {
+    flex-direction: column;
+    gap: var(--ws-space-xs);
+  }
+
+  .ws-sequence-sheet-note {
+    max-width: none;
+    text-align: left;
+  }
+
+  .ws-sequence-card {
+    flex-basis: 100%;
+  }
 }
 
 /* ─── FOOTER ────────────────────────────────────────────── */
@@ -1019,14 +1099,165 @@ input[type=number] {
   .print-page {
     page-break-after: always;
     break-after: page;
-    padding: 2cm;
+    padding: 12mm;
     width: 100%;
-    min-height: 100vh;
+    min-height: 0;
   }
 
   .print-page:last-child {
     page-break-after: auto;
     break-after: auto;
+  }
+
+  .print-report {
+    display: block !important;
+    color: #1c1d1f;
+    font-family: Arial, sans-serif;
+  }
+
+  .print-summary {
+    padding: 0;
+    min-height: 0;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .print-report h1 {
+    margin: 0.2rem 0 0.35rem;
+    font-size: 25px;
+    letter-spacing: -0.02em;
+  }
+
+  .print-report h2 {
+    margin: 1.4rem 0 0.65rem;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .print-report-kicker,
+  .print-summary-grid span,
+  .print-diagram-meta {
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #68716e;
+  }
+
+  .print-report-subtitle {
+    margin: 0;
+    color: #68716e;
+    font-size: 11px;
+  }
+
+  .print-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 1.2rem 0 1.5rem;
+    padding: 11px 0;
+    border-top: 1px solid #cbd2d0;
+    border-bottom: 1px solid #cbd2d0;
+  }
+
+  .print-summary-grid div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .print-summary-grid strong {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .print-parts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  .print-parts-table thead {
+    display: table-header-group;
+  }
+
+  .print-parts-table tr {
+    page-break-inside: avoid;
+  }
+
+  .print-parts-table th {
+    padding: 7px 6px;
+    border-top: 1px solid #242526;
+    border-bottom: 1px solid #242526;
+    text-align: left;
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .print-parts-table td {
+    padding: 7px 6px;
+    border-bottom: 1px solid #dfe3e1;
+    vertical-align: middle;
+  }
+
+  .print-nowrap {
+    white-space: nowrap;
+  }
+
+  .print-color-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 5px;
+    border: 1px solid #242526;
+    border-radius: 50%;
+  }
+
+  .print-unplaced-row {
+    color: #b43b1b;
+  }
+
+  .print-warning {
+    margin-top: 10px;
+    color: #b43b1b;
+    font-size: 10px;
+  }
+
+  .print-diagram-page {
+    height: 250mm;
+    min-height: 0;
+    overflow: hidden;
+    padding-top: 0;
+    page-break-before: always;
+    page-break-after: always;
+    break-inside: avoid;
+    break-before: page;
+    break-after: page;
+  }
+
+  .print-diagram-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #cbd2d0;
+  }
+
+  .print-diagram-header h2 {
+    margin: 0.15rem 0 0;
+    font-size: 20px;
+    letter-spacing: 0;
+  }
+
+  .print-diagram-page svg {
+    width: 100%;
+    height: 195mm !important;
+    max-height: 195mm !important;
   }
 }
 
