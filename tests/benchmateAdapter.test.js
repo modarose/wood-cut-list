@@ -25,6 +25,15 @@ import {
   saveStoredMaterials,
   validateMaterialStock,
 } from '../src/utils/materialInventory.js';
+import {
+  createTool,
+  loadStoredTools,
+  removeStoredTool,
+  saveStoredTools,
+  TOOL_STORAGE_KEY,
+  updateTool,
+  validateTool,
+} from '../src/utils/toolInventory.js';
 
 const FIXED_NOW = '2026-07-31T00:00:00.000Z';
 
@@ -379,4 +388,61 @@ test('owned material reservations are explicit, bounded and releasable by projec
     () => reserveMaterialStock({ ...material, source: 'planned' }, 'project_reservation', 1),
     /Only owned material can be reserved/,
   );
+});
+
+test('tool inventory normalizes capabilities and validates availability fields', () => {
+  const tool = createTool({
+    id: 'tool_track_saw',
+    name: 'Track saw',
+    category: 'saw',
+    brand: 'Makita',
+    model: 'SP6000',
+    owned: true,
+    availability: 'available',
+    condition: 'good',
+    location: 'Workshop wall A',
+    capabilities: ['rip-cutting', 'cross-cutting', 'rip-cutting'],
+    accessories: 'Guide rail, dust bag',
+    lastMaintenanceAt: '2026-07-01',
+  }, { now: FIXED_NOW });
+
+  assert.deepEqual(tool.capabilities, ['rip-cutting', 'cross-cutting']);
+  assert.deepEqual(tool.accessories, ['Guide rail', 'dust bag']);
+  assert.equal(validateTool(tool).valid, true);
+  assert.throws(
+    () => updateTool(tool, { availability: 'not-a-status' }),
+    /Tool availability is invalid/,
+  );
+});
+
+test('tool inventory storage ignores invalid records and removes valid records', () => {
+  let serialized = null;
+  const storage = {
+    getItem(key) {
+      assert.equal(key, TOOL_STORAGE_KEY);
+      return serialized;
+    },
+    setItem(key, value) {
+      assert.equal(key, TOOL_STORAGE_KEY);
+      serialized = value;
+    },
+  };
+  const tool = createTool({
+    id: 'tool_storage',
+    name: 'Orbital sander',
+    category: 'sander',
+    owned: true,
+    availability: 'maintenance',
+    condition: 'fair',
+    capabilities: ['sanding'],
+  }, { now: FIXED_NOW });
+
+  assert.equal(saveStoredTools([tool], storage), true);
+  assert.deepEqual(loadStoredTools(storage), [tool]);
+  storage.setItem(TOOL_STORAGE_KEY, JSON.stringify([tool, { id: 'invalid' }]));
+  assert.deepEqual(loadStoredTools(storage), [tool]);
+
+  const removed = removeStoredTool(tool.id, [tool], storage);
+  assert.equal(removed.saved, true);
+  assert.deepEqual(removed.tools, []);
 });

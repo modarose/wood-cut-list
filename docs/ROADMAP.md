@@ -92,12 +92,14 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 
 ### Phase 2 implementation notes
 
-- Material inventory is the first Phase 2 vertical slice; tools, hardware and finishes remain future work.
+- Material and tool inventory are the first Phase 2 vertical slices; hardware and finishes remain future work.
 - `MaterialInventory` supports local add, edit and remove workflows for sheet goods, solid timber and offcuts.
 - Inventory records use metric dimensions and persist under `benchmate.materials.v1`.
 - Owned or planned records can be selected as the optimizer stock template; the selected source is retained when the project is saved.
 - Owned stock can be explicitly reserved for the current project's calculated sheet requirement, with bounded quantity and release support.
 - The current cut-list check reports potential owned-stock dimensional candidates and planned-purchase candidates separately. It does not claim board allocation or optimisation results.
+- `ToolInventory` supports local add, edit, remove, search and category/availability filtering under `benchmate.tools.v1`.
+- Tool capabilities use a normalised vocabulary for future build-step matching; the records do not make safety or substitution claims.
 
 ## Phase 3 — Build planner
 

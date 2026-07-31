@@ -326,3 +326,27 @@ Each stored record includes:
 ```
 
 Dimensions are stored in millimetres. Quantity and reserved quantity must be non-negative integers, and reserved quantity cannot exceed quantity. A reservation record identifies the project and quantity that caused the reserved total; the sum of reservation records must equal `reservedQuantity`. The current material check compares each active WoodCut part against owned stock dimensions and thickness, reports planned-purchase candidates separately and flags unmatched rows. It is deliberately a screening result rather than a cutting allocation claim.
+
+## 15. Phase 2 tool inventory
+
+Tool records are stored separately from project envelopes in browser-local storage under `benchmate.tools.v1`:
+
+```json
+{
+  "id": "tool_track_saw_01",
+  "name": "Track saw",
+  "category": "saw",
+  "brand": "Makita",
+  "model": "SP6000",
+  "owned": true,
+  "availability": "available",
+  "condition": "good",
+  "location": "Workshop wall A",
+  "capabilities": ["cross-cutting", "rip-cutting"],
+  "accessories": ["Guide rail", "Dust bag"],
+  "maintenanceNotes": "",
+  "lastMaintenanceAt": null
+}
+```
+
+Categories, availability values and capabilities are validated against the vocabulary in `src/utils/toolInventory.js`. A tool can be recorded for reference without being owned, and unavailable or maintenance states must remain visible rather than being treated as ready. Capability tags are planning metadata, not safety certification.

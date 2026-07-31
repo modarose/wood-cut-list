@@ -5,7 +5,7 @@ const NAV_ITEMS = [
   { id: 'optimizer', label: 'Optimizer', icon: LayoutGrid, enabled: true },
   { id: 'projects', label: 'Projects', icon: FolderOpen, enabled: true },
   { id: 'inventory', label: 'Inventory', icon: Package, enabled: true },
-  { id: 'workshop', label: 'Workshop', icon: Wrench, enabled: false },
+  { id: 'workshop', label: 'Workshop', icon: Wrench, enabled: true },
 ];
 
 export default function Sidebar({ activeSection, projectName, onNavigate }) {

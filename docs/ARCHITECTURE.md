@@ -254,7 +254,7 @@ The current stock settings are treated as a cut-stock template, not owned invent
 The project shell is implemented around the existing single-page workspace without adding a router:
 
 - The workspace loads the first active saved project when browser-local storage contains one; otherwise it opens the existing WoodCut Studio preset workflow as an unsaved draft.
-- The shared desktop sidebar provides functional Optimizer, Projects and Inventory navigation; Workshop, Settings and Support remain visible as explicitly disabled future sections.
+- The shared desktop sidebar provides functional Optimizer, Projects, Inventory and Workshop navigation; Settings and Support remain visible as explicitly disabled future sections.
 - `ProjectDetails` owns editable project name, status and notes while `Header` exposes project navigation and explicit save.
 - `ProjectDashboard` provides new, open, duplicate, archive and restore actions.
 - Archiving sets `project.archivedAt` and keeps the canonical record available for restoration.
@@ -275,3 +275,13 @@ The first inventory slice is a browser-local workshop collection rather than pro
 - A selected source reference is persisted as `cutStock.sourceMaterialStockId` when the project is saved. Manual stock edits clear that source link when dimensions no longer match.
 - The current cut-list check identifies potential individual owned-stock dimensional matches and reports planned-purchase candidates separately. It does not replace the existing WoodCut optimisation calculation.
 - An explicit reservation action can reserve the optimizer's required sheet count against an owned material for the current project. Reservations are bounded by available quantity and can be released.
+
+## 17. Phase 2 tool inventory
+
+The Workshop view provides a separate browser-local tool collection:
+
+- `src/utils/toolInventory.js` owns the tool schema, validation, capability vocabulary and storage under `benchmate.tools.v1`.
+- `src/components/ToolInventory.jsx` provides add, edit, remove, search and category/availability filtering.
+- Tool records preserve ownership, availability, condition, location, accessories and maintenance notes.
+- Capabilities are selected from a normalised vocabulary so a future build planner can match requirements consistently.
+- The inventory records workshop facts only; capability tags do not certify a safe setup or automatically approve tool substitutions.

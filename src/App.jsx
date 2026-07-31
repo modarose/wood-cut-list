@@ -9,6 +9,7 @@ import PresetsModal from './components/PresetsModal';
 import ProjectDashboard from './components/ProjectDashboard';
 import ProjectDetails from './components/ProjectDetails';
 import MaterialInventory from './components/MaterialInventory';
+import ToolInventory from './components/ToolInventory';
 import Sidebar from './components/Sidebar';
 
 import { UNITS, convertDimension } from './utils/unitConverter';
@@ -27,6 +28,13 @@ import {
   updateMaterialStock,
   upsertStoredMaterial,
 } from './utils/materialInventory.js';
+import {
+  createTool,
+  loadStoredTools,
+  removeStoredTool,
+  updateTool,
+  upsertStoredTool,
+} from './utils/toolInventory.js';
 
 function createDefaultSession() {
   const preset = PROJECT_PRESETS[0];
@@ -73,7 +81,9 @@ export default function App() {
   const [isDirty, setIsDirty] = useState(() => !initialProject);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+  const [isWorkshopOpen, setIsWorkshopOpen] = useState(false);
   const [materials, setMaterials] = useState(() => loadStoredMaterials());
+  const [tools, setTools] = useState(() => loadStoredTools());
   const [selectedMaterialId, setSelectedMaterialId] = useState(
     () => initialProject?.cutStock?.sourceMaterialStockId ?? null,
   );
@@ -181,6 +191,7 @@ export default function App() {
   const handleOpenProjects = () => {
     if (!canLeaveWorkspace()) return;
     setIsInventoryOpen(false);
+    setIsWorkshopOpen(false);
     setIsProjectsOpen(true);
   };
 
@@ -190,11 +201,22 @@ export default function App() {
 
   const handleOpenInventory = () => {
     setIsProjectsOpen(false);
+    setIsWorkshopOpen(false);
     setIsInventoryOpen(true);
   };
 
   const handleCloseInventory = () => {
     setIsInventoryOpen(false);
+  };
+
+  const handleOpenWorkshop = () => {
+    setIsProjectsOpen(false);
+    setIsInventoryOpen(false);
+    setIsWorkshopOpen(true);
+  };
+
+  const handleCloseWorkshop = () => {
+    setIsWorkshopOpen(false);
   };
 
   const handleSidebarNavigate = (section) => {
@@ -208,9 +230,15 @@ export default function App() {
       return;
     }
 
+    if (section === 'workshop') {
+      handleOpenWorkshop();
+      return;
+    }
+
     if (section === 'optimizer') {
       if (isProjectsOpen && canLeaveWorkspace()) setIsProjectsOpen(false);
       if (isInventoryOpen) handleCloseInventory();
+      if (isWorkshopOpen) handleCloseWorkshop();
     }
   };
 
@@ -410,6 +438,31 @@ export default function App() {
     return { saved: true, error: '' };
   };
 
+  const handleSaveTool = (input, existingTool) => {
+    try {
+      const tool = existingTool ? updateTool(existingTool, input) : createTool(input);
+      const result = upsertStoredTool(tool, tools);
+      if (!result.saved) {
+        return { saved: false, error: result.error || 'The tool could not be saved in this browser.' };
+      }
+
+      setTools(result.tools);
+      return { saved: true, error: '' };
+    } catch (error) {
+      return { saved: false, error: error.message };
+    }
+  };
+
+  const handleDeleteTool = (tool) => {
+    const result = removeStoredTool(tool.id, tools);
+    if (!result.saved) {
+      return { saved: false, error: 'The tool could not be removed in this browser.' };
+    }
+
+    setTools(result.tools);
+    return { saved: true, error: '' };
+  };
+
   const handleReserveSelectedMaterial = () => {
     const currentMaterial = materials.find(material => material.id === selectedMaterialId) ?? null;
     const requiredQuantity = optimizationResult?.totalSheetsCount ?? 0;
@@ -524,6 +577,24 @@ export default function App() {
           onDeleteMaterial={handleDeleteMaterial}
           onUseMaterial={handleUseMaterial}
           onBack={handleCloseInventory}
+        />
+      </div>
+    );
+  }
+
+  if (isWorkshopOpen) {
+    return (
+      <div className="ws-shell">
+        <Sidebar
+          activeSection="workshop"
+          projectName={projectName}
+          onNavigate={handleSidebarNavigate}
+        />
+        <ToolInventory
+          tools={tools}
+          onSaveTool={handleSaveTool}
+          onDeleteTool={handleDeleteTool}
+          onBack={handleCloseWorkshop}
         />
       </div>
     );
