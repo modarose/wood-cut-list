@@ -1,11 +1,14 @@
 import React from 'react';
 import { UNITS } from '../utils/unitConverter';
-import { Download, Printer, FolderOpen, Trash2, Ruler } from 'lucide-react';
+import { Download, Printer, FolderOpen, Trash2, Ruler, Save, LayoutDashboard } from 'lucide-react';
 
 export default function Header({
   unit,
   onUnitChange,
   onOpenPresets,
+  onOpenProjects,
+  onSaveProject,
+  isDirty,
   onExportCSV,
   onPrint,
   onClearAll,
@@ -81,6 +84,19 @@ export default function Header({
 
       {/* Right: action buttons */}
       <div className="ws-appbar-right">
+        <button onClick={onOpenProjects} className="ws-btn ws-btn-sm" title="Open BenchMate projects">
+          <LayoutDashboard size={14} />
+          Projects
+        </button>
+        <button
+          onClick={onSaveProject}
+          className="ws-btn ws-btn-sm"
+          title={isDirty ? 'Save project' : 'Project is already saved'}
+          disabled={!isDirty}
+        >
+          <Save size={14} />
+          Save
+        </button>
         <button onClick={onOpenPresets} className="ws-btn ws-btn-sm" title="Load Woodworking Presets">
           <FolderOpen size={14} />
           Presets

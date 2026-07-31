@@ -237,6 +237,24 @@ input[type=number] {
   transform: translateX(2px);
 }
 
+.ws-nav-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ws-nav-item:disabled:hover {
+  background: none;
+  color: var(--ws-on-surface-variant);
+}
+
+.ws-nav-item-status {
+  margin-left: auto;
+  font-family: var(--ws-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .ws-sidebar-footer {
   border-top: 1px solid var(--ws-outline-variant);
   padding-top: var(--ws-space-base);
@@ -248,6 +266,7 @@ input[type=number] {
 /* ─── MAIN AREA ─────────────────────────────────────────── */
 .ws-main {
   flex: 1;
+  min-width: 0;
   height: 100vh;
   overflow-y: auto;
   display: flex;
@@ -259,9 +278,11 @@ input[type=number] {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex: 0 0 auto;
   padding: 0 var(--ws-space-md);
-  height: 64px;
+  height: auto;
   min-height: 64px;
+  min-width: 0;
   background: var(--ws-surface-container-low);
   border-bottom: 1px solid var(--ws-outline-variant);
   position: sticky;
@@ -329,12 +350,18 @@ input[type=number] {
   display: flex;
   align-items: center;
   gap: var(--ws-space-lg);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .ws-appbar-right {
   display: flex;
   align-items: center;
   gap: var(--ws-space-md);
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 /* Pill toggle (MM / INCHES) */
@@ -409,7 +436,6 @@ input[type=number] {
 
 @media (max-width: 900px) {
   .ws-appbar {
-    height: auto;
     min-height: 64px;
     padding-top: 10px;
     padding-bottom: 10px;
@@ -421,6 +447,19 @@ input[type=number] {
 
   .ws-appbar-left {
     flex: 1 1 auto;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1280px) {
+  .ws-appbar {
+    align-items: flex-start;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .ws-appbar-right {
+    flex: 1 1 100%;
+    justify-content: flex-start;
   }
 }
 

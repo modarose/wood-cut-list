@@ -281,3 +281,18 @@ The initial adapter maps the existing fields as follows:
 | `part.id` | `Part.sourceEntityId` | Preserved alongside a generated stable internal ID. |
 
 The adapter emits explicit warning objects for missing thickness, material mappings, ambiguous grain direction, unsupported geometry and invalid source values. A revision with warnings remains reviewable but is not considered ready for cutting. See `src/utils/benchmateAdapter.js` and the sample payload in `docs/examples/benchmate-project.json`.
+
+## 13. Phase 1 project shell fields
+
+The project shell adds two workflow fields without changing the cut-list part contract:
+
+```json
+{
+  "readiness": "needs-review",
+  "archivedAt": null
+}
+```
+
+`readiness` describes whether the current revision still has unresolved review warnings. `archivedAt` is an ISO 8601 timestamp when a project is archived, or `null`/absent while active. Archived projects remain stored and can be restored.
+
+Project records are persisted as complete canonical envelopes in browser-local storage under `benchmate.projects.v1`. Persistence is explicit; editing the workspace marks the draft as dirty until the user saves it.

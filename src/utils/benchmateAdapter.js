@@ -88,6 +88,7 @@ function readQuantity(value, path, warnings) {
 function makeStableId(prefix, sourceId, fallback) {
   const rawId = String(sourceId ?? fallback).trim();
   const safeId = rawId.replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '');
+  if (safeId === prefix || safeId.startsWith(`${prefix}_`)) return safeId;
   return `${prefix}_${safeId || fallback}`;
 }
 

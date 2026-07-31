@@ -1,7 +1,7 @@
 # BenchMate Roadmap
 
 **Foundation:** Existing WoodCut Studio application  
-**Roadmap status:** Phase 0 foundation implemented  
+**Roadmap status:** Phase 1 implementation in progress
 **Date:** 2026-07-31
 
 ## Product strategy
@@ -38,6 +38,15 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 - JSON serialization/parsing and validation are covered by the repository's dependency-free Node test suite.
 - A representative review-state payload is checked in at `docs/examples/benchmate-project.json`.
 - The existing WoodCut Studio UI and optimisation algorithm remain unchanged.
+
+### Phase 1 implementation notes
+
+- The existing WoodCut workspace remains the default working view.
+- `ProjectDashboard` provides new, open, duplicate, archive and restore actions.
+- `ProjectDetails` provides project name, status and notes editing.
+- Explicit save/reopen uses the canonical envelope in browser-local storage.
+- The restored desktop sidebar connects the Optimizer and Projects views while clearly marking future modules as unavailable.
+- The shell currently persists one active draft revision per project; revision comparison and approval history remain future work.
 
 ## Phase 1 — BenchMate project shell
 

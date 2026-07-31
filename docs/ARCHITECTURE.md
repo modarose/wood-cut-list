@@ -145,6 +145,8 @@ Start with the least complex persistence that protects the user's work:
 
 Project data should be exportable so the user is not trapped in the application.
 
+Phase 1 establishes browser-local persistence under the `benchmate.projects.v1` local storage key. Saved records use the canonical project envelope, invalid records are ignored when loaded, and saving is explicit from the workspace. Cloud sync, authentication and cross-device persistence remain deferred.
+
 ## 9. Server boundary
 
 A backend or serverless function will eventually be needed for:
@@ -246,3 +248,16 @@ The adapter converts the current WoodCut session into canonical millimetres and 
 The current stock settings are treated as a cut-stock template, not owned inventory, because the existing application does not know stock quantity, ownership or material thickness. Missing thickness, material mapping, grain direction, units, dimensions or quantities are represented as warnings and move the revision to `needs-review`; the adapter does not invent those values. The original WoodCut payload is retained on the design revision for traceability.
 
 `createBenchMateProjectFromWoodCut`, `toWoodCutSession`, `validateBenchMateProject`, `serializeBenchMateProject` and `parseBenchMateProject` form the initial import/export contract. A representative payload is checked in at `docs/examples/benchmate-project.json`.
+
+## 15. Phase 1 project shell
+
+The project shell is implemented around the existing single-page workspace without adding a router:
+
+- The workspace loads the first active saved project when browser-local storage contains one; otherwise it opens the existing WoodCut Studio preset workflow as an unsaved draft.
+- The shared desktop sidebar provides functional Optimizer and Projects navigation; Inventory, Workshop, Settings and Support remain visible as explicitly disabled future sections.
+- `ProjectDetails` owns editable project name, status and notes while `Header` exposes project navigation and explicit save.
+- `ProjectDashboard` provides new, open, duplicate, archive and restore actions.
+- Archiving sets `project.archivedAt` and keeps the canonical record available for restoration.
+- Opening and saving convert through the Phase 0 adapter, so the optimizer continues to consume the existing WoodCut session shape.
+
+Phase 1 intentionally does not add cloud persistence, authentication, supplier data, inventory reservations or a second route tree. Historical approved-revision comparison remains a later slice; the current shell saves one active draft revision per project.

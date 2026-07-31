@@ -10,6 +10,11 @@ import {
   validateBenchMateProject,
 } from '../src/utils/benchmateAdapter.js';
 import { optimizeCutList } from '../src/utils/cutOptimizer.js';
+import {
+  loadStoredProjects,
+  PROJECT_STORAGE_KEY,
+  saveStoredProjects,
+} from '../src/utils/projectStorage.js';
 
 const FIXED_NOW = '2026-07-31T00:00:00.000Z';
 
@@ -40,7 +45,7 @@ test('maps a legacy millimetre WoodCut session into the canonical envelope', () 
 
   assert.equal(record.schemaVersion, 1);
   assert.equal(record.project.units, 'mm');
-  assert.equal(record.project.activeRevisionId, 'revision_revision_test');
+  assert.equal(record.project.activeRevisionId, 'revision_test');
   assert.deepEqual(record.cutStock.dimensions, {
     width: 1220,
     length: 2440,
@@ -162,6 +167,33 @@ test('the checked-in sample project follows the canonical schema', async () => {
   assert.equal(sample.project.units, 'mm');
   assert.equal(sample.parts[0].dimensions.length, 1800);
   assert.equal(validateBenchMateProject(sample).valid, true);
+});
+
+test('local project storage round-trips valid records and ignores invalid records', () => {
+  let serialized = null;
+  const storage = {
+    getItem() {
+      return serialized;
+    },
+    setItem(key, value) {
+      assert.equal(key, PROJECT_STORAGE_KEY);
+      serialized = value;
+    },
+  };
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [],
+  }, {
+    projectId: 'project_storage',
+    now: FIXED_NOW,
+  });
+
+  assert.equal(saveStoredProjects([record], storage), true);
+  assert.deepEqual(loadStoredProjects(storage), [record]);
+
+  storage.setItem(PROJECT_STORAGE_KEY, JSON.stringify([record, { schemaVersion: 99 }]));
+  assert.deepEqual(loadStoredProjects(storage), [record]);
 });
 
 test('the existing optimizer is deterministic for identical inputs', () => {
