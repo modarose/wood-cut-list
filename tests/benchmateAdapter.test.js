@@ -20,6 +20,8 @@ import {
   loadStoredMaterials,
   MATERIAL_STORAGE_KEY,
   matchMaterialStockToParts,
+  releaseMaterialStock,
+  reserveMaterialStock,
   saveStoredMaterials,
   validateMaterialStock,
 } from '../src/utils/materialInventory.js';
@@ -72,6 +74,27 @@ test('maps a legacy millimetre WoodCut session into the canonical envelope', () 
 
   const restored = toWoodCutSession(record);
   assert.deepEqual(restored, session);
+});
+
+test('persists an optional inventory source reference without changing the WoodCut session shape', () => {
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [],
+  }, {
+    projectId: 'project_stock_reference',
+    sourceMaterialStockId: 'stock_owned_sheet',
+    now: FIXED_NOW,
+  });
+
+  assert.equal(record.cutStock.sourceMaterialStockId, 'stock_owned_sheet');
+  assert.equal(validateBenchMateProject(record).valid, true);
+  assert.deepEqual(toWoodCutSession(record).stock, {
+    width: 600,
+    height: 1200,
+    kerf: 3,
+    margin: 0,
+  });
 });
 
 test('normalizes inch dimensions to millimetres while preserving an inch round trip', () => {
@@ -317,4 +340,43 @@ test('material matching reports potential dimensional candidates without claimin
   assert.equal(result.rows[0].candidates[0].orientation, 'rotated');
   assert.equal(result.rows[1].status, 'unmatched');
   assert.equal(result.rows[2].status, 'planned');
+});
+
+test('owned material reservations are explicit, bounded and releasable by project', () => {
+  const material = createMaterialStock({
+    id: 'stock_reservable',
+    category: 'sheet-goods',
+    name: 'MDF',
+    length: 2440,
+    width: 1220,
+    thickness: 18,
+    usableLength: 2440,
+    usableWidth: 1220,
+    quantity: 3,
+    source: 'owned',
+    condition: 'good',
+  }, { now: FIXED_NOW });
+
+  const reserved = reserveMaterialStock(material, 'project_reservation', 2, {
+    now: FIXED_NOW,
+    reservedAt: FIXED_NOW,
+  });
+  assert.equal(reserved.reservedQuantity, 2);
+  assert.equal(reserved.reservations[0].quantity, 2);
+  assert.equal(reserved.quantity - reserved.reservedQuantity, 1);
+  assert.throws(
+    () => reserveMaterialStock(reserved, 'project_other', 2),
+    /exceeds the available material quantity/,
+  );
+
+  const released = releaseMaterialStock(reserved, 'project_reservation', undefined, {
+    now: FIXED_NOW,
+    releasedAt: FIXED_NOW,
+  });
+  assert.equal(released.reservedQuantity, 0);
+  assert.deepEqual(released.reservations, []);
+  assert.throws(
+    () => reserveMaterialStock({ ...material, source: 'planned' }, 'project_reservation', 1),
+    /Only owned material can be reserved/,
+  );
 });

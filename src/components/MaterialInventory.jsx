@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   MapPin,
   Package,
@@ -82,8 +83,10 @@ export default function MaterialInventory({
   materials,
   parts,
   unit,
+  selectedMaterialId,
   onSaveMaterial,
   onDeleteMaterial,
+  onUseMaterial,
   onBack,
 }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -162,6 +165,11 @@ export default function MaterialInventory({
     if (!result.saved) {
       setPageError(result.error || 'The material could not be removed.');
     }
+  };
+
+  const handleUse = material => {
+    const result = onUseMaterial(material);
+    if (!result.used) setPageError(result.error || 'This material could not be selected.');
   };
 
   return (
@@ -334,7 +342,10 @@ export default function MaterialInventory({
                   {materials.map(material => (
                     <tr key={material.id}>
                       <td>
-                        <div className="ws-inventory-material-name">{material.name}</div>
+                        <div className="ws-inventory-material-name">
+                          {material.name}
+                          {selectedMaterialId === material.id && <span className="ws-inventory-selected">Selected</span>}
+                        </div>
                         <div className="ws-inventory-meta">
                           {optionLabel(MATERIAL_CATEGORIES, material.category)}
                           {material.species ? ` · ${material.species}` : ''}
@@ -357,6 +368,15 @@ export default function MaterialInventory({
                       </td>
                       <td>
                         <div className="ws-inventory-actions">
+                          <button
+                            type="button"
+                            className="ws-btn ws-btn-icon ws-btn-use"
+                            onClick={() => handleUse(material)}
+                            disabled={getAvailableQuantity(material) <= 0}
+                            title={getAvailableQuantity(material) > 0 ? `Use ${material.name} in optimizer` : 'No available quantity'}
+                          >
+                            <ArrowRight size={15} />
+                          </button>
                           <button type="button" className="ws-btn ws-btn-icon" onClick={() => openEditForm(material)} title={`Edit ${material.name}`}><Pencil size={15} /></button>
                           <button type="button" className="ws-btn ws-btn-icon ws-btn-danger" onClick={() => handleDelete(material)} title={`Remove ${material.name}`}><Trash2 size={15} /></button>
                         </div>

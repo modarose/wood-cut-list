@@ -299,7 +299,7 @@ Project records are persisted as complete canonical envelopes in browser-local s
 
 ## 14. Phase 2 material inventory
 
-The first inventory slice uses the existing `MaterialStock` shape as a separate workshop collection. It is stored in browser-local storage under `benchmate.materials.v1` and is not copied into a project envelope until a future reservation workflow exists.
+The first inventory slice uses the existing `MaterialStock` shape as a separate workshop collection. It is stored in browser-local storage under `benchmate.materials.v1`. A project stores an optional `cutStock.sourceMaterialStockId` reference when an inventory item is selected as the optimizer stock template; the full workshop collection remains separate from the project envelope.
 
 Each stored record includes:
 
@@ -325,4 +325,4 @@ Each stored record includes:
 }
 ```
 
-Dimensions are stored in millimetres. Quantity and reserved quantity must be non-negative integers, and reserved quantity cannot exceed quantity. The current material check compares each active WoodCut part against owned stock dimensions and thickness, reports planned-purchase candidates separately and flags unmatched rows. It is deliberately a screening result rather than a stock allocation or reservation claim.
+Dimensions are stored in millimetres. Quantity and reserved quantity must be non-negative integers, and reserved quantity cannot exceed quantity. A reservation record identifies the project and quantity that caused the reserved total; the sum of reservation records must equal `reservedQuantity`. The current material check compares each active WoodCut part against owned stock dimensions and thickness, reports planned-purchase candidates separately and flags unmatched rows. It is deliberately a screening result rather than a cutting allocation claim.

@@ -18,8 +18,12 @@ import { createBenchMateProjectFromWoodCut, toWoodCutSession } from './utils/ben
 import { createProjectId, loadStoredProjects, saveStoredProjects, upsertStoredProject } from './utils/projectStorage.js';
 import {
   createMaterialStock,
+  getAvailableQuantity,
+  getProjectReservation,
   loadStoredMaterials,
   removeStoredMaterial,
+  releaseMaterialStock,
+  reserveMaterialStock,
   updateMaterialStock,
   upsertStoredMaterial,
 } from './utils/materialInventory.js';
@@ -47,6 +51,13 @@ function getInitialProjectState() {
   };
 }
 
+function stockSizeMatchesMaterial(material, stock, unit) {
+  if (!material || !stock) return false;
+  const displayDimension = value => Math.round(convertDimension(value, UNITS.MM, unit) * 10) / 10;
+  return Math.abs(stock.width - displayDimension(material.usableWidth)) < 0.05
+    && Math.abs(stock.height - displayDimension(material.usableLength)) < 0.05;
+}
+
 export default function App() {
   const [initialState] = useState(() => getInitialProjectState());
   const initialProject = initialState.initialProject;
@@ -63,6 +74,9 @@ export default function App() {
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [materials, setMaterials] = useState(() => loadStoredMaterials());
+  const [selectedMaterialId, setSelectedMaterialId] = useState(
+    () => initialProject?.cutStock?.sourceMaterialStockId ?? null,
+  );
   const [saveError, setSaveError] = useState('');
 
   // Existing WoodCut Studio state
@@ -72,6 +86,8 @@ export default function App() {
   const [stock, setStock] = useState(initialState.session.stock);
   const [parts, setParts] = useState(initialState.session.parts);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
+
+  const selectedMaterial = materials.find(material => material.id === selectedMaterialId) ?? null;
 
   const markDirty = () => {
     setIsDirty(true);
@@ -100,7 +116,27 @@ export default function App() {
 
   const handleStockChange = (nextStock) => {
     setStock(nextStock);
+    if (selectedMaterialId && !stockSizeMatchesMaterial(selectedMaterial, nextStock, unit)) {
+      setSelectedMaterialId(null);
+    }
     markDirty();
+  };
+
+  const handleUseMaterial = (material) => {
+    if (!material || getAvailableQuantity(material) <= 0) {
+      return { used: false, error: 'This material has no available quantity to use.' };
+    }
+
+    setStock(currentStock => ({
+      ...currentStock,
+      width: Math.round(convertDimension(material.usableWidth, UNITS.MM, unit) * 10) / 10,
+      height: Math.round(convertDimension(material.usableLength, UNITS.MM, unit) * 10) / 10,
+    }));
+    setSelectedMaterialId(material.id);
+    setIsProjectsOpen(false);
+    setIsInventoryOpen(false);
+    markDirty();
+    return { used: true, error: '' };
   };
 
   const handlePartsChange = (nextParts) => {
@@ -133,6 +169,7 @@ export default function App() {
     setUnit(preset.unit);
     setStock({ ...preset.stock });
     setParts(preset.parts.map(part => ({ ...part })));
+    setSelectedMaterialId(null);
     markDirty();
   };
 
@@ -192,6 +229,7 @@ export default function App() {
       status: projectStatus,
       description: projectDescription,
       sourceName: 'WoodCut Studio project workspace',
+      sourceMaterialStockId: selectedMaterialId,
       now,
     });
     const result = upsertStoredProject(record, savedProjects);
@@ -224,6 +262,7 @@ export default function App() {
       setUnit(session.unit);
       setStock(session.stock);
       setParts(session.parts);
+      setSelectedMaterialId(record.cutStock?.sourceMaterialStockId ?? null);
       setStrategy(session.strategy ?? STRATEGIES.BSSF);
       setCutPreference(session.cutPreference ?? CUT_PREFERENCES.RIP_FIRST);
       setIsDirty(false);
@@ -247,6 +286,7 @@ export default function App() {
     setUnit(UNITS.MM);
     setStock({ ...preset.stock });
     setParts([]);
+    setSelectedMaterialId(null);
     setStrategy(STRATEGIES.BSSF);
     setCutPreference(CUT_PREFERENCES.RIP_FIRST);
     setIsDirty(true);
@@ -264,6 +304,7 @@ export default function App() {
         status: 'planning',
         description: record.project.description ?? '',
         sourceName: 'WoodCut Studio project duplicate',
+        sourceMaterialStockId: record.cutStock?.sourceMaterialStockId ?? null,
         now,
       });
       const result = upsertStoredProject(duplicate, savedProjects);
@@ -283,6 +324,7 @@ export default function App() {
       setUnit(session.unit);
       setStock(session.stock);
       setParts(session.parts);
+      setSelectedMaterialId(record.cutStock?.sourceMaterialStockId ?? null);
       setStrategy(session.strategy ?? STRATEGIES.BSSF);
       setCutPreference(session.cutPreference ?? CUT_PREFERENCES.RIP_FIRST);
       setIsDirty(false);
@@ -348,6 +390,9 @@ export default function App() {
       }
 
       setMaterials(result.materials);
+      if (selectedMaterialId === material.id && !stockSizeMatchesMaterial(material, stock, unit)) {
+        setSelectedMaterialId(null);
+      }
       return { saved: true, error: '' };
     } catch (error) {
       return { saved: false, error: error.message };
@@ -361,7 +406,58 @@ export default function App() {
     }
 
     setMaterials(result.materials);
+    if (selectedMaterialId === material.id) setSelectedMaterialId(null);
     return { saved: true, error: '' };
+  };
+
+  const handleReserveSelectedMaterial = () => {
+    const currentMaterial = materials.find(material => material.id === selectedMaterialId) ?? null;
+    const requiredQuantity = optimizationResult?.totalSheetsCount ?? 0;
+    if (!currentMaterial) {
+      return { saved: false, error: 'Select an inventory material before reserving stock.' };
+    }
+    if (requiredQuantity <= 0) {
+      return { saved: false, error: 'Add valid cut-list parts before reserving stock.' };
+    }
+
+    const existingReservation = getProjectReservation(currentMaterial, projectId);
+    const additionalQuantity = requiredQuantity - (existingReservation?.quantity ?? 0);
+    if (additionalQuantity <= 0) return { saved: true, error: '' };
+
+    try {
+      const reservedMaterial = reserveMaterialStock(
+        currentMaterial,
+        projectId,
+        additionalQuantity,
+      );
+      const result = upsertStoredMaterial(reservedMaterial, materials);
+      if (!result.saved) {
+        return { saved: false, error: 'The reservation could not be saved in this browser.' };
+      }
+      setMaterials(result.materials);
+      return { saved: true, error: '' };
+    } catch (error) {
+      return { saved: false, error: error.message };
+    }
+  };
+
+  const handleReleaseSelectedMaterial = () => {
+    const currentMaterial = materials.find(material => material.id === selectedMaterialId) ?? null;
+    if (!currentMaterial) {
+      return { saved: false, error: 'The selected inventory material is no longer available.' };
+    }
+
+    try {
+      const releasedMaterial = releaseMaterialStock(currentMaterial, projectId);
+      const result = upsertStoredMaterial(releasedMaterial, materials);
+      if (!result.saved) {
+        return { saved: false, error: 'The reservation could not be released in this browser.' };
+      }
+      setMaterials(result.materials);
+      return { saved: true, error: '' };
+    } catch (error) {
+      return { saved: false, error: error.message };
+    }
   };
 
   // Export CSV
@@ -423,8 +519,10 @@ export default function App() {
           materials={materials}
           parts={parts}
           unit={unit}
+          selectedMaterialId={selectedMaterialId}
           onSaveMaterial={handleSaveMaterial}
           onDeleteMaterial={handleDeleteMaterial}
+          onUseMaterial={handleUseMaterial}
           onBack={handleCloseInventory}
         />
       </div>
@@ -503,6 +601,14 @@ export default function App() {
                 unit={unit}
                 cutPreference={cutPreference}
                 onCutPreferenceChange={handleCutPreferenceChange}
+                selectedMaterial={selectedMaterial}
+                hasMaterialMappings={parts.length > 0 && parts.every(part => (
+                  part.materialRequirementId || part.material || part.materialName
+                ))}
+                requiredStockQuantity={optimizationResult?.totalSheetsCount ?? 0}
+                projectReservation={getProjectReservation(selectedMaterial, projectId)}
+                onReserveMaterial={handleReserveSelectedMaterial}
+                onReleaseMaterial={handleReleaseSelectedMaterial}
               />
               <CutListInput
                 parts={parts}

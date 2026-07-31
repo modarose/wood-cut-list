@@ -597,6 +597,77 @@ input[type=number] {
   font-size: 13px;
 }
 
+.ws-stock-source {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: var(--ws-space-md);
+  padding: 10px 12px;
+  border: 1px solid var(--ws-outline-variant);
+  border-radius: var(--ws-radius);
+  background: var(--ws-surface-container-low);
+}
+
+.ws-stock-source.linked {
+  border-color: color-mix(in srgb, var(--ws-primary) 35%, var(--ws-outline-variant));
+}
+
+.ws-stock-source.unlinked {
+  border-color: color-mix(in srgb, var(--ws-secondary) 35%, var(--ws-outline-variant));
+}
+
+.ws-stock-source-heading {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ws-primary);
+}
+
+.ws-stock-source.unlinked .ws-stock-source-heading {
+  color: var(--ws-secondary);
+}
+
+.ws-stock-source strong {
+  color: var(--ws-on-surface);
+}
+
+.ws-stock-source-meta {
+  color: var(--ws-on-surface-variant);
+  font-family: var(--ws-font-mono);
+  font-size: 11px;
+}
+
+.ws-stock-source-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  color: var(--ws-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ws-stock-source-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ws-space-sm);
+  margin-top: 3px;
+}
+
+.ws-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ws-btn:disabled:hover {
+  background: transparent;
+}
+
 .ws-inventory-table-wrap {
   overflow-x: auto;
   padding: var(--ws-space-md);
@@ -614,6 +685,21 @@ input[type=number] {
 .ws-inventory-material-name {
   font-weight: 600;
   color: var(--ws-on-surface);
+}
+
+.ws-inventory-selected {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 2px 6px;
+  border-radius: var(--ws-radius-full);
+  background: var(--ws-primary);
+  color: var(--ws-on-primary);
+  font-family: var(--ws-font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
 }
 
 .ws-inventory-meta {
@@ -648,6 +734,10 @@ input[type=number] {
 
 .ws-btn-danger:hover {
   color: var(--ws-secondary);
+}
+
+.ws-btn-use {
+  color: var(--ws-primary);
 }
 
 .ws-inventory-empty {

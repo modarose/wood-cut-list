@@ -275,6 +275,7 @@ export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
   const cutStock = {
     id: makeStableId('cut-stock', options.stockId, `${projectId}_template`),
     source: 'woodcut-studio',
+    sourceMaterialStockId: options.sourceMaterialStockId ?? null,
     sourceUnit: sourceUnit ?? sourceSession.unit ?? null,
     dimensions: {
       width: readDimension(stockInput.width, sourceUnit, 'stock.width', stockWarnings),
@@ -424,6 +425,12 @@ export function validateBenchMateProject(record) {
   if (!isObject(record.cutStock)) {
     errors.push('cutStock must be an object.');
   } else {
+    if (record.cutStock.sourceMaterialStockId !== undefined
+      && record.cutStock.sourceMaterialStockId !== null
+      && typeof record.cutStock.sourceMaterialStockId !== 'string') {
+      errors.push('cutStock.sourceMaterialStockId must be null or a string.');
+    }
+
     const stockDimensions = record.cutStock.dimensions;
     if (!isObject(stockDimensions)) {
       errors.push('cutStock.dimensions must be an object.');

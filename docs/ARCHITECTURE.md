@@ -271,4 +271,7 @@ The first inventory slice is a browser-local workshop collection rather than pro
 - Records are stored under `benchmate.materials.v1`, separately from project envelopes under `benchmate.projects.v1`.
 - Stock records retain canonical fields for dimensions, usable dimensions, quantity, reserved quantity, source, condition, location and notes.
 - Inventory quantities and reservations are validated before persistence; invalid or negative records are not silently accepted.
-- The current cut-list check identifies potential individual owned-stock dimensional matches and reports planned-purchase candidates separately. It does not allocate a board, reserve stock or replace the existing WoodCut optimisation calculation.
+- An owned or planned material can be selected as the optimizer's stock template; the selection uses usable dimensions and preserves the existing kerf and margin settings.
+- A selected source reference is persisted as `cutStock.sourceMaterialStockId` when the project is saved. Manual stock edits clear that source link when dimensions no longer match.
+- The current cut-list check identifies potential individual owned-stock dimensional matches and reports planned-purchase candidates separately. It does not replace the existing WoodCut optimisation calculation.
+- An explicit reservation action can reserve the optimizer's required sheet count against an owned material for the current project. Reservations are bounded by available quantity and can be released.

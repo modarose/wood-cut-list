@@ -73,6 +73,11 @@ export function getAvailableQuantity(material) {
   return Math.max(0, quantity - reservedQuantity);
 }
 
+export function getProjectReservation(material, projectId) {
+  if (!isObject(material) || !readText(projectId) || !Array.isArray(material.reservations)) return null;
+  return material.reservations.find(reservation => reservation.projectId === projectId) ?? null;
+}
+
 export function validateMaterialStock(material) {
   const errors = [];
 
@@ -125,6 +130,28 @@ export function validateMaterialStock(material) {
     errors.push('Material stock reservedQuantity cannot exceed quantity.');
   }
 
+  if (material.reservations !== undefined) {
+    if (!Array.isArray(material.reservations)) {
+      errors.push('Material stock reservations must be an array.');
+    } else {
+      let reservationTotal = 0;
+      for (const [index, reservation] of material.reservations.entries()) {
+        if (!isObject(reservation) || !readText(reservation.projectId)) {
+          errors.push(`Material stock reservations[${index}].projectId is required.`);
+          continue;
+        }
+        if (!Number.isInteger(reservation.quantity) || reservation.quantity <= 0) {
+          errors.push(`Material stock reservations[${index}].quantity must be a positive integer.`);
+          continue;
+        }
+        reservationTotal += reservation.quantity;
+      }
+      if (reservationTotal !== material.reservedQuantity) {
+        errors.push('Material stock reservedQuantity must equal the reservation total.');
+      }
+    }
+  }
+
   return { valid: errors.length === 0, errors };
 }
 
@@ -152,6 +179,10 @@ export function createMaterialStock(input = {}, options = {}) {
     createdAt: options.createdAt ?? source.createdAt ?? now,
     updatedAt: options.updatedAt ?? now,
   };
+
+  if (Array.isArray(source.reservations)) {
+    material.reservations = source.reservations.map(reservation => ({ ...reservation }));
+  }
 
   const validation = validateMaterialStock(material);
   if (!validation.valid) {
@@ -245,6 +276,80 @@ export function removeStoredMaterial(materialId, materials, storage = getDefault
     materials: nextMaterials,
     saved: saveStoredMaterials(nextMaterials, storage),
   };
+}
+
+export function reserveMaterialStock(material, projectId, quantity, options = {}) {
+  const validation = validateMaterialStock(material);
+  if (!validation.valid) throw new Error(validation.errors.join(' '));
+  if (material.source !== 'owned') throw new Error('Only owned material can be reserved.');
+
+  const normalizedProjectId = readText(projectId);
+  const normalizedQuantity = readInteger(quantity);
+  if (!normalizedProjectId) throw new Error('A project ID is required to reserve material.');
+  if (normalizedQuantity === null || normalizedQuantity <= 0) {
+    throw new Error('Reservation quantity must be a positive integer.');
+  }
+  if (normalizedQuantity > getAvailableQuantity(material)) {
+    throw new Error('The reservation exceeds the available material quantity.');
+  }
+
+  const reservations = Array.isArray(material.reservations)
+    ? material.reservations.map(reservation => ({ ...reservation }))
+    : [];
+  const existingIndex = reservations.findIndex(
+    reservation => reservation.projectId === normalizedProjectId,
+  );
+  const reservedAt = options.reservedAt ?? new Date().toISOString();
+
+  if (existingIndex >= 0) {
+    reservations[existingIndex] = {
+      ...reservations[existingIndex],
+      quantity: reservations[existingIndex].quantity + normalizedQuantity,
+      reservedAt,
+    };
+  } else {
+    reservations.push({
+      projectId: normalizedProjectId,
+      quantity: normalizedQuantity,
+      reservedAt,
+    });
+  }
+
+  return updateMaterialStock(material, {
+    reservedQuantity: material.reservedQuantity + normalizedQuantity,
+    reservations,
+  }, { now: options.now ?? reservedAt });
+}
+
+export function releaseMaterialStock(material, projectId, quantity, options = {}) {
+  const validation = validateMaterialStock(material);
+  if (!validation.valid) throw new Error(validation.errors.join(' '));
+
+  const normalizedProjectId = readText(projectId);
+  const existingReservation = getProjectReservation(material, normalizedProjectId);
+  if (!existingReservation) throw new Error('This project has no reservation for the selected material.');
+
+  const requestedQuantity = quantity === undefined || quantity === null
+    ? existingReservation.quantity
+    : readInteger(quantity);
+  if (requestedQuantity === null || requestedQuantity <= 0) {
+    throw new Error('Release quantity must be a positive integer.');
+  }
+  if (requestedQuantity > existingReservation.quantity) {
+    throw new Error('The release quantity exceeds this project reservation.');
+  }
+
+  const reservations = (material.reservations ?? []).flatMap(reservation => {
+    if (reservation.projectId !== normalizedProjectId) return [{ ...reservation }];
+    const remainingQuantity = reservation.quantity - requestedQuantity;
+    return remainingQuantity > 0 ? [{ ...reservation, quantity: remainingQuantity }] : [];
+  });
+  const releasedAt = options.releasedAt ?? new Date().toISOString();
+
+  return updateMaterialStock(material, {
+    reservedQuantity: material.reservedQuantity - requestedQuantity,
+    reservations,
+  }, { now: options.now ?? releasedAt });
 }
 
 function getPartDimension(part, field, unit) {
