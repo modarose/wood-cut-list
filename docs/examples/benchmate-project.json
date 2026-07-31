@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "id": "project_bookshelf-demo",
+    "name": "Bookshelf cut-list sample",
+    "status": "planning",
+    "description": "",
+    "units": "mm",
+    "currency": "AUD",
+    "activeRevisionId": "revision_bookshelf-revision-1",
+    "designRevisionIds": [
+      "revision_bookshelf-revision-1"
+    ],
+    "materialRequirementIds": [],
+    "hardwareRequirementIds": [],
+    "finishRequirementIds": [],
+    "buildMethodIds": [],
+    "journalEntryIds": [],
+    "readiness": "needs-review",
+    "createdAt": "2026-07-31T00:00:00.000Z",
+    "updatedAt": "2026-07-31T00:00:00.000Z"
+  },
+  "designRevisions": [
+    {
+      "id": "revision_bookshelf-revision-1",
+      "projectId": "project_bookshelf-demo",
+      "revisionNumber": 1,
+      "source": {
+        "type": "woodcut-studio",
+        "name": "WoodCut Studio preset: Custom Bookshelf",
+        "externalId": null,
+        "fileHash": null
+      },
+      "sourceUnit": "mm",
+      "status": "needs-review",
+      "partIds": [
+        "part_1"
+      ],
+      "importedAt": "2026-07-31T00:00:00.000Z",
+      "approvedAt": null,
+      "warnings": [
+        {
+          "code": "thickness-missing",
+          "message": "Material thickness was not provided by the WoodCut session.",
+          "path": "parts[0].thickness"
+        },
+        {
+          "code": "material-mapping-missing",
+          "message": "No BenchMate material requirement is mapped to this part.",
+          "path": "parts[0].materialRequirementId"
+        },
+        {
+          "code": "grain-direction-missing",
+          "message": "Rotation is locked, but the source does not identify the grain direction.",
+          "path": "parts[0].grainDirection"
+        }
+      ],
+      "sourcePayload": {
+        "unit": "mm",
+        "stock": {
+          "width": 1220,
+          "height": 2440,
+          "kerf": 3,
+          "margin": 5
+        },
+        "parts": [
+          {
+            "id": "1",
+            "name": "Side Panels",
+            "width": 300,
+            "height": 1800,
+            "qty": 2,
+            "allowRotation": false,
+            "color": "#3B82F6"
+          }
+        ],
+        "strategy": "bssf",
+        "cutPreference": "rip_first"
+      }
+    }
+  ],
+  "parts": [
+    {
+      "id": "part_1",
+      "revisionId": "revision_bookshelf-revision-1",
+      "name": "Side Panels",
+      "partCode": null,
+      "quantity": 2,
+      "dimensions": {
+        "length": 1800,
+        "width": 300,
+        "thickness": null
+      },
+      "shape": "rectangular",
+      "materialRequirementId": null,
+      "grainDirection": null,
+      "rotationAllowed": false,
+      "edgeTreatment": {
+        "top": "none",
+        "bottom": "none",
+        "left": "none",
+        "right": "none"
+      },
+      "cutAllowance": 0,
+      "machiningNotes": null,
+      "sourceEntityId": "1",
+      "sourceUnit": "mm",
+      "confidence": "needs-review",
+      "status": "needs-review",
+      "warnings": [
+        {
+          "code": "thickness-missing",
+          "message": "Material thickness was not provided by the WoodCut session.",
+          "path": "parts[0].thickness"
+        },
+        {
+          "code": "material-mapping-missing",
+          "message": "No BenchMate material requirement is mapped to this part.",
+          "path": "parts[0].materialRequirementId"
+        },
+        {
+          "code": "grain-direction-missing",
+          "message": "Rotation is locked, but the source does not identify the grain direction.",
+          "path": "parts[0].grainDirection"
+        }
+      ],
+      "presentation": {
+        "color": "#3B82F6"
+      }
+    }
+  ],
+  "materialRequirements": [],
+  "materialStock": [],
+  "cutStock": {
+    "id": "cut-stock_project_bookshelf-demo_template",
+    "source": "woodcut-studio",
+    "sourceUnit": "mm",
+    "dimensions": {
+      "width": 1220,
+      "length": 2440,
+      "thickness": null
+    },
+    "kerf": 3,
+    "margin": 5,
+    "status": "ready",
+    "warnings": []
+  },
+  "cutSettings": {
+    "strategy": "bssf",
+    "cutPreference": "rip_first"
+  }
+}
