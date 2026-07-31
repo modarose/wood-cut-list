@@ -1,7 +1,7 @@
 # BenchMate Roadmap
 
 **Foundation:** Existing WoodCut Studio application  
-**Roadmap status:** Phase 1 implementation in progress
+**Roadmap status:** Phase 2 implementation in progress
 **Date:** 2026-07-31
 
 ## Product strategy
@@ -45,7 +45,7 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 - `ProjectDashboard` provides new, open, duplicate, archive and restore actions.
 - `ProjectDetails` provides project name, status and notes editing.
 - Explicit save/reopen uses the canonical envelope in browser-local storage.
-- The restored desktop sidebar connects the Optimizer and Projects views while clearly marking future modules as unavailable.
+- The restored desktop sidebar connects the Optimizer, Projects and Inventory views while clearly marking future modules as unavailable.
 - The shell currently persists one active draft revision per project; revision comparison and approval history remain future work.
 
 ## Phase 1 — BenchMate project shell
@@ -89,6 +89,13 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 
 - The app can show what the user already has and what is missing for a sample project.
 - Existing stock can be selected as an input to the cut-list workflow.
+
+### Phase 2 implementation notes
+
+- Material inventory is the first Phase 2 vertical slice; tools, hardware, finishes and reservations remain future work.
+- `MaterialInventory` supports local add, edit and remove workflows for sheet goods, solid timber and offcuts.
+- Inventory records use metric dimensions and persist under `benchmate.materials.v1`.
+- The current cut-list check reports potential owned-stock dimensional candidates and planned-purchase candidates separately. It does not claim board allocation, reservation or optimisation results.
 
 ## Phase 3 — Build planner
 

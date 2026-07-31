@@ -296,3 +296,33 @@ The project shell adds two workflow fields without changing the cut-list part co
 `readiness` describes whether the current revision still has unresolved review warnings. `archivedAt` is an ISO 8601 timestamp when a project is archived, or `null`/absent while active. Archived projects remain stored and can be restored.
 
 Project records are persisted as complete canonical envelopes in browser-local storage under `benchmate.projects.v1`. Persistence is explicit; editing the workspace marks the draft as dirty until the user saves it.
+
+## 14. Phase 2 material inventory
+
+The first inventory slice uses the existing `MaterialStock` shape as a separate workshop collection. It is stored in browser-local storage under `benchmate.materials.v1` and is not copied into a project envelope until a future reservation workflow exists.
+
+Each stored record includes:
+
+```json
+{
+  "id": "stock_01",
+  "category": "sheet-goods",
+  "name": "18 mm plywood",
+  "species": "Birch plywood",
+  "dimensions": {
+    "length": 2440,
+    "width": 1220,
+    "thickness": 18
+  },
+  "usableLength": 2440,
+  "usableWidth": 1220,
+  "quantity": 1,
+  "reservedQuantity": 0,
+  "source": "owned",
+  "condition": "good",
+  "location": "Garage rack A",
+  "notes": ""
+}
+```
+
+Dimensions are stored in millimetres. Quantity and reserved quantity must be non-negative integers, and reserved quantity cannot exceed quantity. The current material check compares each active WoodCut part against owned stock dimensions and thickness, reports planned-purchase candidates separately and flags unmatched rows. It is deliberately a screening result rather than a stock allocation or reservation claim.

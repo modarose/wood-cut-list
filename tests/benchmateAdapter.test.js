@@ -15,6 +15,14 @@ import {
   PROJECT_STORAGE_KEY,
   saveStoredProjects,
 } from '../src/utils/projectStorage.js';
+import {
+  createMaterialStock,
+  loadStoredMaterials,
+  MATERIAL_STORAGE_KEY,
+  matchMaterialStockToParts,
+  saveStoredMaterials,
+  validateMaterialStock,
+} from '../src/utils/materialInventory.js';
 
 const FIXED_NOW = '2026-07-31T00:00:00.000Z';
 
@@ -207,4 +215,106 @@ test('the existing optimizer is deterministic for identical inputs', () => {
   const second = optimizeCutList(stock, parts, { strategy: 'bssf', cutPreference: 'rip_first' });
 
   assert.deepEqual(first, second);
+});
+
+test('material stock requires positive dimensions and cannot reserve more than it owns', () => {
+  const material = createMaterialStock({
+    id: 'stock_sheet',
+    category: 'sheet-goods',
+    name: '18 mm plywood',
+    length: 2440,
+    width: 1220,
+    thickness: 18,
+    usableLength: 2440,
+    usableWidth: 1220,
+    quantity: 2,
+    reservedQuantity: 1,
+    source: 'owned',
+    condition: 'good',
+  }, { now: FIXED_NOW });
+
+  assert.equal(validateMaterialStock(material).valid, true);
+  assert.equal(material.updatedAt, FIXED_NOW);
+  assert.throws(
+    () => createMaterialStock({
+      ...material,
+      quantity: 1,
+      reservedQuantity: 2,
+    }),
+    /reservedQuantity cannot exceed quantity/,
+  );
+});
+
+test('material inventory storage round-trips valid records and ignores invalid records', () => {
+  let serialized = null;
+  const storage = {
+    getItem(key) {
+      assert.equal(key, MATERIAL_STORAGE_KEY);
+      return serialized;
+    },
+    setItem(key, value) {
+      assert.equal(key, MATERIAL_STORAGE_KEY);
+      serialized = value;
+    },
+  };
+  const material = createMaterialStock({
+    id: 'stock_storage',
+    category: 'offcut',
+    name: 'Oak offcut',
+    length: 800,
+    width: 300,
+    thickness: 19,
+    usableLength: 780,
+    usableWidth: 290,
+    quantity: 1,
+    source: 'owned',
+    condition: 'rough',
+  }, { now: FIXED_NOW });
+
+  assert.equal(saveStoredMaterials([material], storage), true);
+  assert.deepEqual(loadStoredMaterials(storage), [material]);
+  storage.setItem(MATERIAL_STORAGE_KEY, JSON.stringify([material, { id: 'invalid' }]));
+  assert.deepEqual(loadStoredMaterials(storage), [material]);
+});
+
+test('material matching reports potential dimensional candidates without claiming allocation', () => {
+  const materials = [createMaterialStock({
+    id: 'stock_rotated',
+    category: 'sheet-goods',
+    name: 'Birch plywood',
+    length: 600,
+    width: 300,
+    thickness: 12,
+    usableLength: 600,
+    usableWidth: 300,
+    quantity: 1,
+    source: 'owned',
+    condition: 'good',
+  }, { now: FIXED_NOW }), createMaterialStock({
+    id: 'stock_planned',
+    category: 'sheet-goods',
+    name: 'Planned MDF',
+    length: 700,
+    width: 400,
+    thickness: 12,
+    usableLength: 700,
+    usableWidth: 400,
+    quantity: 1,
+    source: 'planned',
+    condition: 'good',
+  }, { now: FIXED_NOW })];
+  const result = matchMaterialStockToParts([
+    { id: 'top', name: 'Top', width: 500, height: 250, thickness: 12, qty: 1, allowRotation: true },
+    { id: 'side', name: 'Side', width: 400, height: 800, thickness: 12, qty: 1, allowRotation: false },
+    { id: 'shelf', name: 'Shelf', width: 350, height: 650, thickness: 12, qty: 1, allowRotation: false },
+  ], 'mm', materials);
+
+  assert.equal(result.totalPartTypes, 3);
+  assert.equal(result.matchedPartTypes, 1);
+  assert.equal(result.plannedPartTypes, 1);
+  assert.equal(result.unmatchedPartTypes, 1);
+  assert.equal(result.rows[0].status, 'potential');
+  assert.equal(result.rows[0].candidates[0].orientation, 'rotated');
+  assert.equal(result.rows[1].status, 'unmatched');
+  assert.equal(result.rows[2].status, 'planned');
 });

@@ -8,6 +8,7 @@ import CutSequence from './components/CutSequence';
 import PresetsModal from './components/PresetsModal';
 import ProjectDashboard from './components/ProjectDashboard';
 import ProjectDetails from './components/ProjectDetails';
+import MaterialInventory from './components/MaterialInventory';
 import Sidebar from './components/Sidebar';
 
 import { UNITS, convertDimension } from './utils/unitConverter';
@@ -15,6 +16,13 @@ import { optimizeCutList, STRATEGIES, CUT_PREFERENCES } from './utils/cutOptimiz
 import { PROJECT_PRESETS } from './utils/presets';
 import { createBenchMateProjectFromWoodCut, toWoodCutSession } from './utils/benchmateAdapter.js';
 import { createProjectId, loadStoredProjects, saveStoredProjects, upsertStoredProject } from './utils/projectStorage.js';
+import {
+  createMaterialStock,
+  loadStoredMaterials,
+  removeStoredMaterial,
+  updateMaterialStock,
+  upsertStoredMaterial,
+} from './utils/materialInventory.js';
 
 function createDefaultSession() {
   const preset = PROJECT_PRESETS[0];
@@ -53,6 +61,8 @@ export default function App() {
   const [lastSavedAt, setLastSavedAt] = useState(() => initialProject?.project.updatedAt ?? null);
   const [isDirty, setIsDirty] = useState(() => !initialProject);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+  const [materials, setMaterials] = useState(() => loadStoredMaterials());
   const [saveError, setSaveError] = useState('');
 
   // Existing WoodCut Studio state
@@ -133,11 +143,21 @@ export default function App() {
 
   const handleOpenProjects = () => {
     if (!canLeaveWorkspace()) return;
+    setIsInventoryOpen(false);
     setIsProjectsOpen(true);
   };
 
   const handleCloseProjects = () => {
     setIsProjectsOpen(false);
+  };
+
+  const handleOpenInventory = () => {
+    setIsProjectsOpen(false);
+    setIsInventoryOpen(true);
+  };
+
+  const handleCloseInventory = () => {
+    setIsInventoryOpen(false);
   };
 
   const handleSidebarNavigate = (section) => {
@@ -146,8 +166,14 @@ export default function App() {
       return;
     }
 
-    if (section === 'optimizer' && isProjectsOpen && canLeaveWorkspace()) {
-      setIsProjectsOpen(false);
+    if (section === 'inventory') {
+      handleOpenInventory();
+      return;
+    }
+
+    if (section === 'optimizer') {
+      if (isProjectsOpen && canLeaveWorkspace()) setIsProjectsOpen(false);
+      if (isInventoryOpen) handleCloseInventory();
     }
   };
 
@@ -310,6 +336,34 @@ export default function App() {
     setSavedProjects(nextProjects);
   };
 
+  const handleSaveMaterial = (input, existingMaterial) => {
+    try {
+      const material = existingMaterial
+        ? updateMaterialStock(existingMaterial, input)
+        : createMaterialStock(input);
+      const result = upsertStoredMaterial(material, materials);
+
+      if (!result.saved) {
+        return { saved: false, error: result.error || 'The material could not be saved in this browser.' };
+      }
+
+      setMaterials(result.materials);
+      return { saved: true, error: '' };
+    } catch (error) {
+      return { saved: false, error: error.message };
+    }
+  };
+
+  const handleDeleteMaterial = (material) => {
+    const result = removeStoredMaterial(material.id, materials);
+    if (!result.saved) {
+      return { saved: false, error: 'The material could not be removed in this browser.' };
+    }
+
+    setMaterials(result.materials);
+    return { saved: true, error: '' };
+  };
+
   // Export CSV
   const handleExportCSV = () => {
     let csvContent = `data:text/csv;charset=utf-8,Part Name,Width (${unit}),Length (${unit}),Quantity,Allow Rotation,Color\n`;
@@ -352,6 +406,26 @@ export default function App() {
           onDuplicate={handleDuplicateProject}
           onArchive={handleArchiveProject}
           onRestore={handleRestoreProject}
+        />
+      </div>
+    );
+  }
+
+  if (isInventoryOpen) {
+    return (
+      <div className="ws-shell">
+        <Sidebar
+          activeSection="inventory"
+          projectName={projectName}
+          onNavigate={handleSidebarNavigate}
+        />
+        <MaterialInventory
+          materials={materials}
+          parts={parts}
+          unit={unit}
+          onSaveMaterial={handleSaveMaterial}
+          onDeleteMaterial={handleDeleteMaterial}
+          onBack={handleCloseInventory}
         />
       </div>
     );

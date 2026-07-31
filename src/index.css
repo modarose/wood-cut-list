@@ -488,6 +488,300 @@ input[type=number] {
 }
 
 /* ─── METRIC CARDS ──────────────────────────────────────── */
+/* Material inventory */
+.ws-inventory-content {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.ws-inventory-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ws-space-md);
+  padding: var(--ws-space-sm) 0;
+}
+
+.ws-page-eyebrow {
+  margin-bottom: 5px;
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ws-primary);
+}
+
+.ws-page-title {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 30px);
+  line-height: 1.1;
+  color: var(--ws-on-surface);
+}
+
+.ws-page-copy {
+  max-width: 680px;
+  margin: 7px 0 0;
+  color: var(--ws-on-surface-variant);
+  line-height: 1.5;
+}
+
+.ws-inventory-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ws-space-md);
+}
+
+.ws-inventory-toolbar strong {
+  display: block;
+  color: var(--ws-on-surface);
+}
+
+.ws-inventory-toolbar-copy {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--ws-font-mono);
+  font-size: 11px;
+  color: var(--ws-on-surface-variant);
+}
+
+.ws-inventory-metrics {
+  margin-bottom: 0;
+}
+
+.ws-inventory-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ws-space-md);
+}
+
+.ws-inventory-field-wide {
+  grid-column: span 2;
+}
+
+.ws-inventory-field-full {
+  grid-column: 1 / -1;
+}
+
+.ws-inventory-form-section-label {
+  padding-top: 3px;
+  border-bottom: 1px solid var(--ws-outline-variant);
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ws-primary);
+}
+
+.ws-inventory-notes {
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.ws-inventory-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ws-space-sm);
+  margin-top: var(--ws-space-lg);
+}
+
+.ws-form-error {
+  padding: 9px 11px;
+  border: 1px solid color-mix(in srgb, var(--ws-secondary) 40%, var(--ws-outline-variant));
+  border-radius: var(--ws-radius);
+  background: color-mix(in srgb, var(--ws-secondary) 10%, var(--ws-surface-container-lowest));
+  color: var(--ws-secondary);
+  font-size: 13px;
+}
+
+.ws-inventory-table-wrap {
+  overflow-x: auto;
+  padding: var(--ws-space-md);
+}
+
+.ws-inventory-table {
+  min-width: 820px;
+}
+
+.ws-inventory-table th:not(:last-child),
+.ws-inventory-table td:not(:last-child) {
+  padding-right: var(--ws-space-md);
+}
+
+.ws-inventory-material-name {
+  font-weight: 600;
+  color: var(--ws-on-surface);
+}
+
+.ws-inventory-meta {
+  margin-top: 3px;
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  color: var(--ws-on-surface-variant);
+}
+
+.ws-inventory-quantity {
+  font-weight: 600;
+  color: var(--ws-primary);
+  white-space: nowrap;
+}
+
+.ws-inventory-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 110px;
+}
+
+.ws-inventory-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.ws-btn-danger {
+  color: var(--ws-secondary);
+}
+
+.ws-btn-danger:hover {
+  color: var(--ws-secondary);
+}
+
+.ws-inventory-empty {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: var(--ws-space-sm);
+  padding: var(--ws-space-xl) var(--ws-space-md);
+  text-align: center;
+  color: var(--ws-on-surface-variant);
+}
+
+.ws-inventory-empty svg {
+  color: var(--ws-primary);
+}
+
+.ws-inventory-empty strong {
+  color: var(--ws-on-surface);
+}
+
+.ws-inventory-empty-compact {
+  align-items: flex-start;
+  padding: var(--ws-space-md) 0 0;
+  text-align: left;
+}
+
+.ws-inventory-note {
+  margin: 0;
+  color: var(--ws-on-surface-variant);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ws-inventory-match-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-space-xs);
+  margin-top: var(--ws-space-md);
+}
+
+.ws-inventory-match-row {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 0.8fr) minmax(240px, 1.2fr);
+  align-items: center;
+  gap: var(--ws-space-sm);
+  padding: 10px 12px;
+  border: 1px solid var(--ws-outline-variant);
+  border-radius: var(--ws-radius);
+  background: var(--ws-surface-container-low);
+}
+
+.ws-inventory-match-row.potential {
+  border-color: color-mix(in srgb, var(--ws-primary) 35%, var(--ws-outline-variant));
+}
+
+.ws-inventory-match-row.needs-review,
+.ws-inventory-match-row.unmatched,
+.ws-inventory-match-row.planned {
+  border-color: color-mix(in srgb, var(--ws-secondary) 35%, var(--ws-outline-variant));
+}
+
+.ws-inventory-match-status {
+  display: flex;
+  color: var(--ws-secondary);
+}
+
+.ws-inventory-match-row.potential .ws-inventory-match-status {
+  color: var(--ws-primary);
+}
+
+.ws-inventory-match-row.planned .ws-inventory-match-status {
+  color: var(--ws-tertiary-container);
+}
+
+.ws-inventory-match-main,
+.ws-inventory-match-result {
+  min-width: 0;
+}
+
+.ws-inventory-match-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ws-inventory-match-main span,
+.ws-inventory-match-result {
+  color: var(--ws-on-surface-variant);
+  font-size: 12px;
+}
+
+.ws-inventory-match-result {
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .ws-inventory-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ws-inventory-match-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .ws-inventory-match-result {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .ws-inventory-heading,
+  .ws-inventory-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ws-inventory-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ws-inventory-field-wide,
+  .ws-inventory-field-full {
+    grid-column: auto;
+  }
+
+  .ws-inventory-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .ws-inventory-form-actions .ws-btn {
+    width: 100%;
+  }
+}
+
 .ws-metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

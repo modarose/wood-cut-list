@@ -4,7 +4,7 @@ import { FolderOpen, HelpCircle, LayoutGrid, Package, Settings, Wrench } from 'l
 const NAV_ITEMS = [
   { id: 'optimizer', label: 'Optimizer', icon: LayoutGrid, enabled: true },
   { id: 'projects', label: 'Projects', icon: FolderOpen, enabled: true },
-  { id: 'inventory', label: 'Inventory', icon: Package, enabled: false },
+  { id: 'inventory', label: 'Inventory', icon: Package, enabled: true },
   { id: 'workshop', label: 'Workshop', icon: Wrench, enabled: false },
 ];
 

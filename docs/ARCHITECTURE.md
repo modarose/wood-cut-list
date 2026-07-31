@@ -254,10 +254,21 @@ The current stock settings are treated as a cut-stock template, not owned invent
 The project shell is implemented around the existing single-page workspace without adding a router:
 
 - The workspace loads the first active saved project when browser-local storage contains one; otherwise it opens the existing WoodCut Studio preset workflow as an unsaved draft.
-- The shared desktop sidebar provides functional Optimizer and Projects navigation; Inventory, Workshop, Settings and Support remain visible as explicitly disabled future sections.
+- The shared desktop sidebar provides functional Optimizer, Projects and Inventory navigation; Workshop, Settings and Support remain visible as explicitly disabled future sections.
 - `ProjectDetails` owns editable project name, status and notes while `Header` exposes project navigation and explicit save.
 - `ProjectDashboard` provides new, open, duplicate, archive and restore actions.
 - Archiving sets `project.archivedAt` and keeps the canonical record available for restoration.
 - Opening and saving convert through the Phase 0 adapter, so the optimizer continues to consume the existing WoodCut session shape.
 
 Phase 1 intentionally does not add cloud persistence, authentication, supplier data, inventory reservations or a second route tree. Historical approved-revision comparison remains a later slice; the current shell saves one active draft revision per project.
+
+## 16. Phase 2 material inventory
+
+The first inventory slice is a browser-local workshop collection rather than project-owned stock:
+
+- `src/utils/materialInventory.js` owns the metric material-stock schema, validation, storage and dimensional screening matcher.
+- `src/components/MaterialInventory.jsx` provides add, edit and remove workflows for sheet goods, solid timber and offcuts.
+- Records are stored under `benchmate.materials.v1`, separately from project envelopes under `benchmate.projects.v1`.
+- Stock records retain canonical fields for dimensions, usable dimensions, quantity, reserved quantity, source, condition, location and notes.
+- Inventory quantities and reservations are validated before persistence; invalid or negative records are not silently accepted.
+- The current cut-list check identifies potential individual owned-stock dimensional matches and reports planned-purchase candidates separately. It does not allocate a board, reserve stock or replace the existing WoodCut optimisation calculation.
