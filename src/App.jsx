@@ -10,6 +10,7 @@ import ProjectDashboard from './components/ProjectDashboard';
 import ProjectDetails from './components/ProjectDetails';
 import ProjectReadiness from './components/ProjectReadiness';
 import MaterialInventory from './components/MaterialInventory';
+import SupplyInventory from './components/SupplyInventory';
 import ToolInventory from './components/ToolInventory';
 import Sidebar from './components/Sidebar';
 
@@ -29,6 +30,13 @@ import {
   updateMaterialStock,
   upsertStoredMaterial,
 } from './utils/materialInventory.js';
+import {
+  createSupply,
+  loadStoredSupplies,
+  removeStoredSupply,
+  updateSupply,
+  upsertStoredSupply,
+} from './utils/supplyInventory.js';
 import {
   createTool,
   loadStoredTools,
@@ -82,8 +90,16 @@ export default function App() {
   const [isDirty, setIsDirty] = useState(() => !initialProject);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+  const [isSuppliesOpen, setIsSuppliesOpen] = useState(false);
   const [isWorkshopOpen, setIsWorkshopOpen] = useState(false);
   const [materials, setMaterials] = useState(() => loadStoredMaterials());
+  const [supplies, setSupplies] = useState(() => loadStoredSupplies());
+  const [supplyRequirements, setSupplyRequirements] = useState(
+    () => initialProject?.supplyRequirements ?? [],
+  );
+  const [toolRequirements, setToolRequirements] = useState(
+    () => initialProject?.toolRequirements ?? [],
+  );
   const [tools, setTools] = useState(() => loadStoredTools());
   const [selectedMaterialId, setSelectedMaterialId] = useState(
     () => initialProject?.cutStock?.sourceMaterialStockId ?? null,
@@ -204,15 +220,29 @@ export default function App() {
     setIsProjectsOpen(false);
     setIsWorkshopOpen(false);
     setIsInventoryOpen(true);
+    setIsSuppliesOpen(false);
   };
 
   const handleCloseInventory = () => {
     setIsInventoryOpen(false);
+    setIsSuppliesOpen(false);
+  };
+
+  const handleOpenSupplies = () => {
+    setIsProjectsOpen(false);
+    setIsWorkshopOpen(false);
+    setIsInventoryOpen(true);
+    setIsSuppliesOpen(true);
+  };
+
+  const handleOpenMaterials = () => {
+    setIsSuppliesOpen(false);
   };
 
   const handleOpenWorkshop = () => {
     setIsProjectsOpen(false);
     setIsInventoryOpen(false);
+    setIsSuppliesOpen(false);
     setIsWorkshopOpen(true);
   };
 
@@ -259,6 +289,8 @@ export default function App() {
       description: projectDescription,
       sourceName: 'WoodCut Studio project workspace',
       sourceMaterialStockId: selectedMaterialId,
+      supplyRequirements,
+      toolRequirements,
       now,
     });
     const result = upsertStoredProject(record, savedProjects);
@@ -292,6 +324,8 @@ export default function App() {
       setStock(session.stock);
       setParts(session.parts);
       setSelectedMaterialId(record.cutStock?.sourceMaterialStockId ?? null);
+      setSupplyRequirements(record.supplyRequirements ?? []);
+      setToolRequirements(record.toolRequirements ?? []);
       setStrategy(session.strategy ?? STRATEGIES.BSSF);
       setCutPreference(session.cutPreference ?? CUT_PREFERENCES.RIP_FIRST);
       setIsDirty(false);
@@ -316,6 +350,8 @@ export default function App() {
     setStock({ ...preset.stock });
     setParts([]);
     setSelectedMaterialId(null);
+    setSupplyRequirements([]);
+    setToolRequirements([]);
     setStrategy(STRATEGIES.BSSF);
     setCutPreference(CUT_PREFERENCES.RIP_FIRST);
     setIsDirty(true);
@@ -334,6 +370,16 @@ export default function App() {
         description: record.project.description ?? '',
         sourceName: 'WoodCut Studio project duplicate',
         sourceMaterialStockId: record.cutStock?.sourceMaterialStockId ?? null,
+        supplyRequirements: (record.supplyRequirements ?? []).map(requirement => ({
+          ...requirement,
+          id: undefined,
+          projectId: undefined,
+        })),
+        toolRequirements: (record.toolRequirements ?? []).map(requirement => ({
+          ...requirement,
+          id: undefined,
+          projectId: undefined,
+        })),
         now,
       });
       const result = upsertStoredProject(duplicate, savedProjects);
@@ -354,6 +400,8 @@ export default function App() {
       setStock(session.stock);
       setParts(session.parts);
       setSelectedMaterialId(record.cutStock?.sourceMaterialStockId ?? null);
+      setSupplyRequirements(duplicate.supplyRequirements ?? []);
+      setToolRequirements(duplicate.toolRequirements ?? []);
       setStrategy(session.strategy ?? STRATEGIES.BSSF);
       setCutPreference(session.cutPreference ?? CUT_PREFERENCES.RIP_FIRST);
       setIsDirty(false);
@@ -437,6 +485,44 @@ export default function App() {
     setMaterials(result.materials);
     if (selectedMaterialId === material.id) setSelectedMaterialId(null);
     return { saved: true, error: '' };
+  };
+
+  const handleSaveSupply = (input, existingSupply) => {
+    try {
+      const supply = existingSupply
+        ? updateSupply(existingSupply, input)
+        : createSupply(input);
+      const result = upsertStoredSupply(supply, supplies);
+
+      if (!result.saved) {
+        return { saved: false, error: result.error || 'The supply could not be saved in this browser.' };
+      }
+
+      setSupplies(result.supplies);
+      return { saved: true, error: '' };
+    } catch (error) {
+      return { saved: false, error: error.message };
+    }
+  };
+
+  const handleDeleteSupply = (supply) => {
+    const result = removeStoredSupply(supply.id, supplies);
+    if (!result.saved) {
+      return { saved: false, error: 'The supply could not be removed in this browser.' };
+    }
+
+    setSupplies(result.supplies);
+    return { saved: true, error: '' };
+  };
+
+  const handleSupplyRequirementsChange = (nextRequirements) => {
+    setSupplyRequirements(nextRequirements);
+    markDirty();
+  };
+
+  const handleToolRequirementsChange = (nextRequirements) => {
+    setToolRequirements(nextRequirements);
+    markDirty();
   };
 
   const handleSaveTool = (input, existingTool) => {
@@ -569,16 +655,27 @@ export default function App() {
           projectName={projectName}
           onNavigate={handleSidebarNavigate}
         />
-        <MaterialInventory
-          materials={materials}
-          parts={parts}
-          unit={unit}
-          selectedMaterialId={selectedMaterialId}
-          onSaveMaterial={handleSaveMaterial}
-          onDeleteMaterial={handleDeleteMaterial}
-          onUseMaterial={handleUseMaterial}
-          onBack={handleCloseInventory}
-        />
+        {isSuppliesOpen ? (
+          <SupplyInventory
+            supplies={supplies}
+            onSaveSupply={handleSaveSupply}
+            onDeleteSupply={handleDeleteSupply}
+            onOpenMaterials={handleOpenMaterials}
+            onBack={handleCloseInventory}
+          />
+        ) : (
+          <MaterialInventory
+            materials={materials}
+            parts={parts}
+            unit={unit}
+            selectedMaterialId={selectedMaterialId}
+            onSaveMaterial={handleSaveMaterial}
+            onDeleteMaterial={handleDeleteMaterial}
+            onUseMaterial={handleUseMaterial}
+            onOpenSupplies={handleOpenSupplies}
+            onBack={handleCloseInventory}
+          />
+        )}
       </div>
     );
   }
@@ -654,6 +751,13 @@ export default function App() {
             unit={unit}
             selectedMaterialId={selectedMaterialId}
             requiredStockQuantity={optimizationResult?.totalSheetsCount ?? 0}
+            projectId={projectId}
+            supplyRequirements={supplyRequirements}
+            supplies={supplies}
+            onSupplyRequirementsChange={handleSupplyRequirementsChange}
+            toolRequirements={toolRequirements}
+            tools={tools}
+            onToolRequirementsChange={handleToolRequirementsChange}
           />
 
           {/* Metric Cards Row */}

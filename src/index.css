@@ -572,6 +572,13 @@ input[type=number] {
   padding: var(--ws-space-sm) 0;
 }
 
+.ws-inventory-heading-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ws-space-sm);
+}
+
 .ws-page-eyebrow {
   margin-bottom: 5px;
   font-family: var(--ws-font-mono);
@@ -1044,6 +1051,114 @@ input[type=number] {
   color: var(--ws-secondary);
 }
 
+.ws-project-supply-panel,
+.ws-project-tool-panel {
+  margin-top: var(--ws-space-lg);
+  padding-top: var(--ws-space-lg);
+  border-top: 1px solid var(--ws-outline-variant);
+}
+
+.ws-project-supply-heading,
+.ws-project-tool-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ws-space-md);
+}
+
+.ws-project-supply-eyebrow {
+  margin-bottom: 4px;
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ws-primary);
+}
+
+.ws-project-supply-heading h3,
+.ws-project-tool-heading h3 {
+  margin: 0;
+  color: var(--ws-on-surface);
+  font-size: 17px;
+}
+
+.ws-project-supply-heading p,
+.ws-project-tool-heading p {
+  max-width: 700px;
+  margin: 5px 0 0;
+  color: var(--ws-on-surface-variant);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ws-project-supply-heading-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ws-space-sm);
+}
+
+.ws-project-supply-metrics {
+  margin: var(--ws-space-md) 0 0;
+}
+
+.ws-project-supply-form {
+  margin-top: var(--ws-space-md);
+  padding: var(--ws-space-md);
+  border: 1px solid color-mix(in srgb, var(--ws-primary) 30%, var(--ws-outline-variant));
+  border-radius: var(--ws-radius);
+  background: var(--ws-surface-container-low);
+}
+
+.ws-tool-requirement-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ws-space-md);
+}
+
+.ws-tool-requirement-field-wide {
+  grid-column: span 2;
+}
+
+.ws-project-supply-form-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ws-space-sm);
+  margin-bottom: var(--ws-space-md);
+  color: var(--ws-on-surface);
+}
+
+.ws-project-supply-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-space-xs);
+  margin-top: var(--ws-space-md);
+}
+
+.ws-project-supply-list .ws-inventory-match-row {
+  grid-template-columns: auto minmax(180px, 0.8fr) minmax(240px, 1.2fr) auto;
+}
+
+.ws-project-supply-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.ws-project-supply-note {
+  margin-top: var(--ws-space-md);
+  color: var(--ws-on-surface-variant);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ws-project-supply-empty {
+  margin-top: var(--ws-space-md);
+}
+
 .ws-readiness-boundaries {
   display: grid;
   gap: var(--ws-space-xs);
@@ -1088,6 +1203,33 @@ input[type=number] {
     text-align: left;
     white-space: normal;
   }
+
+  .ws-project-supply-heading,
+  .ws-project-tool-heading {
+    flex-direction: column;
+  }
+
+  .ws-tool-requirement-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ws-project-supply-heading-actions {
+    justify-content: flex-start;
+  }
+
+  .ws-project-supply-list .ws-inventory-match-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .ws-project-supply-list .ws-inventory-match-result {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .ws-project-supply-row-actions {
+    grid-column: 3;
+    grid-row: 1;
+  }
 }
 
 @media (max-width: 600px) {
@@ -1095,6 +1237,15 @@ input[type=number] {
   .ws-inventory-toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .ws-inventory-heading-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ws-inventory-heading-actions .ws-btn {
+    width: 100%;
   }
 
   .ws-inventory-form-grid {
@@ -1112,6 +1263,23 @@ input[type=number] {
 
   .ws-inventory-form-actions .ws-btn {
     width: 100%;
+  }
+
+  .ws-project-supply-heading-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ws-project-supply-heading-actions .ws-btn {
+    width: 100%;
+  }
+
+  .ws-tool-requirement-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ws-tool-requirement-field-wide {
+    grid-column: auto;
   }
 }
 

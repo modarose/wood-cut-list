@@ -87,6 +87,7 @@ export default function MaterialInventory({
   onSaveMaterial,
   onDeleteMaterial,
   onUseMaterial,
+  onOpenSupplies,
   onBack,
 }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -183,10 +184,16 @@ export default function MaterialInventory({
               Record the boards, sheets and offcuts you actually have before planning purchases.
             </p>
           </div>
-          <button type="button" className="ws-btn" onClick={onBack}>
-            <ArrowLeft size={15} />
-            Optimizer
-          </button>
+          <div className="ws-inventory-heading-actions">
+            <button type="button" className="ws-btn ws-btn-primary" onClick={onOpenSupplies}>
+              <Package size={15} />
+              Supplies
+            </button>
+            <button type="button" className="ws-btn" onClick={onBack}>
+              <ArrowLeft size={15} />
+              Optimizer
+            </button>
+          </div>
         </div>
 
         <div className="ws-inventory-toolbar">

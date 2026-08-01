@@ -35,6 +35,24 @@ import {
   validateTool,
 } from '../src/utils/toolInventory.js';
 import { getProjectResourceCheck } from '../src/utils/projectReadiness.js';
+import {
+  createSupply,
+  loadStoredSupplies,
+  removeStoredSupply,
+  saveStoredSupplies,
+  SUPPLY_STORAGE_KEY,
+  validateSupply,
+} from '../src/utils/supplyInventory.js';
+import {
+  createSupplyRequirement,
+  getSupplyRequirementCheck,
+  validateSupplyRequirement,
+} from '../src/utils/supplyRequirements.js';
+import {
+  createToolRequirement,
+  getToolRequirementCheck,
+  validateToolRequirement,
+} from '../src/utils/toolRequirements.js';
 
 const FIXED_NOW = '2026-07-31T00:00:00.000Z';
 
@@ -391,7 +409,7 @@ test('project resource check separates owned, planned and unresolved material ro
   assert.equal(result.plannedPartTypes, 1);
   assert.equal(result.unmatchedPartTypes, 1);
   assert.deepEqual(result.attentionRows.map(row => row.id), ['side', 'shelf']);
-  assert.equal(result.toolRequirements.status, 'not-mapped');
+  assert.equal(result.toolRequirements.status, 'not-started');
   assert.equal(result.hardwareRequirements.status, 'not-mapped');
 });
 
@@ -529,4 +547,221 @@ test('tool inventory storage ignores invalid records and removes valid records',
   const removed = removeStoredTool(tool.id, [tool], storage);
   assert.equal(removed.saved, true);
   assert.deepEqual(removed.tools, []);
+});
+
+test('project tool requirements screen owned, review and missing capability matches', () => {
+  const coveredRequirement = createToolRequirement({
+    id: 'tool_requirement_cross_cutting',
+    projectId: 'project_tools',
+    capability: 'cross-cutting',
+    quantity: 1,
+  }, { now: FIXED_NOW });
+  const reviewRequirement = createToolRequirement({
+    id: 'tool_requirement_routing',
+    projectId: 'project_tools',
+    capability: 'routing',
+    quantity: 1,
+  }, { now: FIXED_NOW });
+  const borrowedRequirement = createToolRequirement({
+    id: 'tool_requirement_sanding',
+    projectId: 'project_tools',
+    capability: 'sanding',
+    quantity: 1,
+  }, { now: FIXED_NOW });
+  const missingRequirement = createToolRequirement({
+    id: 'tool_requirement_planing',
+    projectId: 'project_tools',
+    capability: 'planing',
+    quantity: 1,
+  }, { now: FIXED_NOW });
+  const trackSaw = createTool({
+    id: 'tool_ready_saw',
+    name: 'Track saw',
+    category: 'saw',
+    owned: true,
+    availability: 'available',
+    condition: 'good',
+    capabilities: ['cross-cutting'],
+  }, { now: FIXED_NOW });
+  const router = createTool({
+    id: 'tool_maintenance_router',
+    name: 'Router',
+    category: 'router',
+    owned: true,
+    availability: 'maintenance',
+    condition: 'fair',
+    capabilities: ['routing'],
+  }, { now: FIXED_NOW });
+  const borrowedSander = createTool({
+    id: 'tool_borrowed_sander',
+    name: 'Random orbital sander',
+    category: 'sander',
+    owned: false,
+    availability: 'available',
+    condition: 'good',
+    capabilities: ['sanding'],
+  }, { now: FIXED_NOW });
+
+  assert.equal(validateToolRequirement(coveredRequirement).valid, true);
+  assert.throws(
+    () => createToolRequirement({ ...coveredRequirement, quantity: 0 }),
+    /quantity must be a positive integer/,
+  );
+
+  const check = getToolRequirementCheck(
+    [coveredRequirement, reviewRequirement, borrowedRequirement, missingRequirement],
+    [trackSaw, router, borrowedSander],
+  );
+  assert.equal(check.status, 'needs-attention');
+  assert.deepEqual(check.summary, {
+    totalRequirements: 4,
+    covered: 1,
+    partial: 0,
+    needsReview: 2,
+    missing: 1,
+  });
+  assert.equal(check.rows[0].status, 'covered');
+  assert.equal(check.rows[1].status, 'needs-review');
+  assert.equal(check.rows[1].attentionCount, 1);
+  assert.equal(check.rows[2].status, 'needs-review');
+  assert.equal(check.rows[2].nonOwnedCount, 1);
+  assert.equal(check.rows[3].status, 'missing');
+
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [],
+  }, {
+    projectId: 'project_tools',
+    toolRequirements: [coveredRequirement],
+    now: FIXED_NOW,
+  });
+  assert.deepEqual(record.project.toolRequirementIds, ['tool_requirement_cross_cutting']);
+  assert.deepEqual(record.toolRequirements, [coveredRequirement]);
+  assert.equal(validateBenchMateProject(record).valid, true);
+});
+
+test('supply inventory stores fractional quantities with explicit units', () => {
+  let serialized = null;
+  const storage = {
+    getItem(key) {
+      assert.equal(key, SUPPLY_STORAGE_KEY);
+      return serialized;
+    },
+    setItem(key, value) {
+      assert.equal(key, SUPPLY_STORAGE_KEY);
+      serialized = value;
+    },
+  };
+  const supply = createSupply({
+    id: 'supply_finish',
+    category: 'finish',
+    name: 'Water-based clear coat',
+    brand: 'Example brand',
+    unit: 'litre',
+    quantity: 1.5,
+    source: 'owned',
+    lastCheckedAt: '2026-07-31',
+  }, { now: FIXED_NOW });
+
+  assert.equal(validateSupply(supply).valid, true);
+  assert.equal(saveStoredSupplies([supply], storage), true);
+  assert.deepEqual(loadStoredSupplies(storage), [supply]);
+  storage.setItem(SUPPLY_STORAGE_KEY, JSON.stringify([supply, { id: 'invalid' }]));
+  assert.deepEqual(loadStoredSupplies(storage), [supply]);
+
+  const removed = removeStoredSupply(supply.id, [supply], storage);
+  assert.equal(removed.saved, true);
+  assert.deepEqual(removed.supplies, []);
+  assert.throws(
+    () => createSupply({ ...supply, quantity: -1 }),
+    /quantity must be a non-negative number/,
+  );
+});
+
+test('project supply requirements persist and separate owned, planned and missing matches', () => {
+  const requirement = createSupplyRequirement({
+    id: 'requirement_screws',
+    projectId: 'project_requirements',
+    category: 'hardware',
+    name: '50 mm screws',
+    reference: 'coarse thread',
+    unit: 'each',
+    quantity: 10,
+  }, { now: FIXED_NOW });
+  const missingRequirement = createSupplyRequirement({
+    id: 'requirement_glue',
+    projectId: 'project_requirements',
+    category: 'adhesive',
+    name: 'PVA glue',
+    unit: 'bottle',
+    quantity: 1,
+  }, { now: FIXED_NOW });
+  const ownedScrews = createSupply({
+    id: 'supply_owned_screws',
+    category: 'hardware',
+    name: '50 mm screws',
+    reference: 'coarse thread',
+    unit: 'each',
+    quantity: 4,
+    source: 'owned',
+  }, { now: FIXED_NOW });
+  const plannedScrews = createSupply({
+    id: 'supply_planned_screws',
+    category: 'hardware',
+    name: '50 mm screws',
+    reference: 'coarse thread',
+    unit: 'each',
+    quantity: 6,
+    source: 'planned',
+  }, { now: FIXED_NOW });
+  const wrongReference = createSupply({
+    id: 'supply_wrong_reference',
+    category: 'hardware',
+    name: '50 mm screws',
+    reference: 'fine thread',
+    unit: 'each',
+    quantity: 100,
+    source: 'owned',
+  }, { now: FIXED_NOW });
+
+  assert.equal(validateSupplyRequirement(requirement).valid, true);
+  assert.throws(
+    () => createSupplyRequirement({ ...requirement, quantity: 0 }),
+    /quantity must be greater than zero/,
+  );
+
+  const check = getSupplyRequirementCheck(
+    [requirement, missingRequirement],
+    [ownedScrews, plannedScrews, wrongReference],
+  );
+  assert.equal(check.status, 'needs-attention');
+  assert.deepEqual(check.summary, {
+    totalRequirements: 2,
+    ownedCovered: 0,
+    plannedCovered: 1,
+    partial: 0,
+    missing: 1,
+    needsReview: 0,
+  });
+  assert.equal(check.rows[0].status, 'planned');
+  assert.equal(check.rows[0].ownedQuantity, 4);
+  assert.equal(check.rows[0].plannedQuantity, 6);
+  assert.equal(check.rows[1].status, 'missing');
+
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [],
+  }, {
+    projectId: 'project_requirements',
+    supplyRequirements: [requirement, missingRequirement],
+    now: FIXED_NOW,
+  });
+  assert.deepEqual(record.project.supplyRequirementIds, [
+    'requirement_screws',
+    'requirement_glue',
+  ]);
+  assert.deepEqual(record.supplyRequirements, [requirement, missingRequirement]);
+  assert.equal(validateBenchMateProject(record).valid, true);
 });

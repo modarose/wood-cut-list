@@ -35,6 +35,8 @@ WorkshopInventory
  └── FinishStock[]
 ```
 
+The current Phase 2 implementation uses `SupplyRequirement[]` as the generic project-level shape for hardware, adhesives, finishes, abrasives and consumables, plus `ToolRequirement[]` for normalised project capability needs. The specialised `HardwareRequirement[]` and `FinishRequirement[]` relationships remain available for future build-method detail.
+
 ## 3. Project
 
 ```json
@@ -50,6 +52,8 @@ WorkshopInventory
   "materialRequirementIds": [],
   "hardwareRequirementIds": [],
   "finishRequirementIds": [],
+  "supplyRequirementIds": [],
+  "toolRequirementIds": [],
   "buildMethodIds": [],
   "journalEntryIds": [],
   "createdAt": "2026-07-31T00:00:00Z",
@@ -260,6 +264,8 @@ The first repository integration uses a versioned JSON envelope rather than chan
   "parts": [],
   "materialRequirements": [],
   "materialStock": [],
+  "supplyRequirements": [],
+  "toolRequirements": [],
   "cutStock": {},
   "cutSettings": {}
 }
@@ -350,3 +356,58 @@ Tool records are stored separately from project envelopes in browser-local stora
 ```
 
 Categories, availability values and capabilities are validated against the vocabulary in `src/utils/toolInventory.js`. A tool can be recorded for reference without being owned, and unavailable or maintenance states must remain visible rather than being treated as ready. Capability tags are planning metadata, not safety certification.
+
+## 16. Phase 2 supplies inventory
+
+Supplies are stored separately from dimensional material stock and project envelopes under `benchmate.supplies.v1`:
+
+```json
+{
+  "id": "supply_finish_01",
+  "category": "finish",
+  "name": "Water-based clear coat",
+  "brand": "Example brand",
+  "reference": "Satin",
+  "unit": "litre",
+  "quantity": 1.5,
+  "source": "owned",
+  "location": "Finish shelf",
+  "notes": "",
+  "lastCheckedAt": "2026-07-31"
+}
+```
+
+Valid categories are hardware, adhesive, finish, abrasive and consumable. Quantities are non-negative numbers with an explicit unit so records such as screws, packs, bottles, sheets, metres and litres are not compared as if they shared a common unit. Project-specific supply requirements are stored inside the project envelope under `supplyRequirements` and referenced by `project.supplyRequirementIds`. Each requirement has an explicit category, name, unit and positive quantity, with an optional reference for exact matching. Owned and planned inventory quantities are compared separately; the matcher does not reserve, price or substitute supplies.
+
+```json
+{
+  "id": "supply_requirement_01",
+  "projectId": "project_01",
+  "category": "hardware",
+  "name": "50 mm screws",
+  "reference": "coarse thread",
+  "unit": "each",
+  "quantity": 24,
+  "notes": "Pocket-hole assembly",
+  "createdAt": "2026-07-31T00:00:00Z",
+  "updatedAt": "2026-07-31T00:00:00Z"
+}
+```
+
+## 17. Phase 2 project tool requirements
+
+Tool requirements are stored inside the project envelope under `toolRequirements` and referenced by `project.toolRequirementIds`:
+
+```json
+{
+  "id": "tool_requirement_01",
+  "projectId": "project_01",
+  "capability": "cross-cutting",
+  "quantity": 1,
+  "notes": "A guide rail may be needed for a straight cut.",
+  "createdAt": "2026-07-31T00:00:00Z",
+  "updatedAt": "2026-07-31T00:00:00Z"
+}
+```
+
+The matcher uses the normalised capability vocabulary from `src/utils/toolInventory.js`. Only owned tools marked available and not marked damaged or unknown condition count as covered. Other matching tools are shown as review candidates; the result is a feasibility screen rather than a step assignment or safety certification.

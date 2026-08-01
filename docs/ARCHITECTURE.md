@@ -293,4 +293,33 @@ The optimizer workspace now includes a project-level resource check:
 - `src/utils/projectReadiness.js` derives a deterministic summary from the existing material matcher without changing the WoodCut part or stock shapes.
 - `src/components/ProjectReadiness.jsx` shows potential owned-stock candidates, planned purchase candidates, unresolved rows and rows requiring review. When a material is selected for the optimizer, it also compares that record's available quantity with `optimizationResult.totalSheetsCount`.
 - The report is deliberately a dimensional screening and stock-quantity result. It does not allocate individual boards, replace cut optimisation or infer tool, hardware or finish requirements.
-- Tool and hardware/finish coverage remains explicitly `not-mapped` until project requirements and build methods are implemented in later slices.
+- Project-level tool capability requirements are now screened separately from build-step assignments; the build planner will decide which tool is used at each step later.
+
+## 19. Phase 2 supplies inventory
+
+Hardware, adhesives, finishes, abrasives and other workshop consumables are stored as a separate browser-local collection:
+
+- `src/utils/supplyInventory.js` owns the validated supply schema and storage under `benchmate.supplies.v1`.
+- `src/components/SupplyInventory.jsx` provides local add, edit, remove, search and category/source filtering workflows.
+- Each record has an explicit category, quantity, quantity unit, source, location and optional brand/reference/notes fields.
+- Quantities may be fractional for units such as litres or metres, but cannot be negative. The collection does not infer prices, supplier availability or project demand.
+
+## 20. Phase 2 project supply requirements
+
+Project supply requirements are stored inside the canonical project envelope rather than as a second global inventory collection:
+
+- `src/utils/supplyRequirements.js` owns the validated requirement schema and deterministic matcher.
+- `src/components/ProjectSupplyRequirements.jsx` provides add, edit and remove controls inside the existing `ProjectReadiness` panel.
+- A requirement records a project ID, category, name, optional reference, explicit unit, positive quantity and notes.
+- Matching is exact by category, normalised name and unit. When a requirement includes a reference, the inventory reference must also match; fuzzy substitutions are not inferred.
+- Owned and planned quantities are reported separately. A report does not consume, reserve, price or certify that a supply is suitable.
+
+## 21. Phase 2 project tool requirements
+
+Project tool requirements use the normalised capability vocabulary from the workshop tool inventory:
+
+- `src/utils/toolRequirements.js` owns the validated capability requirement schema and deterministic feasibility matcher.
+- `src/components/ProjectToolRequirements.jsx` provides add, edit and remove controls inside the existing `ProjectReadiness` panel.
+- A requirement records a project ID, one capability, a positive integer quantity and optional notes.
+- A tool is counted as ready only when it is owned, marked available, and not marked damaged or unknown condition. Maintenance, unavailable, non-owned and uncertain tools remain visible as review candidates.
+- The screen does not allocate the same tool across steps, assign a tool to a cut, or certify a safe workshop setup.

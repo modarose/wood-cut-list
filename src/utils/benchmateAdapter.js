@@ -1,4 +1,6 @@
 import { convertDimension, UNITS } from './unitConverter.js';
+import { createSupplyRequirement, validateSupplyRequirement } from './supplyRequirements.js';
+import { createToolRequirement, validateToolRequirement } from './toolRequirements.js';
 
 export const BENCHMATE_SCHEMA_VERSION = 1;
 export const CANONICAL_UNITS = UNITS.MM;
@@ -245,6 +247,30 @@ function mapPart(partInput, index, sourceUnit, revisionId, usedIds) {
   };
 }
 
+function mapSupplyRequirements(requirementsInput, projectId, now) {
+  if (!Array.isArray(requirementsInput)) return [];
+
+  return requirementsInput.map(requirement => createSupplyRequirement(requirement, {
+    id: requirement?.id,
+    projectId,
+    createdAt: requirement?.createdAt ?? now,
+    updatedAt: now,
+    now,
+  }));
+}
+
+function mapToolRequirements(requirementsInput, projectId, now) {
+  if (!Array.isArray(requirementsInput)) return [];
+
+  return requirementsInput.map(requirement => createToolRequirement(requirement, {
+    id: requirement?.id,
+    projectId,
+    createdAt: requirement?.createdAt ?? now,
+    updatedAt: now,
+    now,
+  }));
+}
+
 export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
   const sourceSession = isObject(session) ? session : {};
   const warnings = [];
@@ -306,6 +332,17 @@ export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
 
   warnings.push(...stockWarnings);
 
+  const supplyRequirements = mapSupplyRequirements(
+    options.supplyRequirements,
+    projectId,
+    now,
+  );
+  const toolRequirements = mapToolRequirements(
+    options.toolRequirements,
+    projectId,
+    now,
+  );
+
   const revisionWarnings = [...warnings];
   const revisionStatus = revisionWarnings.length > 0 ? 'needs-review' : 'draft';
   const project = {
@@ -320,6 +357,8 @@ export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
     materialRequirementIds: [],
     hardwareRequirementIds: [],
     finishRequirementIds: [],
+    supplyRequirementIds: supplyRequirements.map(requirement => requirement.id),
+    toolRequirementIds: toolRequirements.map(requirement => requirement.id),
     buildMethodIds: [],
     journalEntryIds: [],
     readiness: revisionWarnings.length > 0 ? 'needs-review' : 'ready',
@@ -353,6 +392,8 @@ export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
     parts: mappedParts,
     materialRequirements: [],
     materialStock: [],
+    supplyRequirements,
+    toolRequirements,
     cutStock,
     cutSettings: {
       strategy: sourceSession.strategy ?? 'bssf',
@@ -412,6 +453,14 @@ export function validateBenchMateProject(record) {
     if (!record.project.id) errors.push('project.id is required.');
     if (record.project.units !== CANONICAL_UNITS) errors.push('project.units must be mm.');
     if (!record.project.activeRevisionId) errors.push('project.activeRevisionId is required.');
+    if (record.project.supplyRequirementIds !== undefined
+      && !Array.isArray(record.project.supplyRequirementIds)) {
+      errors.push('project.supplyRequirementIds must be an array.');
+    }
+    if (record.project.toolRequirementIds !== undefined
+      && !Array.isArray(record.project.toolRequirementIds)) {
+      errors.push('project.toolRequirementIds must be an array.');
+    }
   }
 
   if (!Array.isArray(record.designRevisions)) {
@@ -420,6 +469,62 @@ export function validateBenchMateProject(record) {
 
   if (!Array.isArray(record.parts)) {
     errors.push('parts must be an array.');
+  }
+
+  const supplyRequirements = record.supplyRequirements ?? [];
+  if (!Array.isArray(supplyRequirements)) {
+    errors.push('supplyRequirements must be an array.');
+  } else {
+    const requirementIds = new Set();
+    for (const [index, requirement] of supplyRequirements.entries()) {
+      const validation = validateSupplyRequirement(requirement);
+      if (!validation.valid) {
+        errors.push(...validation.errors.map(error => `supplyRequirements[${index}]: ${error}`));
+      }
+      if (requirementIds.has(requirement?.id)) {
+        errors.push(`supplyRequirements[${index}].id must be unique.`);
+      }
+      if (requirement?.id) requirementIds.add(requirement.id);
+      if (requirement?.projectId !== record.project?.id) {
+        errors.push(`supplyRequirements[${index}].projectId must match project.id.`);
+      }
+    }
+
+    const projectRequirementIds = record.project?.supplyRequirementIds ?? [];
+    if (Array.isArray(record.project?.supplyRequirementIds)) {
+      if (projectRequirementIds.length !== requirementIds.size
+        || projectRequirementIds.some(id => !requirementIds.has(id))) {
+        errors.push('project.supplyRequirementIds must reference the saved supply requirements.');
+      }
+    }
+  }
+
+  const toolRequirements = record.toolRequirements ?? [];
+  if (!Array.isArray(toolRequirements)) {
+    errors.push('toolRequirements must be an array.');
+  } else {
+    const requirementIds = new Set();
+    for (const [index, requirement] of toolRequirements.entries()) {
+      const validation = validateToolRequirement(requirement);
+      if (!validation.valid) {
+        errors.push(...validation.errors.map(error => `toolRequirements[${index}]: ${error}`));
+      }
+      if (requirementIds.has(requirement?.id)) {
+        errors.push(`toolRequirements[${index}].id must be unique.`);
+      }
+      if (requirement?.id) requirementIds.add(requirement.id);
+      if (requirement?.projectId !== record.project?.id) {
+        errors.push(`toolRequirements[${index}].projectId must match project.id.`);
+      }
+    }
+
+    const projectRequirementIds = record.project?.toolRequirementIds ?? [];
+    if (Array.isArray(record.project?.toolRequirementIds)) {
+      if (projectRequirementIds.length !== requirementIds.size
+        || projectRequirementIds.some(id => !requirementIds.has(id))) {
+        errors.push('project.toolRequirementIds must reference the saved tool requirements.');
+      }
+    }
   }
 
   if (!isObject(record.cutStock)) {
@@ -520,10 +625,27 @@ export function parseBenchMateProject(serialized) {
     throw new Error('BenchMate project JSON could not be parsed.');
   }
 
-  const validation = validateBenchMateProject(record);
+  const normalizedRecord = {
+    ...record,
+    project: {
+      ...record.project,
+      supplyRequirementIds: record.project?.supplyRequirementIds
+        ?? (Array.isArray(record.supplyRequirements)
+          ? record.supplyRequirements.map(requirement => requirement?.id).filter(Boolean)
+          : []),
+      toolRequirementIds: record.project?.toolRequirementIds
+        ?? (Array.isArray(record.toolRequirements)
+          ? record.toolRequirements.map(requirement => requirement?.id).filter(Boolean)
+          : []),
+    },
+    supplyRequirements: record.supplyRequirements ?? [],
+    toolRequirements: record.toolRequirements ?? [],
+  };
+
+  const validation = validateBenchMateProject(normalizedRecord);
   if (!validation.valid) {
     throw new Error(`Invalid BenchMate project JSON: ${validation.errors.join(' ')}`);
   }
 
-  return record;
+  return normalizedRecord;
 }

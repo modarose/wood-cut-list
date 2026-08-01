@@ -1,7 +1,7 @@
 # BenchMate Roadmap
 
 **Foundation:** Existing WoodCut Studio application  
-**Roadmap status:** Phase 2 implementation in progress
+**Roadmap status:** Phase 2 inventory-screening implementation complete
 **Date:** 2026-07-31
 
 ## Product strategy
@@ -92,15 +92,18 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 
 ### Phase 2 implementation notes
 
-- Material and tool inventory are the first Phase 2 vertical slices; hardware and finishes remain future work.
+- Material, tool and supplies inventory are the first Phase 2 vertical slices; project-specific supply requirements now extend the same project resource check.
 - `MaterialInventory` supports local add, edit and remove workflows for sheet goods, solid timber and offcuts.
 - Inventory records use metric dimensions and persist under `benchmate.materials.v1`.
 - Owned or planned records can be selected as the optimizer stock template; the selected source is retained when the project is saved.
 - Owned stock can be explicitly reserved for the current project's calculated sheet requirement, with bounded quantity and release support.
 - The current cut-list check reports potential owned-stock dimensional candidates and planned-purchase candidates separately. It does not claim board allocation or optimisation results.
-- The optimizer now shows a project-level resource check that reuses the material matcher, separates owned candidates, planned purchases, unresolved parts and review rows, and compares the selected stock record's available quantity with the optimizer's required sheet count. It remains dimensional screening plus a stock-quantity check; tool, hardware and finish requirements are not yet mapped to projects.
+- The optimizer now shows a project-level resource check that reuses the material matcher, separates owned candidates, planned purchases, unresolved parts and review rows, and compares the selected stock record's available quantity with the optimizer's required sheet count. It remains dimensional screening plus a stock-quantity check for materials.
 - `ToolInventory` supports local add, edit, remove, search and category/availability filtering under `benchmate.tools.v1`.
 - Tool capabilities use a normalised vocabulary for future build-step matching; the records do not make safety or substitution claims.
+- `SupplyInventory` supports local add, edit, remove, search and category/source filtering for hardware, adhesives, finishes, abrasives and other consumables under `benchmate.supplies.v1`.
+- Supply quantities retain an explicit unit and are validated as non-negative numbers. Project-specific supply requirements are stored in the project envelope and matched exactly by category, name, unit and optional reference; prices, supplier availability and reservations remain deferred.
+- Project tool requirements are stored in the project envelope as normalised capability needs and matched against owned available tools. Unavailable, maintenance, damaged, unknown-condition and non-owned candidates remain visible for review; the report does not assign or certify tools.
 
 ## Phase 3 — Build planner
 

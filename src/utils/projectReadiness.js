@@ -1,4 +1,5 @@
 import { getAvailableQuantity, matchMaterialStockToParts } from './materialInventory.js';
+import { getToolRequirementCheck } from './toolRequirements.js';
 
 const STATUS_LABELS = Object.freeze({
   'not-started': 'No parts yet',
@@ -106,6 +107,7 @@ function getStatus(materialCheck, selectedStockCheck) {
 export function getProjectResourceCheck(parts = [], unit = 'mm', materials = [], options = {}) {
   const materialCheck = matchMaterialStockToParts(parts, unit, materials);
   const selectedStockCheck = getSelectedStockCheck(materialCheck, materials, options);
+  const toolRequirements = getToolRequirementCheck(options.toolRequirements, options.tools);
   const attentionRows = materialCheck.rows.filter(row => row.status !== 'potential');
   const status = getStatus(materialCheck, selectedStockCheck);
   const statusLabel = status === 'quantity-gap'
@@ -118,10 +120,7 @@ export function getProjectResourceCheck(parts = [], unit = 'mm', materials = [],
     statusLabel,
     attentionRows,
     selectedStockCheck,
-    toolRequirements: {
-      status: 'not-mapped',
-      message: 'Tool requirements are not mapped to this project yet.',
-    },
+    toolRequirements,
     hardwareRequirements: {
       status: 'not-mapped',
       message: 'Hardware and finish requirements are not mapped to this project yet.',

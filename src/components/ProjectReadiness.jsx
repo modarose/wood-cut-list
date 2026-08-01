@@ -7,6 +7,9 @@ import {
   Wrench,
 } from 'lucide-react';
 import { getProjectResourceCheck } from '../utils/projectReadiness.js';
+import { getSupplyRequirementCheck } from '../utils/supplyRequirements.js';
+import ProjectSupplyRequirements from './ProjectSupplyRequirements.jsx';
+import ProjectToolRequirements from './ProjectToolRequirements.jsx';
 
 function StatusIcon({ status }) {
   return status === 'potential' ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />;
@@ -36,20 +39,55 @@ function rowResult(row) {
   return row.reason || 'No available owned or planned stock passed screening.';
 }
 
+function getOverallStatus(materialCheck, supplyCheck, toolCheck) {
+  if (toolCheck.status === 'needs-attention') {
+    return { status: 'needs-review', statusLabel: 'Tool gaps' };
+  }
+  if (supplyCheck.status === 'needs-attention') {
+    return { status: 'needs-review', statusLabel: 'Supply gaps' };
+  }
+  if (materialCheck.status === 'needs-review'
+    || materialCheck.status === 'material-gap'
+    || materialCheck.status === 'quantity-gap') {
+    return { status: materialCheck.status, statusLabel: materialCheck.statusLabel };
+  }
+  if (materialCheck.status === 'planned' || supplyCheck.status === 'planned') {
+    return { status: 'planned', statusLabel: 'Purchase planned' };
+  }
+  if (materialCheck.status === 'not-started' && supplyCheck.status === 'not-started') {
+    return { status: 'not-started', statusLabel: 'No resources yet' };
+  }
+  return { status: 'screened', statusLabel: 'Potentially covered' };
+}
+
 export default function ProjectReadiness({
   parts,
   materials,
   unit,
   selectedMaterialId,
   requiredStockQuantity,
+  projectId,
+  supplyRequirements,
+  supplies,
+  onSupplyRequirementsChange,
+  toolRequirements,
+  tools,
+  onToolRequirementsChange,
 }) {
   const check = useMemo(
     () => getProjectResourceCheck(parts, unit, materials, {
       selectedMaterialId,
       requiredStockQuantity,
+      toolRequirements,
+      tools,
     }),
-    [materials, parts, requiredStockQuantity, selectedMaterialId, unit],
+    [materials, parts, requiredStockQuantity, selectedMaterialId, toolRequirements, tools, unit],
   );
+  const supplyCheck = useMemo(
+    () => getSupplyRequirementCheck(supplyRequirements, supplies),
+    [supplies, supplyRequirements],
+  );
+  const overallStatus = getOverallStatus(check, supplyCheck, check.toolRequirements);
 
   return (
     <section className="ws-card no-print ws-readiness-card">
@@ -58,7 +96,7 @@ export default function ProjectReadiness({
           <ClipboardCheck size={18} />
           Project resource check
         </div>
-        <span className={statusClass(check.status)}>{check.statusLabel}</span>
+        <span className={statusClass(overallStatus.status)}>{overallStatus.statusLabel}</span>
       </div>
 
       <div className="ws-card-body">
@@ -144,14 +182,30 @@ export default function ProjectReadiness({
           </div>
         )}
 
+        <ProjectSupplyRequirements
+          projectId={projectId}
+          requirements={supplyRequirements}
+          supplies={supplies}
+          check={supplyCheck}
+          onChange={onSupplyRequirementsChange}
+        />
+
+        <ProjectToolRequirements
+          projectId={projectId}
+          requirements={toolRequirements}
+          tools={tools}
+          check={check.toolRequirements}
+          onChange={onToolRequirementsChange}
+        />
+
         <div className="ws-readiness-boundaries">
           <div>
             <Wrench size={15} />
-            <span><strong>Tools:</strong> requirements are not mapped to this project yet.</span>
+            <span><strong>Tool matching:</strong> capability coverage does not assign tools or certify a safe setup.</span>
           </div>
           <div>
             <Package size={15} />
-            <span><strong>Hardware and finishes:</strong> requirements are not mapped yet.</span>
+            <span><strong>Supply matching:</strong> exact inventory matches are planning data and do not reserve or price stock.</span>
           </div>
         </div>
       </div>
