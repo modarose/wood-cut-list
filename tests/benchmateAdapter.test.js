@@ -1,0 +1,448 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import test from 'node:test';
+
+import {
+  createBenchMateProjectFromWoodCut,
+  parseBenchMateProject,
+  serializeBenchMateProject,
+  toWoodCutSession,
+  validateBenchMateProject,
+} from '../src/utils/benchmateAdapter.js';
+import { optimizeCutList } from '../src/utils/cutOptimizer.js';
+import {
+  loadStoredProjects,
+  PROJECT_STORAGE_KEY,
+  saveStoredProjects,
+} from '../src/utils/projectStorage.js';
+import {
+  createMaterialStock,
+  loadStoredMaterials,
+  MATERIAL_STORAGE_KEY,
+  matchMaterialStockToParts,
+  releaseMaterialStock,
+  reserveMaterialStock,
+  saveStoredMaterials,
+  validateMaterialStock,
+} from '../src/utils/materialInventory.js';
+import {
+  createTool,
+  loadStoredTools,
+  removeStoredTool,
+  saveStoredTools,
+  TOOL_STORAGE_KEY,
+  updateTool,
+  validateTool,
+} from '../src/utils/toolInventory.js';
+
+const FIXED_NOW = '2026-07-31T00:00:00.000Z';
+
+test('maps a legacy millimetre WoodCut session into the canonical envelope', () => {
+  const session = {
+    unit: 'mm',
+    stock: { width: 1220, height: 2440, kerf: 3, margin: 5 },
+    parts: [
+      {
+        id: 'side',
+        name: 'Side panel',
+        width: 300,
+        height: 1800,
+        qty: 2,
+        allowRotation: false,
+        color: '#123456',
+      },
+    ],
+    strategy: 'bssf',
+    cutPreference: 'rip_first',
+  };
+
+  const record = createBenchMateProjectFromWoodCut(session, {
+    projectId: 'project_test',
+    revisionId: 'revision_test',
+    now: FIXED_NOW,
+  });
+
+  assert.equal(record.schemaVersion, 1);
+  assert.equal(record.project.units, 'mm');
+  assert.equal(record.project.activeRevisionId, 'revision_test');
+  assert.deepEqual(record.cutStock.dimensions, {
+    width: 1220,
+    length: 2440,
+    thickness: null,
+  });
+  assert.deepEqual(record.parts[0].dimensions, {
+    length: 1800,
+    width: 300,
+    thickness: null,
+  });
+  assert.equal(record.parts[0].quantity, 2);
+  assert.equal(record.parts[0].rotationAllowed, false);
+  assert.equal(record.parts[0].sourceEntityId, 'side');
+  assert.equal(record.project.readiness, 'needs-review');
+  assert.equal(validateBenchMateProject(record).valid, true);
+
+  const restored = toWoodCutSession(record);
+  assert.deepEqual(restored, session);
+});
+
+test('persists an optional inventory source reference without changing the WoodCut session shape', () => {
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [],
+  }, {
+    projectId: 'project_stock_reference',
+    sourceMaterialStockId: 'stock_owned_sheet',
+    now: FIXED_NOW,
+  });
+
+  assert.equal(record.cutStock.sourceMaterialStockId, 'stock_owned_sheet');
+  assert.equal(validateBenchMateProject(record).valid, true);
+  assert.deepEqual(toWoodCutSession(record).stock, {
+    width: 600,
+    height: 1200,
+    kerf: 3,
+    margin: 0,
+  });
+});
+
+test('normalizes inch dimensions to millimetres while preserving an inch round trip', () => {
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'in',
+    stock: { width: 48, height: 96, kerf: 0.125, margin: 0.25 },
+    parts: [
+      { id: 'top', name: 'Top', width: 12, height: 24, qty: 1, allowRotation: true },
+    ],
+  }, {
+    projectId: 'project_inches',
+    now: FIXED_NOW,
+  });
+
+  assert.deepEqual(record.cutStock.dimensions, {
+    width: 1219.2,
+    length: 2438.4,
+    thickness: null,
+  });
+  assert.equal(record.cutStock.kerf, 3.175);
+  assert.equal(record.cutStock.margin, 6.35);
+  assert.equal(record.parts[0].dimensions.width, 304.8);
+  assert.equal(record.parts[0].dimensions.length, 609.6);
+
+  const restored = toWoodCutSession(record, { unit: 'in' });
+  assert.equal(restored.stock.width, 48);
+  assert.equal(restored.stock.height, 96);
+  assert.equal(restored.stock.kerf, 0.125);
+  assert.equal(restored.parts[0].width, 12);
+  assert.equal(restored.parts[0].height, 24);
+});
+
+test('surfaces unresolved legacy values instead of inventing dimensions or quantities', () => {
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 0, height: -1, kerf: -2, margin: 0 },
+    parts: [
+      { id: 'unknown', width: 0, height: -10, qty: -1 },
+    ],
+  }, {
+    projectId: 'project_invalid',
+    now: FIXED_NOW,
+  });
+  const invalidUnitRecord = createBenchMateProjectFromWoodCut({
+    unit: 'cm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [],
+  }, {
+    projectId: 'project_invalid_unit',
+    now: FIXED_NOW,
+  });
+
+  const warningCodes = record.designRevisions[0].warnings.map(warning => warning.code);
+  const invalidUnitCodes = invalidUnitRecord.designRevisions[0].warnings.map(warning => warning.code);
+  assert.equal(record.cutStock.dimensions.width, 0);
+  assert.equal(record.parts[0].quantity, 0);
+  assert.ok(warningCodes.includes('invalid-dimension'));
+  assert.ok(warningCodes.includes('invalid-quantity'));
+  assert.ok(warningCodes.includes('thickness-missing'));
+  assert.ok(warningCodes.includes('material-mapping-missing'));
+  assert.ok(invalidUnitCodes.includes('invalid-unit'));
+});
+
+test('serializes and parses a valid canonical project', () => {
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [
+      {
+        id: 'panel',
+        name: 'Panel',
+        width: 300,
+        height: 500,
+        thickness: 18,
+        qty: 1,
+        materialRequirementId: 'material_panel',
+      },
+    ],
+  }, {
+    projectId: 'project_serialized',
+    now: FIXED_NOW,
+  });
+
+  const serialized = serializeBenchMateProject(record);
+  const parsed = parseBenchMateProject(serialized);
+  assert.deepEqual(parsed, record);
+  assert.throws(
+    () => parseBenchMateProject('{"schemaVersion":2}'),
+    /schemaVersion/,
+  );
+});
+
+test('the checked-in sample project follows the canonical schema', async () => {
+  const sampleJson = await readFile(
+    new URL('../docs/examples/benchmate-project.json', import.meta.url),
+    'utf8',
+  );
+  const sample = parseBenchMateProject(sampleJson);
+
+  assert.equal(sample.project.id, 'project_bookshelf-demo');
+  assert.equal(sample.project.units, 'mm');
+  assert.equal(sample.parts[0].dimensions.length, 1800);
+  assert.equal(validateBenchMateProject(sample).valid, true);
+});
+
+test('local project storage round-trips valid records and ignores invalid records', () => {
+  let serialized = null;
+  const storage = {
+    getItem() {
+      return serialized;
+    },
+    setItem(key, value) {
+      assert.equal(key, PROJECT_STORAGE_KEY);
+      serialized = value;
+    },
+  };
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [],
+  }, {
+    projectId: 'project_storage',
+    now: FIXED_NOW,
+  });
+
+  assert.equal(saveStoredProjects([record], storage), true);
+  assert.deepEqual(loadStoredProjects(storage), [record]);
+
+  storage.setItem(PROJECT_STORAGE_KEY, JSON.stringify([record, { schemaVersion: 99 }]));
+  assert.deepEqual(loadStoredProjects(storage), [record]);
+});
+
+test('the existing optimizer is deterministic for identical inputs', () => {
+  const stock = { width: 1220, height: 2440, kerf: 3, margin: 5 };
+  const parts = [
+    { id: 'a', name: 'A', width: 300, height: 600, qty: 2, allowRotation: false },
+    { id: 'b', name: 'B', width: 500, height: 400, qty: 1, allowRotation: true },
+  ];
+
+  const first = optimizeCutList(stock, parts, { strategy: 'bssf', cutPreference: 'rip_first' });
+  const second = optimizeCutList(stock, parts, { strategy: 'bssf', cutPreference: 'rip_first' });
+
+  assert.deepEqual(first, second);
+});
+
+test('material stock requires positive dimensions and cannot reserve more than it owns', () => {
+  const material = createMaterialStock({
+    id: 'stock_sheet',
+    category: 'sheet-goods',
+    name: '18 mm plywood',
+    length: 2440,
+    width: 1220,
+    thickness: 18,
+    usableLength: 2440,
+    usableWidth: 1220,
+    quantity: 2,
+    reservedQuantity: 1,
+    source: 'owned',
+    condition: 'good',
+  }, { now: FIXED_NOW });
+
+  assert.equal(validateMaterialStock(material).valid, true);
+  assert.equal(material.updatedAt, FIXED_NOW);
+  assert.throws(
+    () => createMaterialStock({
+      ...material,
+      quantity: 1,
+      reservedQuantity: 2,
+    }),
+    /reservedQuantity cannot exceed quantity/,
+  );
+});
+
+test('material inventory storage round-trips valid records and ignores invalid records', () => {
+  let serialized = null;
+  const storage = {
+    getItem(key) {
+      assert.equal(key, MATERIAL_STORAGE_KEY);
+      return serialized;
+    },
+    setItem(key, value) {
+      assert.equal(key, MATERIAL_STORAGE_KEY);
+      serialized = value;
+    },
+  };
+  const material = createMaterialStock({
+    id: 'stock_storage',
+    category: 'offcut',
+    name: 'Oak offcut',
+    length: 800,
+    width: 300,
+    thickness: 19,
+    usableLength: 780,
+    usableWidth: 290,
+    quantity: 1,
+    source: 'owned',
+    condition: 'rough',
+  }, { now: FIXED_NOW });
+
+  assert.equal(saveStoredMaterials([material], storage), true);
+  assert.deepEqual(loadStoredMaterials(storage), [material]);
+  storage.setItem(MATERIAL_STORAGE_KEY, JSON.stringify([material, { id: 'invalid' }]));
+  assert.deepEqual(loadStoredMaterials(storage), [material]);
+});
+
+test('material matching reports potential dimensional candidates without claiming allocation', () => {
+  const materials = [createMaterialStock({
+    id: 'stock_rotated',
+    category: 'sheet-goods',
+    name: 'Birch plywood',
+    length: 600,
+    width: 300,
+    thickness: 12,
+    usableLength: 600,
+    usableWidth: 300,
+    quantity: 1,
+    source: 'owned',
+    condition: 'good',
+  }, { now: FIXED_NOW }), createMaterialStock({
+    id: 'stock_planned',
+    category: 'sheet-goods',
+    name: 'Planned MDF',
+    length: 700,
+    width: 400,
+    thickness: 12,
+    usableLength: 700,
+    usableWidth: 400,
+    quantity: 1,
+    source: 'planned',
+    condition: 'good',
+  }, { now: FIXED_NOW })];
+  const result = matchMaterialStockToParts([
+    { id: 'top', name: 'Top', width: 500, height: 250, thickness: 12, qty: 1, allowRotation: true },
+    { id: 'side', name: 'Side', width: 400, height: 800, thickness: 12, qty: 1, allowRotation: false },
+    { id: 'shelf', name: 'Shelf', width: 350, height: 650, thickness: 12, qty: 1, allowRotation: false },
+  ], 'mm', materials);
+
+  assert.equal(result.totalPartTypes, 3);
+  assert.equal(result.matchedPartTypes, 1);
+  assert.equal(result.plannedPartTypes, 1);
+  assert.equal(result.unmatchedPartTypes, 1);
+  assert.equal(result.rows[0].status, 'potential');
+  assert.equal(result.rows[0].candidates[0].orientation, 'rotated');
+  assert.equal(result.rows[1].status, 'unmatched');
+  assert.equal(result.rows[2].status, 'planned');
+});
+
+test('owned material reservations are explicit, bounded and releasable by project', () => {
+  const material = createMaterialStock({
+    id: 'stock_reservable',
+    category: 'sheet-goods',
+    name: 'MDF',
+    length: 2440,
+    width: 1220,
+    thickness: 18,
+    usableLength: 2440,
+    usableWidth: 1220,
+    quantity: 3,
+    source: 'owned',
+    condition: 'good',
+  }, { now: FIXED_NOW });
+
+  const reserved = reserveMaterialStock(material, 'project_reservation', 2, {
+    now: FIXED_NOW,
+    reservedAt: FIXED_NOW,
+  });
+  assert.equal(reserved.reservedQuantity, 2);
+  assert.equal(reserved.reservations[0].quantity, 2);
+  assert.equal(reserved.quantity - reserved.reservedQuantity, 1);
+  assert.throws(
+    () => reserveMaterialStock(reserved, 'project_other', 2),
+    /exceeds the available material quantity/,
+  );
+
+  const released = releaseMaterialStock(reserved, 'project_reservation', undefined, {
+    now: FIXED_NOW,
+    releasedAt: FIXED_NOW,
+  });
+  assert.equal(released.reservedQuantity, 0);
+  assert.deepEqual(released.reservations, []);
+  assert.throws(
+    () => reserveMaterialStock({ ...material, source: 'planned' }, 'project_reservation', 1),
+    /Only owned material can be reserved/,
+  );
+});
+
+test('tool inventory normalizes capabilities and validates availability fields', () => {
+  const tool = createTool({
+    id: 'tool_track_saw',
+    name: 'Track saw',
+    category: 'saw',
+    brand: 'Makita',
+    model: 'SP6000',
+    owned: true,
+    availability: 'available',
+    condition: 'good',
+    location: 'Workshop wall A',
+    capabilities: ['rip-cutting', 'cross-cutting', 'rip-cutting'],
+    accessories: 'Guide rail, dust bag',
+    lastMaintenanceAt: '2026-07-01',
+  }, { now: FIXED_NOW });
+
+  assert.deepEqual(tool.capabilities, ['rip-cutting', 'cross-cutting']);
+  assert.deepEqual(tool.accessories, ['Guide rail', 'dust bag']);
+  assert.equal(validateTool(tool).valid, true);
+  assert.throws(
+    () => updateTool(tool, { availability: 'not-a-status' }),
+    /Tool availability is invalid/,
+  );
+});
+
+test('tool inventory storage ignores invalid records and removes valid records', () => {
+  let serialized = null;
+  const storage = {
+    getItem(key) {
+      assert.equal(key, TOOL_STORAGE_KEY);
+      return serialized;
+    },
+    setItem(key, value) {
+      assert.equal(key, TOOL_STORAGE_KEY);
+      serialized = value;
+    },
+  };
+  const tool = createTool({
+    id: 'tool_storage',
+    name: 'Orbital sander',
+    category: 'sander',
+    owned: true,
+    availability: 'maintenance',
+    condition: 'fair',
+    capabilities: ['sanding'],
+  }, { now: FIXED_NOW });
+
+  assert.equal(saveStoredTools([tool], storage), true);
+  assert.deepEqual(loadStoredTools(storage), [tool]);
+  storage.setItem(TOOL_STORAGE_KEY, JSON.stringify([tool, { id: 'invalid' }]));
+  assert.deepEqual(loadStoredTools(storage), [tool]);
+
+  const removed = removeStoredTool(tool.id, [tool], storage);
+  assert.equal(removed.saved, true);
+  assert.deepEqual(removed.tools, []);
+});

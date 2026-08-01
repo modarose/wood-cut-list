@@ -1,19 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { STOCK_PRESETS } from '../utils/presets';
 import { convertDimension, UNITS } from '../utils/unitConverter';
-import { LayoutGrid, Maximize2, Scissors, ShieldAlert } from 'lucide-react';
+import { getAvailableQuantity } from '../utils/materialInventory.js';
+import { AlertTriangle, CheckCircle2, LayoutGrid, Maximize2, Scissors, ShieldAlert } from 'lucide-react';
 
 export default function SheetSettings({
   stock,
   onStockChange,
   unit,
+  onUnitChange,
+  strategy,
+  onStrategyChange,
   cutPreference,
   onCutPreferenceChange,
+  selectedMaterial,
+  hasMaterialMappings,
+  requiredStockQuantity,
+  projectReservation,
+  onReserveMaterial,
+  onReleaseMaterial,
 }) {
+  const [reservationError, setReservationError] = useState('');
   const handleWidthChange  = val => onStockChange({ ...stock, width:  parseFloat(val) || 0 });
   const handleHeightChange = val => onStockChange({ ...stock, height: parseFloat(val) || 0 });
   const handleKerfChange   = val => onStockChange({ ...stock, kerf:   parseFloat(val) || 0 });
   const handleMarginChange = val => onStockChange({ ...stock, margin: parseFloat(val) || 0 });
+
+  const handleReserveMaterial = () => {
+    setReservationError('');
+    const result = onReserveMaterial();
+    if (!result.saved) setReservationError(result.error);
+  };
+
+  const handleReleaseMaterial = () => {
+    setReservationError('');
+    const result = onReleaseMaterial();
+    if (!result.saved) setReservationError(result.error);
+  };
 
   const handlePresetSelect = (preset) => {
     let w = preset.width, h = preset.height, k = preset.kerf, m = preset.margin;
@@ -34,6 +57,7 @@ export default function SheetSettings({
 
   const step = unit === UNITS.INCH ? '0.125' : '1';
   const kerfStep = unit === UNITS.INCH ? '0.03125' : '0.5';
+  const additionalReservationQuantity = requiredStockQuantity - (projectReservation?.quantity ?? 0);
 
   return (
     <section className="ws-card">
@@ -45,6 +69,40 @@ export default function SheetSettings({
       </div>
 
       <div className="ws-card-body">
+
+        <div className="ws-stock-controls">
+          <div className="ws-stock-control">
+            <span className="ws-label">Units</span>
+            <div className="ws-pill-group" role="group" aria-label="Dimension units">
+              <button
+                type="button"
+                className={`ws-pill-btn${unit === UNITS.MM ? ' active' : ''}`}
+                onClick={() => onUnitChange(UNITS.MM)}
+              >
+                MM
+              </button>
+              <button
+                type="button"
+                className={`ws-pill-btn${unit === UNITS.INCH ? ' active' : ''}`}
+                onClick={() => onUnitChange(UNITS.INCH)}
+              >
+                INCHES
+              </button>
+            </div>
+          </div>
+
+          <label className="ws-input-group ws-stock-strategy">
+            <span className="ws-label">Strategy</span>
+            <select
+              value={strategy}
+              onChange={e => onStrategyChange(e.target.value)}
+              className="ws-select"
+            >
+              <option value="bssf">BSSF (Best Fit)</option>
+              <option value="baf">BAF (Area Priority)</option>
+            </select>
+          </label>
+        </div>
 
         {/* 4 dimension inputs */}
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
@@ -121,6 +179,64 @@ export default function SheetSettings({
           <span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--ws-on-surface-variant)' }}>
             Kerf {stock.kerf} · Margin {stock.margin}
           </span>
+        </div>
+
+        <div className={`ws-stock-source${selectedMaterial ? ' linked' : ' unlinked'}`}>
+          <div className="ws-stock-source-heading">
+            {selectedMaterial ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
+            {selectedMaterial ? 'Inventory source linked' : 'Manual stock template'}
+          </div>
+          {selectedMaterial ? (
+            <>
+              <strong>{selectedMaterial.name}</strong>
+              <span className="ws-stock-source-meta">
+                {selectedMaterial.source === 'owned' ? 'Owned' : 'Planned purchase'}
+                {selectedMaterial.location ? ` · ${selectedMaterial.location}` : ''}
+                <span> · {selectedMaterial.dimensions.thickness} mm thick</span>
+              </span>
+              {selectedMaterial.source === 'planned' && (
+                <div className="ws-stock-source-warning">
+                  <AlertTriangle size={13} /> This is planned stock, not material currently owned.
+                </div>
+              )}
+              {!hasMaterialMappings && (
+                <div className="ws-stock-source-warning">
+                  <AlertTriangle size={13} /> Cut-list parts do not identify a material mapping; thickness fit still needs review.
+                </div>
+              )}
+              <div className="ws-stock-source-actions">
+                <button
+                  type="button"
+                  className="ws-btn ws-btn-sm"
+                  onClick={handleReserveMaterial}
+                  disabled={selectedMaterial.source !== 'owned'
+                    || getAvailableQuantity(selectedMaterial) <= 0
+                    || requiredStockQuantity <= 0
+                    || additionalReservationQuantity <= 0}
+                  title={selectedMaterial.source !== 'owned' ? 'Only owned stock can be reserved' : undefined}
+                >
+                  {projectReservation
+                    ? additionalReservationQuantity > 0
+                      ? `Reserve ${additionalReservationQuantity} more sheets`
+                      : `Reserved ${projectReservation.quantity} / ${requiredStockQuantity}`
+                    : requiredStockQuantity > 0 ? `Reserve ${requiredStockQuantity} sheets` : 'Add parts to reserve'}
+                </button>
+                {projectReservation && (
+                  <button type="button" className="ws-btn ws-btn-sm" onClick={handleReleaseMaterial}>
+                    Release reservation
+                  </button>
+                )}
+              </div>
+              {reservationError && <div className="ws-stock-source-warning" role="alert">{reservationError}</div>}
+            </>
+          ) : (
+            <>
+              <span className="ws-stock-source-meta">Current dimensions are not linked to workshop inventory.</span>
+              <div className="ws-stock-source-warning">
+                <AlertTriangle size={13} /> Material source, thickness and owned quantity are unverified.
+              </div>
+            </>
+          )}
         </div>
 
         {/* Preset + cut preference */}

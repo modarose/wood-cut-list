@@ -1,19 +1,41 @@
-import React from 'react';
-import { UNITS } from '../utils/unitConverter';
-import { Download, Printer, FolderOpen, Trash2, Ruler } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Download, FolderOpen, LayoutDashboard, Menu, Printer, Ruler, Save, Trash2, X } from 'lucide-react';
 
 export default function Header({
-  unit,
-  onUnitChange,
   onOpenPresets,
+  onOpenProjects,
+  onSaveProject,
+  isDirty,
   onExportCSV,
   onPrint,
   onClearAll,
-  strategy,
-  onStrategyChange,
-  stock,
-  onStockChange,
 }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return undefined;
+
+    const handlePointerDown = event => {
+      if (!menuRef.current?.contains(event.target)) setIsMenuOpen(false);
+    };
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') setIsMenuOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMenuOpen]);
+
+  const runAction = action => {
+    setIsMenuOpen(false);
+    action();
+  };
+
   return (
     <header className="ws-appbar no-print">
 
@@ -27,80 +49,56 @@ export default function Header({
         </div>
       </div>
 
-      {/* Left: unit pill + kerf inline */}
-      <div className="ws-appbar-left" style={{ flexWrap: 'wrap', gap: '12px' }}>
-
-        {/* MM / INCHES pill toggle */}
-        <div className="ws-pill-group">
-          <button
-            className={`ws-pill-btn${unit === UNITS.MM ? ' active' : ''}`}
-            onClick={() => onUnitChange(UNITS.MM)}
-          >
-            MM
-          </button>
-          <button
-            className={`ws-pill-btn${unit === UNITS.INCH ? ' active' : ''}`}
-            onClick={() => onUnitChange(UNITS.INCH)}
-          >
-            INCHES
-          </button>
-        </div>
-
-        {/* Kerf inline */}
-        <div className="ws-appbar-stat">
-          <label htmlFor="header-kerf">KERF:</label>
-          <input
-            id="header-kerf"
-            className="ws-appbar-input"
-            type="number"
-            step={unit === UNITS.INCH ? '0.03125' : '0.5'}
-            value={stock.kerf}
-            onChange={e => onStockChange({ ...stock, kerf: parseFloat(e.target.value) || 0 })}
-          />
-          <label htmlFor="header-kerf" style={{ fontFamily: 'var(--ws-font-mono)', fontSize: '11px', fontWeight: 500 }}>
-            {unit}
-          </label>
-        </div>
-
-        {/* Strategy selector */}
-        <div className="ws-appbar-stat">
-          <label style={{ fontFamily: 'var(--ws-font-mono)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            STRATEGY:
-          </label>
-          <select
-            value={strategy}
-            onChange={e => onStrategyChange(e.target.value)}
-            className="ws-select-inline"
-          >
-            <option value="bssf">BSSF (Best Fit)</option>
-            <option value="baf">BAF (Area Priority)</option>
-          </select>
-        </div>
-
-      </div>
-
-      {/* Right: action buttons */}
       <div className="ws-appbar-right">
-        <button onClick={onOpenPresets} className="ws-btn ws-btn-sm" title="Load Woodworking Presets">
-          <FolderOpen size={14} />
-          Presets
-        </button>
-        <button onClick={onExportCSV} className="ws-btn ws-btn-sm" title="Export Cut List CSV">
-          <Download size={14} />
-          CSV
-        </button>
-        <button onClick={onPrint} className="ws-btn ws-btn-primary ws-btn-sm" title="Print Cut Sheet PDF">
-          <Printer size={14} />
-          Print / PDF
-        </button>
-        <button
-          onClick={onClearAll}
-          className="ws-btn-icon"
-          style={{ color: 'var(--ws-error)' }}
-          title="Reset All Data"
-        >
-          <Trash2 size={16} />
-        </button>
+        <div className="ws-action-menu" ref={menuRef}>
+          <button
+            type="button"
+            className="ws-btn ws-btn-sm ws-action-menu-toggle"
+            onClick={() => setIsMenuOpen(value => !value)}
+            aria-expanded={isMenuOpen}
+            aria-haspopup="true"
+            aria-label={isMenuOpen ? 'Close optimizer actions menu' : 'Open optimizer actions menu'}
+            title="Optimizer actions"
+          >
+            {isMenuOpen ? <X size={15} /> : <Menu size={15} />}
+            Menu
+          </button>
+
+          {isMenuOpen && (
+            <div className="ws-action-menu-panel" aria-label="Optimizer actions">
+              <button type="button" className="ws-action-menu-item" onClick={() => runAction(onOpenProjects)}>
+                <LayoutDashboard size={15} />
+                Projects
+              </button>
+              <button
+                type="button"
+                className="ws-action-menu-item"
+                onClick={() => runAction(onSaveProject)}
+                title={isDirty ? 'Save project' : 'Project is already saved'}
+                disabled={!isDirty}
+              >
+                <Save size={15} />
+                Save
+              </button>
+              <button type="button" className="ws-action-menu-item" onClick={() => runAction(onOpenPresets)}>
+                <FolderOpen size={15} />
+                Presets
+              </button>
+              <button type="button" className="ws-action-menu-item" onClick={() => runAction(onExportCSV)}>
+                <Download size={15} />
+                Export CSV
+              </button>
+              <button type="button" className="ws-action-menu-item" onClick={() => runAction(onPrint)}>
+                <Printer size={15} />
+                Print / PDF
+              </button>
+              <button type="button" className="ws-action-menu-item danger" onClick={() => runAction(onClearAll)}>
+                <Trash2 size={15} />
+                Reset all data
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
     </header>
