@@ -181,12 +181,25 @@ input[type=number] {
   padding: 0 4px;
 }
 
-.ws-sidebar-title {
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 28px;
-  color: var(--ws-primary);
-  letter-spacing: -0.01em;
+.ws-sidebar-logo,
+.ws-mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ws-sidebar-logo {
+  margin-bottom: var(--ws-space-sm);
+}
+
+.ws-sidebar-logo .ws-project-copy,
+.ws-mobile-brand .ws-project-copy {
+  min-width: 0;
+}
+
+.ws-mobile-brand {
+  display: none;
 }
 
 .ws-sidebar-subtitle {
@@ -277,7 +290,7 @@ input[type=number] {
 .ws-appbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   flex: 0 0 auto;
   padding: 0 var(--ws-space-md);
   height: auto;
@@ -290,14 +303,6 @@ input[type=number] {
   z-index: 50;
   flex-wrap: wrap;
   gap: var(--ws-space-sm);
-}
-
-.ws-project-identity {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  margin-right: var(--ws-space-sm);
 }
 
 .ws-project-mark {
@@ -344,14 +349,6 @@ input[type=number] {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
-}
-
-.ws-appbar-left {
-  display: flex;
-  align-items: center;
-  gap: var(--ws-space-lg);
-  flex: 1 1 auto;
-  min-width: 0;
 }
 
 .ws-appbar-right {
@@ -424,6 +421,24 @@ input[type=number] {
   color: var(--ws-primary);
 }
 
+.ws-action-menu-item.primary {
+  background: var(--ws-primary);
+  color: var(--ws-on-primary);
+}
+
+.ws-action-menu-item.primary svg {
+  color: var(--ws-on-primary);
+}
+
+.ws-action-menu-item.primary:hover:not(:disabled) {
+  background: var(--ws-primary-container);
+  color: var(--ws-on-primary-container);
+}
+
+.ws-action-menu-item.primary:hover:not(:disabled) svg {
+  color: var(--ws-on-primary-container);
+}
+
 .ws-action-menu-item.danger {
   color: var(--ws-error);
 }
@@ -471,41 +486,6 @@ input[type=number] {
   color: var(--ws-on-surface);
 }
 
-/* Inline label+value in appbar */
-.ws-appbar-stat {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--ws-on-surface-variant);
-}
-
-.ws-appbar-stat label {
-  font-family: var(--ws-font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.ws-appbar-input {
-  width: 52px;
-  background: var(--ws-surface-container-highest);
-  border: none;
-  border-radius: var(--ws-radius-sm);
-  padding: 4px 6px;
-  text-align: center;
-  font-family: var(--ws-font-mono);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ws-on-surface);
-  outline: none;
-  transition: box-shadow 0.15s;
-}
-
-.ws-appbar-input:focus {
-  box-shadow: 0 0 0 2px var(--ws-primary);
-}
-
 @media (max-width: 900px) {
   .ws-appbar {
     min-height: 64px;
@@ -513,12 +493,19 @@ input[type=number] {
     padding-bottom: 10px;
   }
 
-  .ws-project-identity {
-    order: -2;
+  .ws-mobile-brand {
+    display: flex;
   }
 
-  .ws-appbar-left {
-    flex: 1 1 auto;
+}
+
+@media (max-width: 1023px) {
+  .ws-appbar {
+    justify-content: space-between;
+  }
+
+  .ws-mobile-brand {
+    display: flex;
   }
 }
 
@@ -564,19 +551,14 @@ input[type=number] {
   margin: 0 auto;
 }
 
-.ws-inventory-heading {
+.ws-inventory-heading,
+.ws-project-heading,
+.ws-tool-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--ws-space-md);
   padding: var(--ws-space-sm) 0;
-}
-
-.ws-inventory-heading-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--ws-space-sm);
 }
 
 .ws-page-eyebrow {
@@ -1234,18 +1216,16 @@ input[type=number] {
 
 @media (max-width: 600px) {
   .ws-inventory-heading,
+  .ws-project-heading,
   .ws-inventory-toolbar {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .ws-inventory-heading-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .ws-inventory-heading-actions .ws-btn {
-    width: 100%;
+  .ws-inventory-heading > .ws-action-menu,
+  .ws-project-heading > .ws-action-menu,
+  .ws-tool-heading > .ws-action-menu {
+    align-self: flex-end;
   }
 
   .ws-inventory-form-grid {
@@ -1288,14 +1268,6 @@ input[type=number] {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-}
-
-.ws-tool-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--ws-space-md);
-  padding: var(--ws-space-sm) 0;
 }
 
 .ws-tool-toolbar {
@@ -2017,14 +1989,14 @@ input[type=number] {
 }
 
 .ws-sequence-strip {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--ws-space-sm);
 }
 
 .ws-sequence-card {
-  flex: 1 1 220px;
-  min-width: 210px;
+  min-width: 0;
+  width: 100%;
   background: var(--ws-surface-container-low);
   border: 1px solid var(--ws-outline-variant);
   border-radius: var(--ws-radius-lg);
@@ -2131,9 +2103,6 @@ input[type=number] {
     text-align: left;
   }
 
-  .ws-sequence-card {
-    flex-basis: 100%;
-  }
 }
 
 /* ─── FOOTER ────────────────────────────────────────────── */
@@ -2237,23 +2206,6 @@ input[type=number] {
 }
 
 /* ─── SELECT (STRATEGY, PREFERENCES) ───────────────────── */
-.ws-select-inline {
-  font-family: var(--ws-font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 5px 8px;
-  border-radius: var(--ws-radius);
-  border: 1px solid var(--ws-outline-variant);
-  background: var(--ws-surface-container-highest);
-  color: var(--ws-on-surface);
-  outline: none;
-  cursor: pointer;
-}
-
-.ws-select-inline:focus {
-  box-shadow: 0 0 0 2px var(--ws-primary);
-}
-
 /* ─── SCROLLBAR ─────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;

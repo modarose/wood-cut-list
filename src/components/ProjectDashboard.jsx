@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Archive, ArrowLeft, Copy, FolderOpen, Plus, RotateCcw } from 'lucide-react';
+import ActionMenu from './ActionMenu';
 
 function statusLabel(status) {
   return (status || 'planning').replaceAll('-', ' ');
@@ -115,32 +116,22 @@ export default function ProjectDashboard({
   return (
     <main className="ws-main">
         <div className="ws-content ws-project-content">
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: 'var(--ws-space-md)',
-            flexWrap: 'wrap',
-            marginBottom: 'var(--ws-space-lg)',
-          }}>
+          <div className="ws-project-heading">
             <div>
-              <div className="ws-label" style={{ marginBottom: '8px' }}>BenchMate workspace</div>
-              <h1 style={{ margin: 0, color: 'var(--ws-on-surface)', fontSize: 'clamp(1.6rem, 4vw, 2.4rem)' }}>Projects</h1>
-              <p style={{ margin: '8px 0 0', color: 'var(--ws-on-surface-variant)', maxWidth: '620px', lineHeight: 1.5 }}>
+              <div className="ws-page-eyebrow">WoodCut Studio workspace</div>
+              <h1 className="ws-page-title">Projects</h1>
+              <p className="ws-page-copy">
                 Keep project notes and cut-list revisions together while WoodCut Studio continues to do the optimisation work.
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button className="ws-btn ws-btn-sm" onClick={onClose}>
-                <ArrowLeft size={14} />
-                Back to workspace
-              </button>
-              <button className="ws-btn ws-btn-primary ws-btn-sm" onClick={onCreate}>
-                <Plus size={14} />
-                New project
-              </button>
-            </div>
+            <ActionMenu
+              ariaLabel="Project actions"
+              items={[
+                { key: 'back', label: 'Back to workspace', icon: ArrowLeft, onClick: onClose },
+                { key: 'new', label: 'New project', icon: Plus, onClick: onCreate, variant: 'primary' },
+              ]}
+            />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: 'var(--ws-space-md)' }}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FolderOpen, HelpCircle, LayoutGrid, Package, Settings, Wrench } from 'lucide-react';
+import { FolderOpen, HelpCircle, LayoutGrid, Package, Ruler, Settings, Wrench } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'optimizer', label: 'Optimizer', icon: LayoutGrid, enabled: true },
@@ -12,11 +12,19 @@ export default function Sidebar({ activeSection, projectName, onNavigate }) {
   return (
     <aside className="ws-sidebar no-print">
       <div className="ws-sidebar-brand">
-        <div className="ws-sidebar-title">BenchMate</div>
-        <div className="ws-sidebar-subtitle">{projectName || 'WoodCut Studio'}</div>
+        <div className="ws-sidebar-logo">
+          <div className="ws-project-mark" aria-hidden="true">
+            <Ruler size={21} strokeWidth={2.4} />
+          </div>
+          <div className="ws-project-copy">
+            <div className="ws-project-title">WoodCut <span>Studio</span></div>
+            <div className="ws-project-subtitle">PLAN // CUT // CRAFT</div>
+          </div>
+        </div>
+        <div className="ws-sidebar-subtitle">{projectName || 'Current project'}</div>
       </div>
 
-      <nav className="ws-sidebar-nav" aria-label="BenchMate sections">
+      <nav className="ws-sidebar-nav" aria-label="WoodCut Studio sections">
         {NAV_ITEMS.map(({ id, label, icon: Icon, enabled }) => (
           <button
             key={id}

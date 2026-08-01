@@ -11,6 +11,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import ActionMenu from './ActionMenu';
 import {
   createSupply,
   SUPPLY_CATEGORIES,
@@ -154,22 +155,19 @@ export default function SupplyInventory({
       <div className="ws-content ws-inventory-content">
         <div className="ws-inventory-heading">
           <div>
-            <div className="ws-page-eyebrow">BenchMate workshop</div>
+            <div className="ws-page-eyebrow">WoodCut Studio workshop</div>
             <h1 className="ws-page-title">Workshop supplies</h1>
             <p className="ws-page-copy">
               Track hardware, adhesives, finishes and abrasives without inventing prices or project requirements.
             </p>
           </div>
-          <div className="ws-inventory-heading-actions">
-            <button type="button" className="ws-btn ws-btn-primary" onClick={onOpenMaterials}>
-              <Package size={15} />
-              Materials
-            </button>
-            <button type="button" className="ws-btn" onClick={onBack}>
-              <ArrowLeft size={15} />
-              Optimizer
-            </button>
-          </div>
+          <ActionMenu
+            ariaLabel="Supplies actions"
+            items={[
+              { key: 'materials', label: 'Materials', icon: Package, onClick: onOpenMaterials, variant: 'primary' },
+              { key: 'optimizer', label: 'Optimizer', icon: ArrowLeft, onClick: onBack },
+            ]}
+          />
         </div>
 
         <div className="ws-inventory-toolbar">
