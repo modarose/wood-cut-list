@@ -285,3 +285,12 @@ The Workshop view provides a separate browser-local tool collection:
 - Tool records preserve ownership, availability, condition, location, accessories and maintenance notes.
 - Capabilities are selected from a normalised vocabulary so a future build planner can match requirements consistently.
 - The inventory records workshop facts only; capability tags do not certify a safe setup or automatically approve tool substitutions.
+
+## 18. Phase 2 project resource check
+
+The optimizer workspace now includes a project-level resource check:
+
+- `src/utils/projectReadiness.js` derives a deterministic summary from the existing material matcher without changing the WoodCut part or stock shapes.
+- `src/components/ProjectReadiness.jsx` shows potential owned-stock candidates, planned purchase candidates, unresolved rows and rows requiring review. When a material is selected for the optimizer, it also compares that record's available quantity with `optimizationResult.totalSheetsCount`.
+- The report is deliberately a dimensional screening and stock-quantity result. It does not allocate individual boards, replace cut optimisation or infer tool, hardware or finish requirements.
+- Tool and hardware/finish coverage remains explicitly `not-mapped` until project requirements and build methods are implemented in later slices.

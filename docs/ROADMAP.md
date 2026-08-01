@@ -98,6 +98,7 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 - Owned or planned records can be selected as the optimizer stock template; the selected source is retained when the project is saved.
 - Owned stock can be explicitly reserved for the current project's calculated sheet requirement, with bounded quantity and release support.
 - The current cut-list check reports potential owned-stock dimensional candidates and planned-purchase candidates separately. It does not claim board allocation or optimisation results.
+- The optimizer now shows a project-level resource check that reuses the material matcher, separates owned candidates, planned purchases, unresolved parts and review rows, and compares the selected stock record's available quantity with the optimizer's required sheet count. It remains dimensional screening plus a stock-quantity check; tool, hardware and finish requirements are not yet mapped to projects.
 - `ToolInventory` supports local add, edit, remove, search and category/availability filtering under `benchmate.tools.v1`.
 - Tool capabilities use a normalised vocabulary for future build-step matching; the records do not make safety or substitution claims.
 

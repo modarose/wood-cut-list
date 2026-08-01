@@ -34,6 +34,7 @@ import {
   updateTool,
   validateTool,
 } from '../src/utils/toolInventory.js';
+import { getProjectResourceCheck } from '../src/utils/projectReadiness.js';
 
 const FIXED_NOW = '2026-07-31T00:00:00.000Z';
 
@@ -349,6 +350,89 @@ test('material matching reports potential dimensional candidates without claimin
   assert.equal(result.rows[0].candidates[0].orientation, 'rotated');
   assert.equal(result.rows[1].status, 'unmatched');
   assert.equal(result.rows[2].status, 'planned');
+});
+
+test('project resource check separates owned, planned and unresolved material rows', () => {
+  const materials = [createMaterialStock({
+    id: 'stock_owned',
+    category: 'sheet-goods',
+    name: 'Birch plywood',
+    length: 600,
+    width: 300,
+    thickness: 12,
+    usableLength: 600,
+    usableWidth: 300,
+    quantity: 1,
+    source: 'owned',
+    condition: 'good',
+  }, { now: FIXED_NOW }), createMaterialStock({
+    id: 'stock_planned',
+    category: 'sheet-goods',
+    name: 'Planned MDF',
+    length: 700,
+    width: 400,
+    thickness: 12,
+    usableLength: 700,
+    usableWidth: 400,
+    quantity: 1,
+    source: 'planned',
+    condition: 'good',
+  }, { now: FIXED_NOW })];
+
+  const result = getProjectResourceCheck([
+    { id: 'top', name: 'Top', width: 500, height: 250, thickness: 12, qty: 1, allowRotation: true },
+    { id: 'side', name: 'Side', width: 400, height: 800, thickness: 12, qty: 1, allowRotation: false },
+    { id: 'shelf', name: 'Shelf', width: 350, height: 650, thickness: 12, qty: 1, allowRotation: false },
+  ], 'mm', materials);
+
+  assert.equal(result.status, 'material-gap');
+  assert.equal(result.statusLabel, 'Material gap');
+  assert.equal(result.matchedPartTypes, 1);
+  assert.equal(result.plannedPartTypes, 1);
+  assert.equal(result.unmatchedPartTypes, 1);
+  assert.deepEqual(result.attentionRows.map(row => row.id), ['side', 'shelf']);
+  assert.equal(result.toolRequirements.status, 'not-mapped');
+  assert.equal(result.hardwareRequirements.status, 'not-mapped');
+});
+
+test('project resource check marks invalid parts for review without inventing requirements', () => {
+  const result = getProjectResourceCheck([
+    { id: 'unknown', name: 'Unknown panel', width: 0, height: 100, qty: 1 },
+  ], 'mm', []);
+
+  assert.equal(result.status, 'needs-review');
+  assert.equal(result.reviewPartTypes, 1);
+  assert.equal(result.attentionRows[0].status, 'needs-review');
+});
+
+test('project resource check flags insufficient selected stock quantity', () => {
+  const material = createMaterialStock({
+    id: 'stock_selected',
+    category: 'sheet-goods',
+    name: '2440 x 1220 plywood',
+    length: 2440,
+    width: 1220,
+    thickness: 18,
+    usableLength: 2440,
+    usableWidth: 1220,
+    quantity: 1,
+    source: 'owned',
+    condition: 'good',
+  }, { now: FIXED_NOW });
+
+  const result = getProjectResourceCheck([
+    { id: 'panel', name: 'Panel', width: 600, height: 900, thickness: 18, qty: 1, allowRotation: true },
+  ], 'mm', [material], {
+    selectedMaterialId: material.id,
+    requiredStockQuantity: 2,
+  });
+
+  assert.equal(result.status, 'quantity-gap');
+  assert.equal(result.statusLabel, '1 sheet short');
+  assert.equal(result.selectedStockCheck.availableQuantity, 1);
+  assert.equal(result.selectedStockCheck.requiredQuantity, 2);
+  assert.equal(result.selectedStockCheck.quantityShortfall, 1);
+  assert.equal(result.selectedStockCheck.status, 'quantity-gap');
 });
 
 test('owned material reservations are explicit, bounded and releasable by project', () => {

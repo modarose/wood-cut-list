@@ -8,6 +8,7 @@ import CutSequence from './components/CutSequence';
 import PresetsModal from './components/PresetsModal';
 import ProjectDashboard from './components/ProjectDashboard';
 import ProjectDetails from './components/ProjectDetails';
+import ProjectReadiness from './components/ProjectReadiness';
 import MaterialInventory from './components/MaterialInventory';
 import ToolInventory from './components/ToolInventory';
 import Sidebar from './components/Sidebar';
@@ -645,6 +646,14 @@ export default function App() {
               setProjectDescription(value);
               markDirty();
             }}
+          />
+
+          <ProjectReadiness
+            parts={parts}
+            materials={materials}
+            unit={unit}
+            selectedMaterialId={selectedMaterialId}
+            requiredStockQuantity={optimizationResult?.totalSheetsCount ?? 0}
           />
 
           {/* Metric Cards Row */}

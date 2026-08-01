@@ -13,6 +13,7 @@ Phase 2 is in progress. The current application provides:
 - Material inventory for sheet goods, solid timber and offcuts.
 - Stock selection and bounded reservations for the current project.
 - Workshop tool inventory with capability and availability metadata.
+- A project-level resource check separating owned-stock candidates, planned purchases, unresolved parts and review rows, with a quantity check for the selected stock record.
 
 The next major slice is the build planner. See the [roadmap](docs/ROADMAP.md) for the planned sequence.
 

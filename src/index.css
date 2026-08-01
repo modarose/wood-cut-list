@@ -902,6 +902,170 @@ input[type=number] {
   line-height: 1.4;
 }
 
+.ws-readiness-card {
+  margin-bottom: var(--ws-space-md);
+}
+
+.ws-readiness-metrics {
+  margin-bottom: var(--ws-space-md);
+}
+
+.ws-readiness-status {
+  font-family: var(--ws-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: var(--ws-radius-full);
+  background: var(--ws-surface-container-highest);
+  color: var(--ws-on-surface-variant);
+}
+
+.ws-readiness-status.screened {
+  color: var(--ws-primary);
+  background: color-mix(in srgb, var(--ws-primary) 12%, var(--ws-surface-container-highest));
+}
+
+.ws-readiness-status.attention {
+  color: var(--ws-secondary);
+  background: color-mix(in srgb, var(--ws-secondary) 12%, var(--ws-surface-container-highest));
+}
+
+.ws-readiness-note {
+  margin: 0;
+  color: var(--ws-on-surface-variant);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ws-readiness-stock {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+  align-items: center;
+  gap: var(--ws-space-md);
+  margin-top: var(--ws-space-md);
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--ws-primary) 35%, var(--ws-outline-variant));
+  border-radius: var(--ws-radius);
+  background: var(--ws-surface-container-low);
+}
+
+.ws-readiness-stock.quantity-gap,
+.ws-readiness-stock.dimension-gap,
+.ws-readiness-stock.needs-review {
+  border-color: color-mix(in srgb, var(--ws-secondary) 45%, var(--ws-outline-variant));
+}
+
+.ws-readiness-stock-heading,
+.ws-readiness-stock-quantity {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-sm);
+}
+
+.ws-readiness-stock-heading {
+  min-width: 0;
+  color: var(--ws-primary);
+}
+
+.ws-readiness-stock-heading > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.ws-readiness-stock-heading strong,
+.ws-readiness-stock-heading span,
+.ws-readiness-stock-message {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-readiness-stock-heading strong {
+  color: var(--ws-on-surface);
+  font-size: 13px;
+}
+
+.ws-readiness-stock-heading span,
+.ws-readiness-stock-message {
+  color: var(--ws-on-surface-variant);
+  font-size: 12px;
+}
+
+.ws-readiness-stock-quantity {
+  font-family: var(--ws-font-mono);
+  white-space: nowrap;
+}
+
+.ws-readiness-stock-quantity strong {
+  color: var(--ws-primary);
+  font-size: 18px;
+}
+
+.ws-readiness-stock.quantity-gap .ws-readiness-stock-quantity strong,
+.ws-readiness-stock.quantity-gap .ws-readiness-stock-heading svg {
+  color: var(--ws-secondary);
+}
+
+.ws-readiness-stock-quantity span {
+  color: var(--ws-on-surface-variant);
+  font-size: 11px;
+}
+
+.ws-readiness-stock-message {
+  text-align: right;
+}
+
+.ws-readiness-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-space-xs);
+  margin-top: var(--ws-space-md);
+}
+
+.ws-readiness-confirmation {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-space-sm);
+  margin-top: var(--ws-space-md);
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--ws-primary) 35%, var(--ws-outline-variant));
+  border-radius: var(--ws-radius);
+  color: var(--ws-primary);
+  background: var(--ws-surface-container-low);
+  font-size: 13px;
+}
+
+.ws-readiness-confirmation.attention {
+  border-color: color-mix(in srgb, var(--ws-secondary) 45%, var(--ws-outline-variant));
+  color: var(--ws-secondary);
+}
+
+.ws-readiness-boundaries {
+  display: grid;
+  gap: var(--ws-space-xs);
+  margin-top: var(--ws-space-md);
+  padding-top: var(--ws-space-md);
+  border-top: 1px solid var(--ws-outline-variant);
+  color: var(--ws-on-surface-variant);
+  font-size: 12px;
+}
+
+.ws-readiness-boundaries > div {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ws-space-sm);
+}
+
+.ws-readiness-boundaries svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--ws-secondary);
+}
+
 @media (max-width: 900px) {
   .ws-inventory-form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -913,6 +1077,16 @@ input[type=number] {
 
   .ws-inventory-match-result {
     grid-column: 2;
+  }
+
+  .ws-readiness-stock {
+    grid-template-columns: 1fr auto;
+  }
+
+  .ws-readiness-stock-message {
+    grid-column: 1 / -1;
+    text-align: left;
+    white-space: normal;
   }
 }
 
