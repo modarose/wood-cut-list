@@ -364,6 +364,78 @@ input[type=number] {
   min-width: 0;
 }
 
+.ws-action-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ws-action-menu-toggle {
+  color: var(--ws-primary);
+}
+
+.ws-action-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 220px;
+  padding: 8px;
+  background: var(--ws-surface-container-lowest);
+  border: 1px solid var(--ws-outline-variant);
+  border-radius: var(--ws-radius-lg);
+  box-shadow: var(--ws-shadow-md);
+}
+
+.ws-action-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: var(--ws-radius);
+  background: transparent;
+  color: var(--ws-on-surface);
+  font-family: var(--ws-font-mono);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ws-action-menu-item:hover:not(:disabled) {
+  background: var(--ws-surface-container-high);
+}
+
+.ws-action-menu-item:focus-visible {
+  outline: 2px solid var(--ws-primary);
+  outline-offset: -2px;
+}
+
+.ws-action-menu-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ws-action-menu-item svg {
+  flex-shrink: 0;
+  color: var(--ws-primary);
+}
+
+.ws-action-menu-item.danger {
+  color: var(--ws-error);
+}
+
+.ws-action-menu-item.danger svg {
+  color: var(--ws-error);
+}
+
+.ws-action-menu-item.danger:hover:not(:disabled) {
+  background: var(--ws-error-container);
+}
+
 /* Pill toggle (MM / INCHES) */
 .ws-pill-group {
   display: flex;
@@ -450,19 +522,6 @@ input[type=number] {
   }
 }
 
-@media (min-width: 901px) and (max-width: 1280px) {
-  .ws-appbar {
-    align-items: flex-start;
-    padding-top: 10px;
-    padding-bottom: 10px;
-  }
-
-  .ws-appbar-right {
-    flex: 1 1 100%;
-    justify-content: flex-start;
-  }
-}
-
 @media (max-width: 600px) {
   .ws-project-title {
     font-size: 16px;
@@ -489,6 +548,16 @@ input[type=number] {
 
 /* ─── METRIC CARDS ──────────────────────────────────────── */
 /* Material inventory */
+.ws-project-content {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.ws-project-card {
+  padding: var(--ws-space-md);
+}
+
 .ws-inventory-content {
   width: 100%;
   max-width: 1280px;
@@ -1284,6 +1353,31 @@ input[type=number] {
 
 .ws-card-body {
   padding: var(--ws-space-md);
+}
+
+.ws-stock-controls {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--ws-space-md);
+  margin-bottom: var(--ws-space-md);
+  padding-bottom: var(--ws-space-md);
+  border-bottom: 1px solid var(--ws-outline-variant);
+}
+
+.ws-stock-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ws-stock-strategy {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.ws-stock-strategy .ws-select {
+  width: 100%;
 }
 
 /* ─── BUTTONS ───────────────────────────────────────────── */

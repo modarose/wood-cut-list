@@ -24,7 +24,7 @@ function ProjectCard({ projectRecord, archived, onOpen, onDuplicate, onArchive, 
   const partCount = projectRecord.parts.reduce((sum, part) => sum + part.quantity, 0);
 
   return (
-    <article className="ws-card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ws-space-md)' }}>
+    <article className="ws-card ws-project-card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--ws-space-md)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--ws-space-md)', alignItems: 'flex-start' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--ws-on-surface)' }}>{project.name}</h2>
@@ -114,7 +114,7 @@ export default function ProjectDashboard({
 
   return (
     <main className="ws-main">
-        <div className="ws-content" style={{ maxWidth: '1180px', margin: '0 auto', width: '100%' }}>
+        <div className="ws-content ws-project-content">
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',

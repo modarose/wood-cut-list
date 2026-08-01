@@ -8,6 +8,9 @@ export default function SheetSettings({
   stock,
   onStockChange,
   unit,
+  onUnitChange,
+  strategy,
+  onStrategyChange,
   cutPreference,
   onCutPreferenceChange,
   selectedMaterial,
@@ -66,6 +69,40 @@ export default function SheetSettings({
       </div>
 
       <div className="ws-card-body">
+
+        <div className="ws-stock-controls">
+          <div className="ws-stock-control">
+            <span className="ws-label">Units</span>
+            <div className="ws-pill-group" role="group" aria-label="Dimension units">
+              <button
+                type="button"
+                className={`ws-pill-btn${unit === UNITS.MM ? ' active' : ''}`}
+                onClick={() => onUnitChange(UNITS.MM)}
+              >
+                MM
+              </button>
+              <button
+                type="button"
+                className={`ws-pill-btn${unit === UNITS.INCH ? ' active' : ''}`}
+                onClick={() => onUnitChange(UNITS.INCH)}
+              >
+                INCHES
+              </button>
+            </div>
+          </div>
+
+          <label className="ws-input-group ws-stock-strategy">
+            <span className="ws-label">Strategy</span>
+            <select
+              value={strategy}
+              onChange={e => onStrategyChange(e.target.value)}
+              className="ws-select"
+            >
+              <option value="bssf">BSSF (Best Fit)</option>
+              <option value="baf">BAF (Area Priority)</option>
+            </select>
+          </label>
+        </div>
 
         {/* 4 dimension inputs */}
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>

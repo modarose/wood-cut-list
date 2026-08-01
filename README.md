@@ -1,79 +1,144 @@
-\# CUT // LIST 8000 — Woodworking 2D Cut Estimator
+# BenchMate
 
-> A minimalist, high-performance 2D Guillotine cutting stock optimizer and sheet visualizer for woodworkers, cabinet makers, and DIYers. Designed with a clean, functional aesthetic inspired by Dieter Rams & Braun ("Less, but better").
+BenchMate is a local-first woodworking project and workshop planner built around the existing WoodCut Studio cut-list engine.
 
-![CUT LIST 8000 Preview](public/preview-banner.png) <!-- Optional preview image -->
+WoodCut Studio remains the specialised 2D cut-list and sheet-optimisation capability. BenchMate adds the surrounding project, material inventory, tool inventory, build-planning, costing and journaling workflows incrementally.
 
----
+## Current status
 
-## ✨ Features
+Phase 2 is in progress. The current application provides:
 
-- **🪚 2D Guillotine Cut Stock Optimization**: Instant offline-first bin packing calculation running directly in the browser (Best Short Side First & Best Area First heuristics).
-- **📐 Dual Unit Support**: Seamless toggle between **Metric (`mm`)** and **Imperial (`inches`)** with automatic fractional rendering (`48 1/2"`).
-- **⚡ Saw Blade Kerf & Edge Trim Compensation**: Specify exact saw blade width (`3.0 mm` / `1/8"`) and panel edge cleanup margins to ensure real-world cut accuracy.
-- **🪵 Grain Alignment Locks**: Toggle rotation rules per piece (`Allow Rotation` vs `Fixed Grain Direction`).
-- **📊 Clean Dieter Rams Instrument Displays**: Gauge panels for Total Sheets Needed, Material Yield %, Scrap %, Kerf Loss %, and Placed Parts count.
-- **🎨 Interactive SVG Visualizer**: Full-screen layout diagram with zoom, pan, fit-to-screen, piece hover tooltips, and offcut scrap hatching.
-- **📋 Workshop Cut Sequence Guide**: Step-by-step table saw rip-cut and cross-cut instructions with interactive check-off toggles for shop floor use.
-- **📂 Presets & Export**: Built-in project templates (Bookshelf, Kitchen Base Cabinet, Workshop Bench), preset sheet sizes, and CSV export.
+- The WoodCut Studio optimiser.
+- A project workspace with save and reopen behaviour.
+- Material inventory for sheet goods, solid timber and offcuts.
+- Stock selection and bounded reservations for the current project.
+- Workshop tool inventory with capability and availability metadata.
 
----
+The next major slice is the build planner. See the [roadmap](docs/ROADMAP.md) for the planned sequence.
 
-## 🛠️ Technology Stack
+## What is available
 
-- **Core**: React 19 + Vite
-- **Styling**: Vanilla CSS with custom Dieter Rams design tokens (`index.css`)
-- **Icons**: Lucide React
-- **Graphics**: Interactive SVG Rendering Engine
+### WoodCut Studio optimiser
 
----
+- Deterministic 2D guillotine cut optimisation using Best Short Side First and Best Area First strategies.
+- Metric and imperial display units, with dimensions represented in millimetres in the canonical data.
+- Kerf and edge-margin compensation.
+- Per-part grain-direction and rotation controls.
+- Interactive SVG layouts with zoom, pan, fit-to-screen, part details and scrap areas.
+- Workshop-oriented cut sequence instructions with check-off controls.
+- Project and stock presets, CSV export, and browser print/PDF output.
 
-## 🚀 Quick Start (Local Development)
+### BenchMate project workspace
+
+- Sidebar navigation for Optimizer, Projects, Inventory and Workshop.
+- Create, open, duplicate, archive and restore projects.
+- Project name, status and notes.
+- Explicit project save/reopen using the canonical BenchMate project envelope.
+
+### Material inventory
+
+- Record sheet goods, solid timber and offcuts.
+- Store overall and usable dimensions, quantity, condition, source, location and notes.
+- Use available stock as the optimiser's stock template while preserving the material reference on the project.
+- Reserve and release whole-sheet quantities for the active project without allowing reservations to exceed available stock.
+- Distinguish owned stock from planned purchases.
+
+Material matching currently performs dimensional screening. It does not claim to allocate individual boards across every part or replace the cut optimiser.
+
+### Workshop inventory
+
+- Record tools with category, ownership, availability, condition and location.
+- Add capability tags, accessories and maintenance notes.
+- Search and filter the workshop collection.
+
+Capability tags are planning metadata, not safety certification or a guarantee that a substitution is suitable.
+
+## Deferred work and current limitations
+
+The following are planned rather than implemented:
+
+- Hardware and finish inventory.
+- Build stages, dependencies, readiness checks and workshop execution mode.
+- Costing, shopping lists and manual supplier records.
+- Supplier integrations, including store-aware pricing and availability.
+- SketchUp import and review.
+- Journal, photos and creator-workflow features.
+- Authentication, cloud persistence and multi-device synchronisation.
+
+The application currently has no backend, database, account system or supplier API integration.
+
+## Quick start
 
 ### Prerequisites
 
-Ensure you have [Node.js](https://nodejs.org/) (v18 or higher) installed.
+Install Node.js 20.19 or newer, or Node.js 22.12 or newer, plus npm. These versions match the current Vite requirement.
 
-### Installation & Running
+### Install and run
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/wood-cut-list.git
-   cd wood-cut-list
-   ```
+From the repository root:
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+~~~sh
+npm install
+npm run dev
+~~~
 
-3. **Start the local development server**:
-   ```bash
-   npm run dev
-   ```
+Open http://localhost:5173 in a browser.
 
-4. Open your browser and navigate to `http://localhost:5173`.
+### Verification and production preview
 
----
-
-## 📦 Build & Deployment
-
-To create an optimized production build:
-
-```bash
+~~~sh
+npm run lint
+npm run test
 npm run build
-```
+npm run preview
+~~~
 
-The output will be generated in the `dist/` directory.
+The production build is written to dist/.
 
-### Deploy to Vercel (Recommended)
+## Data and persistence
 
-1. Push your repository to GitHub.
-2. Import the repository into [Vercel](https://vercel.com).
-3. Vercel will automatically detect **Vite** and deploy your site in seconds!
+Current saved data is kept in the browser's local storage. It is not stored in source files or a server-side database.
 
----
+| Data | Storage key | Behaviour |
+| --- | --- | --- |
+| Projects | benchmate.projects.v1 | Written when a project is explicitly saved; the first non-archived project is reopened on application start. |
+| Material inventory | benchmate.materials.v1 | Updated when materials or reservations are added, edited, removed or released. |
+| Workshop tools | benchmate.tools.v1 | Updated when tools are added, edited or removed. |
 
-## 📄 License
+Storage is specific to the browser profile and application origin. Clearing site data, changing browsers or using another device will not carry these records across. Cloud backup, account sync and project JSON import/export are not implemented yet.
 
-MIT License — Feel free to use, modify, and build upon this project!
+## Architecture
+
+- Framework and build tool: React 19 with Vite 8.
+- Package manager: npm.
+- Entry point: index.html -> src/main.jsx -> src/App.jsx.
+- UI: React components in src/components and application styling in src/index.css and src/App.css.
+- Calculation logic: src/utils/cutOptimizer.js and src/utils/unitConverter.js.
+- BenchMate adapter and persistence: src/utils/benchmateAdapter.js, src/utils/projectStorage.js, src/utils/materialInventory.js and src/utils/toolInventory.js.
+- Tests: tests/ using Node's built-in test runner.
+- Routing: there is currently no router; the single-page shell switches sections through application state.
+
+The project keeps calculation logic separate from UI components and uses a versioned canonical project envelope so the existing WoodCut session can remain the optimiser's input shape.
+
+## Data and safety conventions
+
+- Dimensions are stored internally in millimetres; the UI can display millimetres or inches.
+- Australian dollars are the planned costing currency; costing is not implemented yet.
+- External supplier information will need a source and checked-at timestamp when integrations are added.
+- Tool and material records describe workshop planning information. They do not replace manufacturer instructions, training, supervision or safe workshop practice.
+
+## Deployment and environment
+
+The app builds as a static Vite site. No deployment provider configuration or environment variables are currently required by the repository. Keep future API credentials and OAuth secrets in a server-side integration layer; they must not be placed in browser code.
+
+## Documentation
+
+- [BenchMate project plan](docs/BENCHMATE_PROJECT_PLAN.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Data model](docs/DATA_MODEL.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Integration notes](docs/INTEGRATIONS.md)
+
+## License
+
+No license file is currently checked in. Treat the repository as unlicensed until a license is added.

@@ -614,8 +614,6 @@ export default function App() {
 
         {/* Top App Bar */}
         <Header
-          unit={unit}
-          onUnitChange={handleUnitChange}
           onOpenPresets={() => setIsPresetsOpen(true)}
           onOpenProjects={handleOpenProjects}
           onSaveProject={handleSaveProject}
@@ -623,10 +621,6 @@ export default function App() {
           onExportCSV={handleExportCSV}
           onPrint={handlePrint}
           onClearAll={handleClearAll}
-          strategy={strategy}
-          onStrategyChange={handleStrategyChange}
-          stock={stock}
-          onStockChange={handleStockChange}
         />
 
         {/* Workspace content */}
@@ -670,6 +664,9 @@ export default function App() {
                 stock={stock}
                 onStockChange={handleStockChange}
                 unit={unit}
+                onUnitChange={handleUnitChange}
+                strategy={strategy}
+                onStrategyChange={handleStrategyChange}
                 cutPreference={cutPreference}
                 onCutPreferenceChange={handleCutPreferenceChange}
                 selectedMaterial={selectedMaterial}
