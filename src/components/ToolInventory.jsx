@@ -12,6 +12,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
+import ActionMenu from './ActionMenu';
 import {
   createTool,
   TOOL_AVAILABILITIES,
@@ -175,16 +176,18 @@ export default function ToolInventory({
       <div className="ws-content ws-tool-content">
         <div className="ws-tool-heading">
           <div>
-            <div className="ws-page-eyebrow">BenchMate workshop</div>
+            <div className="ws-page-eyebrow">WoodCut Studio workshop</div>
             <h1 className="ws-page-title">Tool inventory</h1>
             <p className="ws-page-copy">
               Keep capabilities and availability clear before a build plan depends on a tool.
             </p>
           </div>
-          <button type="button" className="ws-btn" onClick={onBack}>
-            <ArrowLeft size={15} />
-            Optimizer
-          </button>
+          <ActionMenu
+            ariaLabel="Workshop actions"
+            items={[
+              { key: 'optimizer', label: 'Optimizer', icon: ArrowLeft, onClick: onBack },
+            ]}
+          />
         </div>
 
         <div className="ws-tool-toolbar">

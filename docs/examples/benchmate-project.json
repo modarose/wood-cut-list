@@ -14,6 +14,8 @@
     "materialRequirementIds": [],
     "hardwareRequirementIds": [],
     "finishRequirementIds": [],
+    "supplyRequirementIds": [],
+    "toolRequirementIds": [],
     "buildMethodIds": [],
     "journalEntryIds": [],
     "readiness": "needs-review",
@@ -131,6 +133,9 @@
   ],
   "materialRequirements": [],
   "materialStock": [],
+  "supplyRequirements": [],
+  "toolRequirements": [],
+  "buildMethods": [],
   "cutStock": {
     "id": "cut-stock_project_bookshelf-demo_template",
     "source": "woodcut-studio",

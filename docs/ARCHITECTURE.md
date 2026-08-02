@@ -1,6 +1,6 @@
 # BenchMate Architecture
 
-**Status:** Target architecture pending repository audit  
+**Status:** Incremental Phase 3 build-planner slice implemented
 **Foundation:** Existing WoodCut Studio application
 
 ## 1. Architectural decision
@@ -285,3 +285,54 @@ The Workshop view provides a separate browser-local tool collection:
 - Tool records preserve ownership, availability, condition, location, accessories and maintenance notes.
 - Capabilities are selected from a normalised vocabulary so a future build planner can match requirements consistently.
 - The inventory records workshop facts only; capability tags do not certify a safe setup or automatically approve tool substitutions.
+
+## 18. Phase 2 project resource check
+
+The optimizer workspace now includes a project-level resource check:
+
+- `src/utils/projectReadiness.js` derives a deterministic summary from the existing material matcher without changing the WoodCut part or stock shapes.
+- `src/components/ProjectReadiness.jsx` shows potential owned-stock candidates, planned purchase candidates, unresolved rows and rows requiring review. When a material is selected for the optimizer, it also compares that record's available quantity with `optimizationResult.totalSheetsCount`.
+- The report is deliberately a dimensional screening and stock-quantity result. It does not allocate individual boards, replace cut optimisation or infer tool, hardware or finish requirements.
+- Project-level tool capability requirements are now screened separately from build-step assignments; the build planner will decide which tool is used at each step later.
+
+## 19. Phase 2 supplies inventory
+
+Hardware, adhesives, finishes, abrasives and other workshop consumables are stored as a separate browser-local collection:
+
+- `src/utils/supplyInventory.js` owns the validated supply schema and storage under `benchmate.supplies.v1`.
+- `src/components/SupplyInventory.jsx` provides local add, edit, remove, search and category/source filtering workflows.
+- Each record has an explicit category, quantity, quantity unit, source, location and optional brand/reference/notes fields.
+- Quantities may be fractional for units such as litres or metres, but cannot be negative. The collection does not infer prices, supplier availability or project demand.
+
+## 20. Phase 2 project supply requirements
+
+Project supply requirements are stored inside the canonical project envelope rather than as a second global inventory collection:
+
+- `src/utils/supplyRequirements.js` owns the validated requirement schema and deterministic matcher.
+- `src/components/ProjectSupplyRequirements.jsx` provides add, edit and remove controls inside the existing `ProjectReadiness` panel.
+- A requirement records a project ID, category, name, optional reference, explicit unit, positive quantity and notes.
+- Matching is exact by category, normalised name and unit. When a requirement includes a reference, the inventory reference must also match; fuzzy substitutions are not inferred.
+- Owned and planned quantities are reported separately. A report does not consume, reserve, price or certify that a supply is suitable.
+
+## 21. Phase 2 project tool requirements
+
+Project tool requirements use the normalised capability vocabulary from the workshop tool inventory:
+
+- `src/utils/toolRequirements.js` owns the validated capability requirement schema and deterministic feasibility matcher.
+- `src/components/ProjectToolRequirements.jsx` provides add, edit and remove controls inside the existing `ProjectReadiness` panel.
+- A requirement records a project ID, one capability, a positive integer quantity and optional notes.
+- A tool is counted as ready only when it is owned, marked available, and not marked damaged or unknown condition. Maintenance, unavailable, non-owned and uncertain tools remain visible as review candidates.
+- The screen does not allocate the same tool across steps, assign a tool to a cut, or certify a safe workshop setup.
+
+## 22. Phase 3 build planner
+
+The first build-planner slice extends the existing single-page shell rather than creating a second application or route tree:
+
+- `src/utils/buildPlanner.js` owns the validated build-plan model, stage/step operations, dependency-cycle checks and derived progress summary.
+- `src/components/BuildPlanner.jsx` provides the saved stages and steps workspace from the sidebar.
+- The project envelope stores the current plan in `buildMethods[]` and references it through `project.buildMethodIds`.
+- A step may reference existing `Part` IDs, `ToolRequirement` IDs and `SupplyRequirement` IDs. It does not copy inventory records or claim that a resource is allocated.
+- Plan status is derived from step status: a draft has no completed or active work, an in-progress plan has started work, and a complete plan has all steps complete.
+- Dependencies are validated as a directed acyclic graph. Progress reports identify incomplete dependencies, but do not schedule work automatically.
+
+This slice deliberately leaves automatic method generation, step-level tool allocation, full material readiness, costing and large-control workshop mode for later work. Safety notes are user-authored reminders and never replace tool manuals, training or supervision.
