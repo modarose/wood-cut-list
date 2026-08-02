@@ -2694,8 +2694,15 @@ input[type=number] {
   }
 
   .ws-main {
+    display: block !important;
     height: auto;
     overflow: visible;
+  }
+
+  .ws-content,
+  .ws-workspace-grid,
+  .ws-workspace-grid > div:not(.no-print) {
+    display: block !important;
   }
 
   .ram-card {
@@ -2710,16 +2717,17 @@ input[type=number] {
 
   .print-page {
     box-sizing: border-box;
-    page-break-after: always;
-    break-after: page;
+    page-break-after: auto;
+    break-after: auto;
     padding: 12mm;
     width: 100%;
     min-height: 0;
   }
 
-  .print-page:last-child {
-    page-break-after: auto;
-    break-after: auto;
+  .print-summary,
+  .print-diagram-page:not(:last-child) {
+    page-break-after: always;
+    break-after: page;
   }
 
   .print-report {
@@ -2733,9 +2741,6 @@ input[type=number] {
     min-height: 0;
     page-break-inside: auto;
     break-inside: auto;
-    page-break-after: always;
-    break-after: page !important;
-    page-break-after: always !important;
   }
 
   .print-report h1 {
@@ -2849,12 +2854,8 @@ input[type=number] {
     min-height: 0;
     overflow: hidden;
     padding-top: 0;
-    page-break-before: always !important;
-    page-break-after: always !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
-    break-before: page !important;
-    break-after: page !important;
   }
 
   .print-diagram-header {
