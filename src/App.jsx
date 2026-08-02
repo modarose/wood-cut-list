@@ -7,8 +7,6 @@ import Visualizer from './components/Visualizer';
 import CutSequence from './components/CutSequence';
 import PresetsModal from './components/PresetsModal';
 import ProjectDashboard from './components/ProjectDashboard';
-import ProjectDetails from './components/ProjectDetails';
-import ProjectReadiness from './components/ProjectReadiness';
 import MaterialInventory from './components/MaterialInventory';
 import SupplyInventory from './components/SupplyInventory';
 import ToolInventory from './components/ToolInventory';
@@ -683,6 +681,38 @@ export default function App() {
           onDuplicate={handleDuplicateProject}
           onArchive={handleArchiveProject}
           onRestore={handleRestoreProject}
+          workspace={{
+            name: projectName,
+            status: projectStatus,
+            description: projectDescription,
+            isDirty,
+            lastSavedAt,
+            saveError,
+            onNameChange: value => {
+              setProjectName(value);
+              markDirty();
+            },
+            onStatusChange: value => {
+              setProjectStatus(value);
+              markDirty();
+            },
+            onDescriptionChange: value => {
+              setProjectDescription(value);
+              markDirty();
+            },
+            parts,
+            materials,
+            unit,
+            selectedMaterialId,
+            requiredStockQuantity: optimizationResult?.totalSheetsCount ?? 0,
+            projectId,
+            supplyRequirements,
+            supplies,
+            onSupplyRequirementsChange: handleSupplyRequirementsChange,
+            toolRequirements,
+            tools,
+            onToolRequirementsChange: handleToolRequirementsChange,
+          }}
         />
       </div>
     );
@@ -751,12 +781,14 @@ export default function App() {
           projectName={projectName}
           onNavigate={handleSidebarNavigate}
         />
-        <ToolInventory
-          tools={tools}
-          onSaveTool={handleSaveTool}
-          onDeleteTool={handleDeleteTool}
-          onBack={handleCloseWorkshop}
-        />
+          <ToolInventory
+            tools={tools}
+            onSaveTool={handleSaveTool}
+            onDeleteTool={handleDeleteTool}
+            onBack={handleCloseWorkshop}
+            cutResult={optimizationResult}
+            cutUnit={unit}
+          />
       </div>
     );
   }
@@ -784,42 +816,6 @@ export default function App() {
             onExportCSV={handleExportCSV}
             onPrint={handlePrint}
             onClearAll={handleClearAll}
-          />
-
-          <ProjectDetails
-            name={projectName}
-            status={projectStatus}
-            description={projectDescription}
-            isDirty={isDirty}
-            lastSavedAt={lastSavedAt}
-            saveError={saveError}
-            onNameChange={value => {
-              setProjectName(value);
-              markDirty();
-            }}
-            onStatusChange={value => {
-              setProjectStatus(value);
-              markDirty();
-            }}
-            onDescriptionChange={value => {
-              setProjectDescription(value);
-              markDirty();
-            }}
-          />
-
-          <ProjectReadiness
-            parts={parts}
-            materials={materials}
-            unit={unit}
-            selectedMaterialId={selectedMaterialId}
-            requiredStockQuantity={optimizationResult?.totalSheetsCount ?? 0}
-            projectId={projectId}
-            supplyRequirements={supplyRequirements}
-            supplies={supplies}
-            onSupplyRequirementsChange={handleSupplyRequirementsChange}
-            toolRequirements={toolRequirements}
-            tools={tools}
-            onToolRequirementsChange={handleToolRequirementsChange}
           />
 
           {/* Metric Cards Row */}
@@ -871,10 +867,13 @@ export default function App() {
 
           </div>
 
-          {/* Cut Sequence */}
-          <div className="no-print">
-            <CutSequence result={optimizationResult} unit={unit} />
-          </div>
+          {/* Cut Sequence preview; the complete sequence lives in Workshop. */}
+          <CutSequence
+            result={optimizationResult}
+            unit={unit}
+            preview
+            onOpenWorkshop={handleOpenWorkshop}
+          />
 
         </div>
 

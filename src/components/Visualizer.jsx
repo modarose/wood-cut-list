@@ -437,7 +437,7 @@ export default function Visualizer({ result, unit }) {
       <div className="print-only print-report">
         {/* The report index is intentionally separate from the diagrams so it can
             flow over multiple pages without splitting a diagram page. */}
-        <section className="print-summary">
+        <section className="print-page print-summary">
           <div className="print-report-kicker">WOODCUT STUDIO · CUT REPORT</div>
           <h1>Cut List &amp; Sheet Schedule</h1>
           <p className="print-report-subtitle">

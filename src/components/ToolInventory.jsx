@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import ActionMenu from './ActionMenu';
+import CutSequence from './CutSequence';
 import {
   createTool,
   TOOL_AVAILABILITIES,
@@ -68,6 +69,8 @@ export default function ToolInventory({
   onSaveTool,
   onDeleteTool,
   onBack,
+  cutResult,
+  cutUnit,
 }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTool, setEditingTool] = useState(null);
@@ -397,6 +400,12 @@ export default function ToolInventory({
           <AlertTriangle size={15} />
           Capability tags describe your recorded workshop inventory; they do not certify that a tool, setup or substitution is safe for a particular operation.
         </div>
+
+        {cutResult && (
+          <div className="ws-workshop-sequence">
+            <CutSequence result={cutResult} unit={cutUnit} />
+          </div>
+        )}
       </div>
     </main>
   );

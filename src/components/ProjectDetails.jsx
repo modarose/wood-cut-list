@@ -55,12 +55,7 @@ export default function ProjectDetails({
       </div>
 
       <div className="ws-card-body">
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(220px, 2fr) minmax(180px, 1fr)',
-          gap: 'var(--ws-space-md)',
-          marginBottom: 'var(--ws-space-md)',
-        }}>
+        <div className="ws-project-details-grid">
           <div className="ws-input-group">
             <label className="ws-label" htmlFor="project-name">Project name</label>
             <input

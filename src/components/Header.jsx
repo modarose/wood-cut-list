@@ -17,7 +17,7 @@ export default function Header({
         <div className="ws-page-eyebrow">WoodCut Studio workspace</div>
         <h1 className="ws-page-title">Optimizer</h1>
         <p className="ws-page-copy">
-          Build a cut list, match it to your stock and turn the plan into a clear workshop sequence.
+          Build a cut list, match it to your stock and review the material yield before heading to the workshop.
         </p>
       </div>
 

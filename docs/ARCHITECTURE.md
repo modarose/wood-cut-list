@@ -336,3 +336,14 @@ The first build-planner slice extends the existing single-page shell rather than
 - Dependencies are validated as a directed acyclic graph. Progress reports identify incomplete dependencies, but do not schedule work automatically.
 
 This slice deliberately leaves automatic method generation, step-level tool allocation, full material readiness, costing and large-control workshop mode for later work. Safety notes are user-authored reminders and never replace tool manuals, training or supervision.
+
+## 23. Phase 3 workspace separation
+
+The page responsibilities are kept focused without adding a new top-level route:
+
+- **Projects** owns the current project brief and the expandable project readiness review for materials, supplies and tools.
+- **Optimizer** owns cut-list parts, stock settings, optimisation results and a compact cut-sequence preview.
+- **Workshop** owns the full generated cut sequence alongside tool inventory.
+- **Build planner** remains the place for user-authored stages, dependencies and build steps.
+
+The generated cut sequence is still derived from the same deterministic optimisation result. Moving its full presentation does not duplicate or relocate calculation logic.
