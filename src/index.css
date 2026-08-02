@@ -503,6 +503,98 @@ input[type=number] {
   gap: 8px;
 }
 
+.ws-project-workspace {
+  margin-bottom: var(--ws-space-lg);
+}
+
+.ws-project-workspace-details {
+  overflow: hidden;
+  border: 1px solid var(--ws-outline-variant);
+  border-radius: var(--ws-radius-xl);
+  background: var(--ws-surface-container-lowest);
+  box-shadow: var(--ws-shadow-sm);
+}
+
+.ws-project-workspace-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ws-space-md);
+  padding: var(--ws-space-md);
+  cursor: pointer;
+  list-style: none;
+}
+
+.ws-project-workspace-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ws-project-workspace-summary::after {
+  content: '+';
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ws-outline-variant);
+  border-radius: var(--ws-radius-full);
+  color: var(--ws-primary);
+  font-family: var(--ws-font-mono);
+  font-size: 18px;
+  line-height: 26px;
+  text-align: center;
+}
+
+.ws-project-workspace-details[open] .ws-project-workspace-summary {
+  border-bottom: 1px solid var(--ws-outline-variant);
+}
+
+.ws-project-workspace-details[open] .ws-project-workspace-summary::after {
+  content: '−';
+}
+
+.ws-project-workspace-summary h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--ws-on-surface);
+}
+
+.ws-project-workspace-summary p {
+  max-width: 680px;
+  margin: 6px 0 0;
+  color: var(--ws-on-surface-variant);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ws-project-workspace-summary-hint {
+  flex: 0 0 auto;
+  color: var(--ws-on-surface-variant);
+  font-family: var(--ws-font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ws-project-workspace-content {
+  padding: var(--ws-space-md);
+  background: var(--ws-surface-container-low);
+}
+
+.ws-project-workspace-content .ws-card:last-child {
+  margin-bottom: 0;
+}
+
+.ws-project-details-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) minmax(180px, 1fr);
+  gap: var(--ws-space-md);
+  margin-bottom: var(--ws-space-md);
+}
+
+.ws-workshop-sequence {
+  margin-top: var(--ws-space-lg);
+}
+
 .ws-inventory-content {
   width: 100%;
   max-width: 1280px;
@@ -1534,6 +1626,18 @@ input[type=number] {
     justify-content: flex-start;
   }
 
+  .ws-project-workspace-summary {
+    align-items: flex-start;
+  }
+
+  .ws-project-workspace-summary-hint {
+    display: none;
+  }
+
+  .ws-project-details-grid {
+    grid-template-columns: 1fr;
+  }
+
   .ws-inventory-form-grid {
     grid-template-columns: 1fr;
   }
@@ -2258,6 +2362,18 @@ input[type=number] {
   padding: var(--ws-space-md) 0 var(--ws-space-sm);
 }
 
+.ws-sequence-preview-more {
+  margin: 0 var(--ws-space-md) var(--ws-space-md);
+  padding: var(--ws-space-sm) var(--ws-space-md);
+  border: 1px solid var(--ws-outline-variant);
+  border-radius: var(--ws-radius);
+  background: var(--ws-surface-container-low);
+  color: var(--ws-on-surface-variant);
+  font-family: var(--ws-font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 .ws-sequence-sheet {
   padding: 0 var(--ws-space-md) var(--ws-space-md);
 }
@@ -2549,6 +2665,10 @@ input[type=number] {
 }
 
 @media print {
+  @page {
+    margin: 10mm;
+  }
+
   body {
     background: #fff !important;
     color: #000 !important;
@@ -2578,6 +2698,10 @@ input[type=number] {
     overflow: visible;
   }
 
+  .ram-card {
+    overflow: visible !important;
+  }
+
   .ws-card {
     border: none;
     box-shadow: none;
@@ -2585,6 +2709,7 @@ input[type=number] {
   }
 
   .print-page {
+    box-sizing: border-box;
     page-break-after: always;
     break-after: page;
     padding: 12mm;
@@ -2606,8 +2731,11 @@ input[type=number] {
   .print-summary {
     padding: 0;
     min-height: 0;
+    page-break-inside: auto;
+    break-inside: auto;
     page-break-after: always;
-    break-after: page;
+    break-after: page !important;
+    page-break-after: always !important;
   }
 
   .print-report h1 {
@@ -2715,15 +2843,18 @@ input[type=number] {
   }
 
   .print-diagram-page {
+    box-sizing: border-box;
     height: 250mm;
+    max-height: 250mm;
     min-height: 0;
     overflow: hidden;
     padding-top: 0;
-    page-break-before: always;
-    page-break-after: always;
-    break-inside: avoid;
-    break-before: page;
-    break-after: page;
+    page-break-before: always !important;
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    break-before: page !important;
+    break-after: page !important;
   }
 
   .print-diagram-header {
@@ -2743,6 +2874,7 @@ input[type=number] {
   }
 
   .print-diagram-page svg {
+    display: block;
     width: 100%;
     height: 195mm !important;
     max-height: 195mm !important;

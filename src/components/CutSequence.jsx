@@ -2,10 +2,19 @@ import React, { useState } from 'react';
 import { formatDimension } from '../utils/unitConverter';
 import { ListOrdered, CheckCircle2, Circle, ArrowRight, Ruler } from 'lucide-react';
 
-export default function CutSequence({ result, unit }) {
+export default function CutSequence({ result, unit, preview = false, onOpenWorkshop }) {
   const [completedSteps, setCompletedSteps] = useState(new Set());
+  const sheetsWithCuts = result?.sheets?.filter(sheet => sheet.cuts?.length > 0) ?? [];
 
-  if (!result || !result.sheets || result.sheets.length === 0) return null;
+  if (sheetsWithCuts.length === 0) return null;
+
+  const displayedSheets = preview ? sheetsWithCuts.slice(0, 1) : sheetsWithCuts;
+  const totalCutCount = sheetsWithCuts.reduce((sum, sheet) => sum + sheet.cuts.length, 0);
+  const previewCutLimit = 3;
+  const displayedCutCount = displayedSheets.reduce(
+    (sum, sheet) => sum + (preview ? Math.min(sheet.cuts.length, previewCutLimit) : sheet.cuts.length),
+    0,
+  );
 
   const toggleStep = (key) => {
     const next = new Set(completedSteps);
@@ -15,19 +24,24 @@ export default function CutSequence({ result, unit }) {
   };
 
   return (
-    <section className="ws-card no-print">
+    <section className={`ws-card${preview ? ' ws-sequence-preview no-print' : ''}`}>
       <div className="ws-card-header">
         <div className="ws-card-title">
           <ListOrdered size={18} />
           Cut Sequence
         </div>
-        <span className="ws-card-badge">Workshop Instructions</span>
+        {preview && onOpenWorkshop ? (
+          <button type="button" className="ws-btn ws-btn-sm" onClick={onOpenWorkshop}>
+            Open Workshop
+          </button>
+        ) : (
+          <span className="ws-card-badge">Workshop Instructions</span>
+        )}
       </div>
 
       <div className="ws-sequence-body">
-        {result.sheets.map((sheet, sheetIdx) => {
-          if (!sheet.cuts || sheet.cuts.length === 0) return null;
-
+        {displayedSheets.map((sheet, sheetIdx) => {
+          const displayedCuts = preview ? sheet.cuts.slice(0, previewCutLimit) : sheet.cuts;
           return (
             <div className="ws-sequence-sheet" key={sheetIdx}>
               <div className="ws-sequence-sheet-header">
@@ -42,7 +56,7 @@ export default function CutSequence({ result, unit }) {
               </div>
 
               <div className="ws-sequence-strip">
-                {sheet.cuts.map((cut, cutIdx) => {
+                {displayedCuts.map((cut, cutIdx) => {
                   const key = `s${sheetIdx}_c${cutIdx}`;
                   const done = completedSteps.has(key);
                   const label = cut.type === 'vertical' ? 'Cross Cut' : 'Rip Cut';
@@ -100,6 +114,13 @@ export default function CutSequence({ result, unit }) {
             </div>
           );
         })}
+
+        {preview && displayedCutCount < totalCutCount && (
+          <div className="ws-sequence-preview-more">
+            Showing {displayedCutCount} of {totalCutCount} cut passes across {sheetsWithCuts.length} sheet{sheetsWithCuts.length === 1 ? '' : 's'}.
+            Open Workshop for the complete sequence.
+          </div>
+        )}
       </div>
     </section>
   );

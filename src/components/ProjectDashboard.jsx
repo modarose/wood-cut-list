@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Archive, ArrowLeft, Copy, FolderOpen, Plus, RotateCcw } from 'lucide-react';
 import ActionMenu from './ActionMenu';
+import ProjectWorkspace from './ProjectWorkspace';
 
 function statusLabel(status) {
   return (status || 'planning').replaceAll('-', ' ');
@@ -109,6 +110,7 @@ export default function ProjectDashboard({
   onDuplicate,
   onArchive,
   onRestore,
+  workspace,
 }) {
   const [showArchived, setShowArchived] = useState(false);
   const visibleProjects = projects.filter(projectRecord => Boolean(projectRecord.project.archivedAt) === showArchived);
@@ -132,6 +134,8 @@ export default function ProjectDashboard({
               ]}
             />
           </div>
+
+          {workspace && <ProjectWorkspace {...workspace} />}
 
           <div className="ws-project-toolbar">
             <div className="ws-card-title" style={{ fontSize: '0.9rem' }}>
