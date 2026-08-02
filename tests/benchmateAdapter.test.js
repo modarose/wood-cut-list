@@ -53,6 +53,14 @@ import {
   getToolRequirementCheck,
   validateToolRequirement,
 } from '../src/utils/toolRequirements.js';
+import {
+  addBuildStage,
+  addBuildStep,
+  createBuildPlan,
+  getBuildPlanSummary,
+  updateBuildStep,
+  validateBuildPlan,
+} from '../src/utils/buildPlanner.js';
 
 const FIXED_NOW = '2026-07-31T00:00:00.000Z';
 
@@ -677,6 +685,60 @@ test('supply inventory stores fractional quantities with explicit units', () => 
     () => createSupply({ ...supply, quantity: -1 }),
     /quantity must be a non-negative number/,
   );
+});
+
+test('build planner stores ordered stages, dependencies and completion progress', () => {
+  let plan = createBuildPlan({
+    projectId: 'project_build',
+    name: 'Workshop build plan',
+  }, { projectId: 'project_build', now: FIXED_NOW });
+  plan = addBuildStage(plan, { name: 'Preparation' }, { now: FIXED_NOW });
+  const stageId = plan.stages[0].id;
+  plan = addBuildStep(plan, stageId, {
+    name: 'Mark cut lines',
+    type: 'preparation',
+    estimatedMinutes: 15,
+  }, { now: FIXED_NOW });
+  const firstStepId = plan.steps[0].id;
+  plan = addBuildStep(plan, stageId, {
+    name: 'Cut panels',
+    type: 'cutting',
+    dependsOn: [firstStepId],
+    estimatedMinutes: 45,
+    waitMinutes: 5,
+  }, { now: FIXED_NOW });
+
+  let summary = getBuildPlanSummary(plan);
+  assert.equal(summary.totalStages, 1);
+  assert.equal(summary.totalSteps, 2);
+  assert.equal(summary.estimatedMinutes, 60);
+  assert.equal(summary.waitMinutes, 5);
+  assert.equal(summary.blockedSteps, 1);
+  assert.equal(summary.availableSteps, 1);
+
+  plan = updateBuildStep(plan, firstStepId, { status: 'complete' }, { now: FIXED_NOW });
+  summary = getBuildPlanSummary(plan);
+  assert.equal(summary.completedSteps, 1);
+  assert.equal(summary.progress.find(item => item.step.name === 'Cut panels').isAvailable, true);
+  assert.equal(validateBuildPlan(plan).valid, true);
+  assert.throws(
+    () => updateBuildStep(plan, plan.steps[1].id, { dependsOn: [plan.steps[1].id] }, { now: FIXED_NOW }),
+    /cannot depend on itself|cycle/,
+  );
+
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [],
+  }, {
+    projectId: 'project_build',
+    buildPlan: plan,
+    now: FIXED_NOW,
+  });
+  assert.deepEqual(record.project.buildMethodIds, [plan.id]);
+  assert.deepEqual(record.buildMethods, [plan]);
+  assert.equal(validateBenchMateProject(record).valid, true);
+  assert.deepEqual(parseBenchMateProject(JSON.stringify(record)).buildMethods, [plan]);
 });
 
 test('project supply requirements persist and separate owned, planned and missing matches', () => {

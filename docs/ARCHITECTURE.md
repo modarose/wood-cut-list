@@ -1,6 +1,6 @@
 # BenchMate Architecture
 
-**Status:** Target architecture pending repository audit  
+**Status:** Incremental Phase 3 build-planner slice implemented
 **Foundation:** Existing WoodCut Studio application
 
 ## 1. Architectural decision
@@ -323,3 +323,16 @@ Project tool requirements use the normalised capability vocabulary from the work
 - A requirement records a project ID, one capability, a positive integer quantity and optional notes.
 - A tool is counted as ready only when it is owned, marked available, and not marked damaged or unknown condition. Maintenance, unavailable, non-owned and uncertain tools remain visible as review candidates.
 - The screen does not allocate the same tool across steps, assign a tool to a cut, or certify a safe workshop setup.
+
+## 22. Phase 3 build planner
+
+The first build-planner slice extends the existing single-page shell rather than creating a second application or route tree:
+
+- `src/utils/buildPlanner.js` owns the validated build-plan model, stage/step operations, dependency-cycle checks and derived progress summary.
+- `src/components/BuildPlanner.jsx` provides the saved stages and steps workspace from the sidebar.
+- The project envelope stores the current plan in `buildMethods[]` and references it through `project.buildMethodIds`.
+- A step may reference existing `Part` IDs, `ToolRequirement` IDs and `SupplyRequirement` IDs. It does not copy inventory records or claim that a resource is allocated.
+- Plan status is derived from step status: a draft has no completed or active work, an in-progress plan has started work, and a complete plan has all steps complete.
+- Dependencies are validated as a directed acyclic graph. Progress reports identify incomplete dependencies, but do not schedule work automatically.
+
+This slice deliberately leaves automatic method generation, step-level tool allocation, full material readiness, costing and large-control workshop mode for later work. Safety notes are user-authored reminders and never replace tool manuals, training or supervision.

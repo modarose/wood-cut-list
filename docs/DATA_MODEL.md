@@ -178,32 +178,7 @@ Tool capabilities should be normalised so the planner can match requirements wit
 
 ## 8. Build method and step
 
-```json
-{
-  "id": "method_01",
-  "projectId": "project_01",
-  "name": "Pocket-hole construction",
-  "status": "selected",
-  "requiredToolIds": ["tool_pocket_hole_jig", "tool_drill_driver"],
-  "steps": [
-    {
-      "id": "step_01",
-      "sequence": 1,
-      "name": "Prepare and label parts",
-      "type": "preparation",
-      "dependsOn": [],
-      "partIds": ["part_01", "part_02"],
-      "toolIds": ["tool_tape_measure", "tool_pencil"],
-      "materialIds": [],
-      "estimatedMinutes": 20,
-      "status": "not-started",
-      "safetyNotes": []
-    }
-  ]
-}
-```
-
-The example IDs are illustrative. Production IDs must be generated consistently and validated.
+Build methods are the target domain relationship for a project's construction process. The first repository implementation uses the concrete `buildMethods[]` envelope described in [Phase 3 build planner](#18-phase-3-build-planner): stages and steps are stored as separate arrays, and steps reference project-level tool and supply requirements rather than copying inventory records. Production IDs must be generated consistently and validated.
 
 ## 9. Supplier product and price snapshot
 
@@ -266,6 +241,7 @@ The first repository integration uses a versioned JSON envelope rather than chan
   "materialStock": [],
   "supplyRequirements": [],
   "toolRequirements": [],
+  "buildMethods": [],
   "cutStock": {},
   "cutSettings": {}
 }
@@ -411,3 +387,46 @@ Tool requirements are stored inside the project envelope under `toolRequirements
 ```
 
 The matcher uses the normalised capability vocabulary from `src/utils/toolInventory.js`. Only owned tools marked available and not marked damaged or unknown condition count as covered. Other matching tools are shown as review candidates; the result is a feasibility screen rather than a step assignment or safety certification.
+
+## 18. Phase 3 build planner
+
+The first saved build-planner implementation stores one current plan in the project envelope. The project references it through `project.buildMethodIds`, while the complete record is held in `buildMethods[]`:
+
+```json
+{
+  "id": "build_plan_01",
+  "projectId": "project_01",
+  "name": "Workshop build plan",
+  "status": "in-progress",
+  "stages": [
+    {
+      "id": "build_stage_01",
+      "name": "Preparation",
+      "sequence": 1,
+      "stepIds": ["build_step_01"]
+    }
+  ],
+  "steps": [
+    {
+      "id": "build_step_01",
+      "stageId": "build_stage_01",
+      "sequence": 1,
+      "name": "Mark cut lines",
+      "type": "preparation",
+      "dependsOn": [],
+      "partIds": ["part_01"],
+      "toolRequirementIds": ["tool_requirement_01"],
+      "supplyRequirementIds": [],
+      "estimatedMinutes": 15,
+      "waitMinutes": 0,
+      "status": "in-progress",
+      "notes": "Confirm dimensions against the active revision.",
+      "safetyNotes": ["Verify the workpiece is supported before marking or cutting."]
+    }
+  ],
+  "createdAt": "2026-08-02T00:00:00Z",
+  "updatedAt": "2026-08-02T00:00:00Z"
+}
+```
+
+The canonical step types are `preparation`, `cutting`, `joinery`, `assembly`, `sanding`, `finishing`, `waiting` and `other`. Step status values are `not-started`, `in-progress`, `blocked` and `complete`; plan status is derived from the steps. A dependency must reference another step and the dependency graph cannot contain a cycle. Part, tool-requirement and supply-requirement references are planning links only: they do not allocate inventory, assign a physical tool or certify a safe setup.

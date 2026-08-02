@@ -6,7 +6,7 @@ WoodCut Studio remains the specialised 2D cut-list and sheet-optimisation capabi
 
 ## Current status
 
-Phase 2 is in progress. The current application provides:
+Phase 3 build-planner work is in progress. The current application provides:
 
 - The WoodCut Studio optimiser.
 - A project workspace with save and reopen behaviour.
@@ -17,8 +17,9 @@ Phase 2 is in progress. The current application provides:
 - Project-specific supply requirements with exact owned, planned and missing-item matching.
 - Project-specific tool requirements with capability and availability feasibility matching.
 - A project-level resource check separating owned-stock candidates, planned purchases, unresolved parts and review rows, with quantity checks for the selected stock record and supply requirements.
+- A saved Build planner with ordered stages, steps, dependencies, durations, completion status, notes and links to project parts, tool requirements and supply requirements.
 
-Phase 2 is now complete at the inventory-screening level. The next phase is the build planner; broader UI improvements will follow that vertical slice. See the [roadmap](docs/ROADMAP.md) for the planned sequence.
+Phase 2 is complete at the inventory-screening level. Phase 3 has started with the first build-planner vertical slice; broader UI improvements and deeper readiness checks will follow. See the [roadmap](docs/ROADMAP.md) for the planned sequence.
 
 ## What is available
 
@@ -34,7 +35,7 @@ Phase 2 is now complete at the inventory-screening level. The next phase is the 
 
 ### BenchMate project workspace
 
-- Sidebar navigation for Optimizer, Projects, Inventory and Workshop.
+- Sidebar navigation for Optimizer, Projects, Inventory, Workshop and Build planner.
 - Create, open, duplicate, archive and restore projects.
 - Project name, status and notes.
 - Explicit project save/reopen using the canonical BenchMate project envelope.
@@ -66,12 +67,19 @@ Capability tags are planning metadata, not safety certification or a guarantee t
 - Search and filter records without inventing prices, supplier availability or project demand.
 - Add project-specific supply requirements and compare them with exact category, name, unit and optional reference matches.
 
+### Build planner
+
+- Create a saved plan with ordered stages and steps.
+- Record step type, work and wait time, notes and safety reminders.
+- Link steps to cut-list parts, project tool requirements and supply requirements.
+- Add dependencies and see which steps are ready, complete or waiting on earlier work.
+- Mark step progress while keeping the plan user-authored and separate from automatic safety certification.
+
 ## Deferred work and current limitations
 
 The following are planned rather than implemented:
 
-- Build-method tool assignments and step-level feasibility decisions.
-- Build stages, dependencies, readiness checks and workshop execution mode.
+- Step-level tool assignment and feasibility decisions, automatic plan generation, readiness checks and workshop execution mode refinements.
 - Costing, shopping lists and manual supplier records.
 - Supplier integrations, including store-aware pricing and availability.
 - SketchUp import and review.
@@ -114,7 +122,7 @@ Current saved data is kept in the browser's local storage. It is not stored in s
 
 | Data | Storage key | Behaviour |
 | --- | --- | --- |
-| Projects and project requirements | benchmate.projects.v1 | Written when a project is explicitly saved; supply and tool requirements are stored inside the project envelope; the first non-archived project is reopened on application start. |
+| Projects, project requirements and build plans | benchmate.projects.v1 | Written when a project is explicitly saved; supply, tool and build-planner data are stored inside the project envelope; the first non-archived project is reopened on application start. |
 | Material inventory | benchmate.materials.v1 | Updated when materials or reservations are added, edited, removed or released. |
 | Workshop tools | benchmate.tools.v1 | Updated when tools are added, edited or removed. |
 | Workshop supplies | benchmate.supplies.v1 | Updated when supplies are added, edited or removed; project requirements remain inside their saved project. |
@@ -128,7 +136,7 @@ Storage is specific to the browser profile and application origin. Clearing site
 - Entry point: index.html -> src/main.jsx -> src/App.jsx.
 - UI: React components in src/components and application styling in src/index.css and src/App.css.
 - Calculation logic: src/utils/cutOptimizer.js and src/utils/unitConverter.js.
-- BenchMate adapter and persistence: src/utils/benchmateAdapter.js, src/utils/projectStorage.js, src/utils/materialInventory.js, src/utils/toolInventory.js, src/utils/supplyInventory.js and src/utils/supplyRequirements.js.
+- BenchMate adapter and persistence: src/utils/benchmateAdapter.js, src/utils/projectStorage.js, src/utils/materialInventory.js, src/utils/toolInventory.js, src/utils/supplyInventory.js, src/utils/supplyRequirements.js and src/utils/buildPlanner.js.
 - Tests: tests/ using Node's built-in test runner.
 - Routing: there is currently no router; the single-page shell switches sections through application state.
 

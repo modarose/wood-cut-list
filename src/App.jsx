@@ -12,12 +12,14 @@ import ProjectReadiness from './components/ProjectReadiness';
 import MaterialInventory from './components/MaterialInventory';
 import SupplyInventory from './components/SupplyInventory';
 import ToolInventory from './components/ToolInventory';
+import BuildPlanner from './components/BuildPlanner';
 import Sidebar from './components/Sidebar';
 
 import { UNITS, convertDimension } from './utils/unitConverter';
 import { optimizeCutList, STRATEGIES, CUT_PREFERENCES } from './utils/cutOptimizer';
 import { PROJECT_PRESETS } from './utils/presets';
 import { createBenchMateProjectFromWoodCut, toWoodCutSession } from './utils/benchmateAdapter.js';
+import { cloneBuildPlan } from './utils/buildPlanner.js';
 import { createProjectId, loadStoredProjects, saveStoredProjects, upsertStoredProject } from './utils/projectStorage.js';
 import {
   createMaterialStock,
@@ -92,6 +94,7 @@ export default function App() {
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isSuppliesOpen, setIsSuppliesOpen] = useState(false);
   const [isWorkshopOpen, setIsWorkshopOpen] = useState(false);
+  const [isBuildPlannerOpen, setIsBuildPlannerOpen] = useState(false);
   const [materials, setMaterials] = useState(() => loadStoredMaterials());
   const [supplies, setSupplies] = useState(() => loadStoredSupplies());
   const [supplyRequirements, setSupplyRequirements] = useState(
@@ -99,6 +102,9 @@ export default function App() {
   );
   const [toolRequirements, setToolRequirements] = useState(
     () => initialProject?.toolRequirements ?? [],
+  );
+  const [buildPlan, setBuildPlan] = useState(
+    () => initialProject?.buildMethods?.[0] ?? null,
   );
   const [tools, setTools] = useState(() => loadStoredTools());
   const [selectedMaterialId, setSelectedMaterialId] = useState(
@@ -209,6 +215,7 @@ export default function App() {
     if (!canLeaveWorkspace()) return;
     setIsInventoryOpen(false);
     setIsWorkshopOpen(false);
+    setIsBuildPlannerOpen(false);
     setIsProjectsOpen(true);
   };
 
@@ -219,6 +226,7 @@ export default function App() {
   const handleOpenInventory = () => {
     setIsProjectsOpen(false);
     setIsWorkshopOpen(false);
+    setIsBuildPlannerOpen(false);
     setIsInventoryOpen(true);
     setIsSuppliesOpen(false);
   };
@@ -231,6 +239,7 @@ export default function App() {
   const handleOpenSupplies = () => {
     setIsProjectsOpen(false);
     setIsWorkshopOpen(false);
+    setIsBuildPlannerOpen(false);
     setIsInventoryOpen(true);
     setIsSuppliesOpen(true);
   };
@@ -243,11 +252,26 @@ export default function App() {
     setIsProjectsOpen(false);
     setIsInventoryOpen(false);
     setIsSuppliesOpen(false);
+    setIsBuildPlannerOpen(false);
     setIsWorkshopOpen(true);
   };
 
   const handleCloseWorkshop = () => {
     setIsWorkshopOpen(false);
+  };
+
+  const handleOpenBuildPlanner = () => {
+    if (!canLeaveWorkspace()) return;
+    setIsProjectsOpen(false);
+    setIsInventoryOpen(false);
+    setIsSuppliesOpen(false);
+    setIsWorkshopOpen(false);
+    setIsBuildPlannerOpen(true);
+  };
+
+  const handleCloseBuildPlanner = () => {
+    if (!canLeaveWorkspace()) return;
+    setIsBuildPlannerOpen(false);
   };
 
   const handleSidebarNavigate = (section) => {
@@ -266,10 +290,16 @@ export default function App() {
       return;
     }
 
+    if (section === 'build-planner') {
+      handleOpenBuildPlanner();
+      return;
+    }
+
     if (section === 'optimizer') {
       if (isProjectsOpen && canLeaveWorkspace()) setIsProjectsOpen(false);
       if (isInventoryOpen) handleCloseInventory();
       if (isWorkshopOpen) handleCloseWorkshop();
+      if (isBuildPlannerOpen) handleCloseBuildPlanner();
     }
   };
 
@@ -291,6 +321,7 @@ export default function App() {
       sourceMaterialStockId: selectedMaterialId,
       supplyRequirements,
       toolRequirements,
+      buildPlan,
       now,
     });
     const result = upsertStoredProject(record, savedProjects);
@@ -326,6 +357,7 @@ export default function App() {
       setSelectedMaterialId(record.cutStock?.sourceMaterialStockId ?? null);
       setSupplyRequirements(record.supplyRequirements ?? []);
       setToolRequirements(record.toolRequirements ?? []);
+      setBuildPlan(record.buildMethods?.[0] ?? null);
       setStrategy(session.strategy ?? STRATEGIES.BSSF);
       setCutPreference(session.cutPreference ?? CUT_PREFERENCES.RIP_FIRST);
       setIsDirty(false);
@@ -352,6 +384,7 @@ export default function App() {
     setSelectedMaterialId(null);
     setSupplyRequirements([]);
     setToolRequirements([]);
+    setBuildPlan(null);
     setStrategy(STRATEGIES.BSSF);
     setCutPreference(CUT_PREFERENCES.RIP_FIRST);
     setIsDirty(true);
@@ -363,8 +396,9 @@ export default function App() {
     try {
       const session = toWoodCutSession(record);
       const now = new Date().toISOString();
+      const duplicateProjectId = createProjectId();
       const duplicate = createBenchMateProjectFromWoodCut(session, {
-        projectId: createProjectId(),
+        projectId: duplicateProjectId,
         name: `${record.project.name} (Copy)`,
         status: 'planning',
         description: record.project.description ?? '',
@@ -380,6 +414,7 @@ export default function App() {
           id: undefined,
           projectId: undefined,
         })),
+        buildPlan: cloneBuildPlan(record.buildMethods?.[0], duplicateProjectId, { now }),
         now,
       });
       const result = upsertStoredProject(duplicate, savedProjects);
@@ -402,6 +437,7 @@ export default function App() {
       setSelectedMaterialId(record.cutStock?.sourceMaterialStockId ?? null);
       setSupplyRequirements(duplicate.supplyRequirements ?? []);
       setToolRequirements(duplicate.toolRequirements ?? []);
+      setBuildPlan(duplicate.buildMethods?.[0] ?? null);
       setStrategy(session.strategy ?? STRATEGIES.BSSF);
       setCutPreference(session.cutPreference ?? CUT_PREFERENCES.RIP_FIRST);
       setIsDirty(false);
@@ -522,6 +558,11 @@ export default function App() {
 
   const handleToolRequirementsChange = (nextRequirements) => {
     setToolRequirements(nextRequirements);
+    markDirty();
+  };
+
+  const handleBuildPlanChange = (nextPlan) => {
+    setBuildPlan(nextPlan);
     markDirty();
   };
 
@@ -676,6 +717,28 @@ export default function App() {
             onBack={handleCloseInventory}
           />
         )}
+      </div>
+    );
+  }
+
+  if (isBuildPlannerOpen) {
+    return (
+      <div className="ws-shell">
+        <Sidebar
+          activeSection="build-planner"
+          projectName={projectName}
+          onNavigate={handleSidebarNavigate}
+        />
+        <BuildPlanner
+          projectId={projectId}
+          projectName={projectName}
+          buildPlan={buildPlan}
+          parts={parts}
+          toolRequirements={toolRequirements}
+          supplyRequirements={supplyRequirements}
+          onChange={handleBuildPlanChange}
+          onBack={handleCloseBuildPlanner}
+        />
       </div>
     );
   }

@@ -135,6 +135,7 @@
   "materialStock": [],
   "supplyRequirements": [],
   "toolRequirements": [],
+  "buildMethods": [],
   "cutStock": {
     "id": "cut-stock_project_bookshelf-demo_template",
     "source": "woodcut-studio",
