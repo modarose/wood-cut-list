@@ -710,19 +710,18 @@ export default function App() {
       {/* ── Main scrollable area ── */}
       <main className="ws-main">
 
-        {/* Top App Bar */}
-        <Header
-          onOpenPresets={() => setIsPresetsOpen(true)}
-          onOpenProjects={handleOpenProjects}
-          onSaveProject={handleSaveProject}
-          isDirty={isDirty}
-          onExportCSV={handleExportCSV}
-          onPrint={handlePrint}
-          onClearAll={handleClearAll}
-        />
-
         {/* Workspace content */}
-        <div className="ws-content">
+        <div className="ws-content ws-optimizer-content">
+
+          <Header
+            onOpenPresets={() => setIsPresetsOpen(true)}
+            onOpenProjects={handleOpenProjects}
+            onSaveProject={handleSaveProject}
+            isDirty={isDirty}
+            onExportCSV={handleExportCSV}
+            onPrint={handlePrint}
+            onClearAll={handleClearAll}
+          />
 
           <ProjectDetails
             name={projectName}

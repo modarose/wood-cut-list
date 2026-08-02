@@ -181,8 +181,7 @@ input[type=number] {
   padding: 0 4px;
 }
 
-.ws-sidebar-logo,
-.ws-mobile-brand {
+.ws-sidebar-logo {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -193,13 +192,8 @@ input[type=number] {
   margin-bottom: var(--ws-space-sm);
 }
 
-.ws-sidebar-logo .ws-project-copy,
-.ws-mobile-brand .ws-project-copy {
+.ws-sidebar-logo .ws-project-copy {
   min-width: 0;
-}
-
-.ws-mobile-brand {
-  display: none;
 }
 
 .ws-sidebar-subtitle {
@@ -286,25 +280,6 @@ input[type=number] {
   flex-direction: column;
 }
 
-/* ─── TOP APP BAR ───────────────────────────────────────── */
-.ws-appbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: 0 0 auto;
-  padding: 0 var(--ws-space-md);
-  height: auto;
-  min-height: 64px;
-  min-width: 0;
-  background: var(--ws-surface-container-low);
-  border-bottom: 1px solid var(--ws-outline-variant);
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  flex-wrap: wrap;
-  gap: var(--ws-space-sm);
-}
-
 .ws-project-mark {
   display: grid;
   place-items: center;
@@ -349,16 +324,6 @@ input[type=number] {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
-}
-
-.ws-appbar-right {
-  display: flex;
-  align-items: center;
-  gap: var(--ws-space-md);
-  flex: 0 1 auto;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  min-width: 0;
 }
 
 .ws-action-menu {
@@ -486,29 +451,6 @@ input[type=number] {
   color: var(--ws-on-surface);
 }
 
-@media (max-width: 900px) {
-  .ws-appbar {
-    min-height: 64px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-  }
-
-  .ws-mobile-brand {
-    display: flex;
-  }
-
-}
-
-@media (max-width: 1023px) {
-  .ws-appbar {
-    justify-content: space-between;
-  }
-
-  .ws-mobile-brand {
-    display: flex;
-  }
-}
-
 @media (max-width: 600px) {
   .ws-project-title {
     font-size: 16px;
@@ -545,7 +487,29 @@ input[type=number] {
   padding: var(--ws-space-md);
 }
 
+.ws-project-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ws-space-md);
+  margin-bottom: var(--ws-space-md);
+}
+
+.ws-project-toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .ws-inventory-content {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.ws-optimizer-content {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
@@ -553,6 +517,7 @@ input[type=number] {
 
 .ws-inventory-heading,
 .ws-project-heading,
+.ws-optimizer-heading,
 .ws-tool-heading {
   display: flex;
   align-items: flex-start;
@@ -1217,15 +1182,22 @@ input[type=number] {
 @media (max-width: 600px) {
   .ws-inventory-heading,
   .ws-project-heading,
-  .ws-inventory-toolbar {
+  .ws-optimizer-heading,
+  .ws-inventory-toolbar,
+  .ws-project-toolbar {
     align-items: stretch;
     flex-direction: column;
   }
 
   .ws-inventory-heading > .ws-action-menu,
   .ws-project-heading > .ws-action-menu,
+  .ws-optimizer-heading > .ws-action-menu,
   .ws-tool-heading > .ws-action-menu {
     align-self: flex-end;
+  }
+
+  .ws-project-toolbar-actions {
+    justify-content: flex-start;
   }
 
   .ws-inventory-form-grid {
@@ -2251,7 +2223,6 @@ input[type=number] {
   }
 
   .ws-sidebar,
-  .ws-appbar,
   .ws-footer {
     display: none !important;
   }

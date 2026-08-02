@@ -129,21 +129,26 @@ export default function ProjectDashboard({
               ariaLabel="Project actions"
               items={[
                 { key: 'back', label: 'Back to workspace', icon: ArrowLeft, onClick: onClose },
-                { key: 'new', label: 'New project', icon: Plus, onClick: onCreate, variant: 'primary' },
               ]}
             />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: 'var(--ws-space-md)' }}>
+          <div className="ws-project-toolbar">
             <div className="ws-card-title" style={{ fontSize: '0.9rem' }}>
               {showArchived ? 'Archived projects' : 'Active projects'}
             </div>
-            <button
-              className="ws-btn ws-btn-sm"
-              onClick={() => setShowArchived(value => !value)}
-            >
-              {showArchived ? 'Show active' : 'Show archived'}
-            </button>
+            <div className="ws-project-toolbar-actions">
+              <button
+                className="ws-btn ws-btn-sm"
+                onClick={() => setShowArchived(value => !value)}
+              >
+                {showArchived ? 'Show active' : 'Show archived'}
+              </button>
+              <button type="button" className="ws-btn ws-btn-primary" onClick={onCreate}>
+                <Plus size={15} />
+                New project
+              </button>
+            </div>
           </div>
 
           {visibleProjects.length === 0 ? (
