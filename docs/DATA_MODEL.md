@@ -1,7 +1,7 @@
 # BenchMate Data Model
 
-**Status:** Initial canonical model  
-**Date:** 2026-07-31
+**Status:** Canonical model with Phase 4 manual costing slice
+**Date:** 2026-08-03
 
 ## 1. Conventions
 
@@ -55,6 +55,7 @@ The current Phase 2 implementation uses `SupplyRequirement[]` as the generic pro
   "supplyRequirementIds": [],
   "toolRequirementIds": [],
   "buildMethodIds": [],
+  "costItemIds": [],
   "journalEntryIds": [],
   "createdAt": "2026-07-31T00:00:00Z",
   "updatedAt": "2026-07-31T00:00:00Z"
@@ -242,6 +243,7 @@ The first repository integration uses a versioned JSON envelope rather than chan
   "supplyRequirements": [],
   "toolRequirements": [],
   "buildMethods": [],
+  "costItems": [],
   "cutStock": {},
   "cutSettings": {}
 }
@@ -430,3 +432,34 @@ The first saved build-planner implementation stores one current plan in the proj
 ```
 
 The canonical step types are `preparation`, `cutting`, `joinery`, `assembly`, `sanding`, `finishing`, `waiting` and `other`. Step status values are `not-started`, `in-progress`, `blocked` and `complete`; plan status is derived from the steps. A dependency must reference another step and the dependency graph cannot contain a cycle. Part, tool-requirement and supply-requirement references are planning links only: they do not allocate inventory, assign a physical tool or certify a safe setup.
+
+## 19. Phase 4 manual cost items
+
+The first costing slice stores project-specific manual price snapshots inside the existing canonical envelope. The project references them through project.costItemIds and the complete records are held in costItems[]. This keeps costing attached to the project without creating a second application or pretending that a global inventory record is a current supplier quote.
+
+Each cost item has an explicit category, quantity unit, ownership/purchase status and AUD currency:
+
+    {
+      "id": "cost_item_01",
+      "projectId": "project_01",
+      "category": "sheet-goods",
+      "name": "18 mm plywood sheet",
+      "quantity": 2,
+      "unit": "sheet",
+      "status": "planned",
+      "unitCost": 98.5,
+      "currency": "AUD",
+      "supplier": "Example timber supplier",
+      "productReference": "PLY-18-2440",
+      "url": "https://example.com/product",
+      "checkedAt": "2026-08-03",
+      "notes": "Confirm grade and usable dimensions before buying.",
+      "createdAt": "2026-08-03T00:00:00Z",
+      "updatedAt": "2026-08-03T00:00:00Z"
+    }
+
+Valid categories include sheet goods, solid timber, hardware, adhesive, finish, abrasive, consumable and other. Units are explicit values such as each, sheet, pack, box, bottle, tin, tube, metre, square-metre, litre and kilogram. Status is owned, planned or missing. Quantity must be positive; unitCost may be null when a price is not known, but cannot be negative; checkedAt is the date the manual source was reviewed.
+
+The costing summary uses known prices only. Purchase estimate sums priced planned and missing items, owned value sums priced owned items, and the shopping list contains all non-owned items. Missing items and non-owned items without a price remain visible as review conditions. Supplier, product reference and URL are source notes, not a guarantee of current price or availability.
+
+Cost items are optional for backward compatibility, so existing schema version 1 project records remain valid. The current slice does not call supplier APIs, import live availability, reserve inventory or automatically infer cost items from optimizer output.

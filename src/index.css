@@ -823,11 +823,18 @@ input[type=number] {
   margin: 0 auto;
 }
 
+.ws-cost-content {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
 .ws-inventory-heading,
 .ws-project-heading,
 .ws-optimizer-heading,
 .ws-tool-heading,
-.ws-build-heading {
+.ws-build-heading,
+.ws-cost-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -1165,14 +1172,16 @@ input[type=number] {
   line-height: 1.4;
 }
 
-.ws-build-toolbar {
+.ws-build-toolbar,
+.ws-cost-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--ws-space-md);
 }
 
-.ws-build-toolbar strong {
+.ws-build-toolbar strong,
+.ws-cost-toolbar strong {
   display: block;
   color: var(--ws-on-surface);
 }
@@ -1185,6 +1194,158 @@ input[type=number] {
   font-family: var(--ws-font-mono);
   font-size: 11px;
   color: var(--ws-on-surface-variant);
+}
+
+.ws-cost-metrics {
+  margin-bottom: 0;
+}
+
+.ws-cost-metric-note {
+  color: var(--ws-on-surface-variant);
+  font-family: var(--ws-font-mono);
+  font-size: 11px;
+}
+
+.ws-cost-status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ws-space-sm);
+  margin: var(--ws-space-md) 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ws-outline-variant);
+  border-radius: var(--ws-radius);
+  background: var(--ws-surface-container-low);
+  color: var(--ws-on-surface-variant);
+}
+
+.ws-cost-status-banner > svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ws-cost-status-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ws-cost-status-banner strong {
+  color: var(--ws-on-surface);
+  font-size: 13px;
+}
+
+.ws-cost-status-banner span {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ws-cost-status-banner.estimated {
+  border-color: color-mix(in srgb, var(--ws-primary) 35%, var(--ws-outline-variant));
+  background: color-mix(in srgb, var(--ws-primary) 7%, var(--ws-surface-container-low));
+  color: var(--ws-primary);
+}
+
+.ws-cost-status-banner.needs-review {
+  border-color: color-mix(in srgb, var(--ws-secondary) 40%, var(--ws-outline-variant));
+  background: color-mix(in srgb, var(--ws-secondary) 7%, var(--ws-surface-container-low));
+  color: var(--ws-secondary);
+}
+
+.ws-cost-status-banner.not-started {
+  color: var(--ws-on-surface-variant);
+}
+
+.ws-cost-form {
+  overflow: visible;
+  margin-bottom: var(--ws-space-md);
+}
+
+.ws-cost-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ws-space-md);
+}
+
+.ws-cost-field-wide {
+  grid-column: span 2;
+}
+
+.ws-cost-field-full {
+  grid-column: 1 / -1;
+}
+
+.ws-cost-notes {
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.ws-cost-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ws-space-sm);
+  margin-top: var(--ws-space-lg);
+}
+
+.ws-cost-table-wrap {
+  overflow-x: auto;
+  padding: var(--ws-space-md);
+}
+
+.ws-cost-table {
+  min-width: 980px;
+}
+
+.ws-cost-table th:not(:last-child),
+.ws-cost-table td:not(:last-child) {
+  padding-right: var(--ws-space-md);
+}
+
+.ws-cost-item-name {
+  color: var(--ws-on-surface);
+  font-weight: 600;
+}
+
+.ws-cost-invalid {
+  color: var(--ws-secondary);
+  font-size: 11px;
+}
+
+.ws-cost-status {
+  display: inline-flex;
+  padding: 4px 7px;
+  border-radius: var(--ws-radius-full);
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ws-cost-status.owned {
+  background: color-mix(in srgb, var(--ws-primary) 12%, var(--ws-surface-container-highest));
+  color: var(--ws-primary);
+}
+
+.ws-cost-status.planned {
+  background: color-mix(in srgb, var(--ws-tertiary-container) 16%, var(--ws-surface-container-highest));
+  color: var(--ws-tertiary-container);
+}
+
+.ws-cost-status.missing {
+  background: color-mix(in srgb, var(--ws-secondary) 12%, var(--ws-surface-container-highest));
+  color: var(--ws-secondary);
+}
+
+.ws-shopping-list-card {
+  margin-top: var(--ws-space-md);
+}
+
+.ws-cost-boundary {
+  margin: var(--ws-space-md) 0 0;
+  color: var(--ws-on-surface-variant);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .ws-build-readiness {
@@ -1841,6 +2002,10 @@ input[type=number] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .ws-cost-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .ws-build-step-resources {
     grid-template-columns: 1fr 1fr;
   }
@@ -1896,6 +2061,7 @@ input[type=number] {
   .ws-project-heading,
   .ws-optimizer-heading,
   .ws-build-heading,
+  .ws-cost-heading,
   .ws-inventory-toolbar,
   .ws-project-toolbar {
     align-items: stretch;
@@ -1906,11 +2072,13 @@ input[type=number] {
   .ws-project-heading > .ws-action-menu,
   .ws-optimizer-heading > .ws-action-menu,
   .ws-tool-heading > .ws-action-menu,
-  .ws-build-heading > .ws-action-menu {
+  .ws-build-heading > .ws-action-menu,
+  .ws-cost-heading > .ws-action-menu {
     align-self: flex-end;
   }
 
   .ws-build-toolbar,
+  .ws-cost-toolbar,
   .ws-build-stage-header,
   .ws-build-step-header {
     align-items: stretch;
@@ -1970,7 +2138,16 @@ input[type=number] {
     grid-template-columns: 1fr;
   }
 
+  .ws-cost-form-grid {
+    grid-template-columns: 1fr;
+  }
+
   .ws-build-field-wide {
+    grid-column: auto;
+  }
+
+  .ws-cost-field-wide,
+  .ws-cost-field-full {
     grid-column: auto;
   }
 
@@ -1988,6 +2165,14 @@ input[type=number] {
   }
 
   .ws-inventory-form-actions .ws-btn {
+    width: 100%;
+  }
+
+  .ws-cost-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .ws-cost-form-actions .ws-btn {
     width: 100%;
   }
 

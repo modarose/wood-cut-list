@@ -1,6 +1,6 @@
 # BenchMate Architecture
 
-**Status:** Incremental Phase 3 build-planner slice implemented
+**Status:** Incremental Phase 4 manual costing slice implemented
 **Foundation:** Existing WoodCut Studio application
 
 ## 1. Architectural decision
@@ -335,7 +335,7 @@ The first build-planner slice extends the existing single-page shell rather than
 - Plan status is derived from step status: a draft has no completed or active work, an in-progress plan has started work, and a complete plan has all steps complete.
 - Dependencies are validated as a directed acyclic graph. Progress reports identify incomplete dependencies, but do not schedule work automatically.
 
-This slice deliberately leaves automatic method generation, step-level tool allocation, full material readiness, costing and large-control workshop mode for later work. Safety notes are user-authored reminders and never replace tool manuals, training or supervision.
+This slice deliberately leaves automatic method generation, step-level tool allocation, per-step reservations and live supplier integrations for later work. Safety notes are user-authored reminders and never replace tool manuals, training or supervision.
 
 ## 23. Phase 3 workspace separation
 
@@ -360,3 +360,16 @@ The build planner now derives a non-persisted readiness report from the saved pl
 - `src/components/WorkshopMode.jsx` presents the derived status in the existing Workshop view, lets the user focus on one step at a time and persists explicit start/complete status changes through the existing project plan handler.
 
 The report is derived at runtime and is not stored as authoritative project data. Workshop mode does not allocate inventory, assign physical tools or certify a safe workshop setup. Automatic build-method generation and resource reservation per step remain future slices.
+
+## 25. Phase 4 manual costing boundary
+
+The first costing slice stays inside the existing project workspace and canonical envelope:
+
+- src/utils/costing.js owns cost-item categories, units, statuses, validation and deterministic summaries.
+- src/components/Costing.jsx owns manual item entry, project totals, the shopping list and source links.
+- src/App.jsx keeps costItems[] with the active project and passes them through the existing adapter when saving, opening or duplicating a project.
+- project.costItemIds references the records held in costItems[]. The field is optional so older schema version 1 records still load.
+
+The model records a manual snapshot rather than claiming supplier truth. A cost item may be owned, planned or missing; a null unit cost is allowed when the price still needs review. Purchase estimate sums priced non-owned items, owned value sums priced owned items, and the shopping list keeps all non-owned items visible. Supplier name, product reference, URL and checkedAt are traceability fields only.
+
+This slice uses AUD and does not call supplier APIs, expose credentials, infer prices from inventory, reserve stock or allocate optimizer sheets. A future supplier provider can map into the same manual record shape through a server-side integration boundary without changing the Costing component.

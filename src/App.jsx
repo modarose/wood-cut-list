@@ -11,6 +11,7 @@ import MaterialInventory from './components/MaterialInventory';
 import SupplyInventory from './components/SupplyInventory';
 import ToolInventory from './components/ToolInventory';
 import BuildPlanner from './components/BuildPlanner';
+import Costing from './components/Costing';
 import Sidebar from './components/Sidebar';
 
 import { UNITS, convertDimension } from './utils/unitConverter';
@@ -93,6 +94,7 @@ export default function App() {
   const [isSuppliesOpen, setIsSuppliesOpen] = useState(false);
   const [isWorkshopOpen, setIsWorkshopOpen] = useState(false);
   const [isBuildPlannerOpen, setIsBuildPlannerOpen] = useState(false);
+  const [isCostingOpen, setIsCostingOpen] = useState(false);
   const [materials, setMaterials] = useState(() => loadStoredMaterials());
   const [supplies, setSupplies] = useState(() => loadStoredSupplies());
   const [supplyRequirements, setSupplyRequirements] = useState(
@@ -103,6 +105,9 @@ export default function App() {
   );
   const [buildPlan, setBuildPlan] = useState(
     () => initialProject?.buildMethods?.[0] ?? null,
+  );
+  const [costItems, setCostItems] = useState(
+    () => initialProject?.costItems ?? [],
   );
   const [tools, setTools] = useState(() => loadStoredTools());
   const [selectedMaterialId, setSelectedMaterialId] = useState(
@@ -214,6 +219,7 @@ export default function App() {
     setIsInventoryOpen(false);
     setIsWorkshopOpen(false);
     setIsBuildPlannerOpen(false);
+    setIsCostingOpen(false);
     setIsProjectsOpen(true);
   };
 
@@ -222,9 +228,11 @@ export default function App() {
   };
 
   const handleOpenInventory = () => {
+    if (isCostingOpen && !canLeaveWorkspace()) return;
     setIsProjectsOpen(false);
     setIsWorkshopOpen(false);
     setIsBuildPlannerOpen(false);
+    setIsCostingOpen(false);
     setIsInventoryOpen(true);
     setIsSuppliesOpen(false);
   };
@@ -235,9 +243,11 @@ export default function App() {
   };
 
   const handleOpenSupplies = () => {
+    if (isCostingOpen && !canLeaveWorkspace()) return;
     setIsProjectsOpen(false);
     setIsWorkshopOpen(false);
     setIsBuildPlannerOpen(false);
+    setIsCostingOpen(false);
     setIsInventoryOpen(true);
     setIsSuppliesOpen(true);
   };
@@ -247,10 +257,12 @@ export default function App() {
   };
 
   const handleOpenWorkshop = () => {
+    if (isCostingOpen && !canLeaveWorkspace()) return;
     setIsProjectsOpen(false);
     setIsInventoryOpen(false);
     setIsSuppliesOpen(false);
     setIsBuildPlannerOpen(false);
+    setIsCostingOpen(false);
     setIsWorkshopOpen(true);
   };
 
@@ -264,12 +276,28 @@ export default function App() {
     setIsInventoryOpen(false);
     setIsSuppliesOpen(false);
     setIsWorkshopOpen(false);
+    setIsCostingOpen(false);
     setIsBuildPlannerOpen(true);
   };
 
   const handleCloseBuildPlanner = () => {
     if (!canLeaveWorkspace()) return;
     setIsBuildPlannerOpen(false);
+  };
+
+  const handleOpenCosting = () => {
+    if (!canLeaveWorkspace()) return;
+    setIsProjectsOpen(false);
+    setIsInventoryOpen(false);
+    setIsSuppliesOpen(false);
+    setIsWorkshopOpen(false);
+    setIsBuildPlannerOpen(false);
+    setIsCostingOpen(true);
+  };
+
+  const handleCloseCosting = () => {
+    if (!canLeaveWorkspace()) return;
+    setIsCostingOpen(false);
   };
 
   const handleSidebarNavigate = (section) => {
@@ -293,11 +321,17 @@ export default function App() {
       return;
     }
 
+    if (section === 'costing') {
+      handleOpenCosting();
+      return;
+    }
+
     if (section === 'optimizer') {
       if (isProjectsOpen && canLeaveWorkspace()) setIsProjectsOpen(false);
       if (isInventoryOpen) handleCloseInventory();
       if (isWorkshopOpen) handleCloseWorkshop();
       if (isBuildPlannerOpen) handleCloseBuildPlanner();
+      if (isCostingOpen) handleCloseCosting();
     }
   };
 
@@ -320,6 +354,7 @@ export default function App() {
       supplyRequirements,
       toolRequirements,
       buildPlan,
+      costItems,
       now,
     });
     const result = upsertStoredProject(record, savedProjects);
@@ -356,6 +391,7 @@ export default function App() {
       setSupplyRequirements(record.supplyRequirements ?? []);
       setToolRequirements(record.toolRequirements ?? []);
       setBuildPlan(record.buildMethods?.[0] ?? null);
+      setCostItems(record.costItems ?? []);
       setStrategy(session.strategy ?? STRATEGIES.BSSF);
       setCutPreference(session.cutPreference ?? CUT_PREFERENCES.RIP_FIRST);
       setIsDirty(false);
@@ -383,6 +419,7 @@ export default function App() {
     setSupplyRequirements([]);
     setToolRequirements([]);
     setBuildPlan(null);
+    setCostItems([]);
     setStrategy(STRATEGIES.BSSF);
     setCutPreference(CUT_PREFERENCES.RIP_FIRST);
     setIsDirty(true);
@@ -413,6 +450,11 @@ export default function App() {
           projectId: undefined,
         })),
         buildPlan: cloneBuildPlan(record.buildMethods?.[0], duplicateProjectId, { now }),
+        costItems: (record.costItems ?? []).map(item => ({
+          ...item,
+          id: undefined,
+          projectId: undefined,
+        })),
         now,
       });
       const result = upsertStoredProject(duplicate, savedProjects);
@@ -436,6 +478,7 @@ export default function App() {
       setSupplyRequirements(duplicate.supplyRequirements ?? []);
       setToolRequirements(duplicate.toolRequirements ?? []);
       setBuildPlan(duplicate.buildMethods?.[0] ?? null);
+      setCostItems(duplicate.costItems ?? []);
       setStrategy(session.strategy ?? STRATEGIES.BSSF);
       setCutPreference(session.cutPreference ?? CUT_PREFERENCES.RIP_FIRST);
       setIsDirty(false);
@@ -561,6 +604,11 @@ export default function App() {
 
   const handleBuildPlanChange = (nextPlan) => {
     setBuildPlan(nextPlan);
+    markDirty();
+  };
+
+  const handleCostItemsChange = (nextItems) => {
+    setCostItems(nextItems);
     markDirty();
   };
 
@@ -747,6 +795,25 @@ export default function App() {
             onBack={handleCloseInventory}
           />
         )}
+      </div>
+    );
+  }
+
+  if (isCostingOpen) {
+    return (
+      <div className="ws-shell">
+        <Sidebar
+          activeSection="costing"
+          projectName={projectName}
+          onNavigate={handleSidebarNavigate}
+        />
+        <Costing
+          projectId={projectId}
+          projectName={projectName}
+          costItems={costItems}
+          onChange={handleCostItemsChange}
+          onBack={handleCloseCosting}
+        />
       </div>
     );
   }
