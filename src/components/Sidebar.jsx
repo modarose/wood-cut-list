@@ -1,5 +1,5 @@
 import React from 'react';
-import { ClipboardList, FolderOpen, HelpCircle, LayoutGrid, Package, Ruler, Settings, Wrench } from 'lucide-react';
+import { ClipboardList, FolderOpen, HelpCircle, LayoutGrid, Package, Settings, Wrench } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'optimizer', label: 'Optimizer', icon: LayoutGrid, enabled: true },
@@ -14,8 +14,8 @@ export default function Sidebar({ activeSection, projectName, onNavigate }) {
     <aside className="ws-sidebar no-print">
       <div className="ws-sidebar-brand">
         <div className="ws-sidebar-logo">
-          <div className="ws-project-mark" aria-hidden="true">
-            <Ruler size={21} strokeWidth={2.4} />
+          <div className="ws-project-mark">
+            <img src="/woodcut-studio-logo.svg" alt="" aria-hidden="true" />
           </div>
           <div className="ws-project-copy">
             <div className="ws-project-title">WoodCut <span>Studio</span></div>

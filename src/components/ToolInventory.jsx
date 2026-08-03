@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import ActionMenu from './ActionMenu';
 import CutSequence from './CutSequence';
+import WorkshopMode from './WorkshopMode';
 import {
   createTool,
   TOOL_AVAILABILITIES,
@@ -71,6 +72,16 @@ export default function ToolInventory({
   onBack,
   cutResult,
   cutUnit,
+  buildPlan,
+  parts,
+  materials,
+  unit,
+  selectedMaterialId,
+  requiredStockQuantity,
+  toolRequirements,
+  supplyRequirements,
+  supplies,
+  onBuildPlanChange,
 }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTool, setEditingTool] = useState(null);
@@ -205,6 +216,20 @@ export default function ToolInventory({
         </div>
 
         {pageError && <div className="ws-form-error" role="alert">{pageError}</div>}
+
+        <WorkshopMode
+          buildPlan={buildPlan}
+          parts={parts}
+          materials={materials}
+          unit={unit}
+          selectedMaterialId={selectedMaterialId}
+          requiredStockQuantity={requiredStockQuantity}
+          toolRequirements={toolRequirements}
+          tools={tools}
+          supplyRequirements={supplyRequirements}
+          supplies={supplies}
+          onChange={onBuildPlanChange}
+        />
 
         <div className="ws-metrics-grid ws-tool-metrics">
           <div className="ws-metric-card">

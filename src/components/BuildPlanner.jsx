@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   CheckCircle2,
+  ClipboardCheck,
   ClipboardList,
   Clock3,
   Edit3,
@@ -24,6 +25,7 @@ import {
   updateBuildStage,
   updateBuildStep,
 } from '../utils/buildPlanner.js';
+import { getBuildPlanReadiness } from '../utils/buildReadiness.js';
 
 const EMPTY_STAGE_FORM = { id: null, name: '' };
 
@@ -84,6 +86,12 @@ function statusClass(status) {
   return `ws-build-step-status ${status}`;
 }
 
+function readinessStatusClass(status) {
+  if (status === 'ready' || status === 'complete') return 'screened';
+  if (status === 'not-started') return 'not-started';
+  return 'attention';
+}
+
 function renderResourceChips(ids, lookup, emptyLabel) {
   if (!ids.length) return <span className="ws-build-note">{emptyLabel}</span>;
 
@@ -99,8 +107,14 @@ export default function BuildPlanner({
   projectName,
   buildPlan,
   parts,
+  materials,
+  unit,
+  selectedMaterialId,
+  requiredStockQuantity,
   toolRequirements,
+  tools,
   supplyRequirements,
+  supplies,
   onChange,
   onBack,
 }) {
@@ -110,6 +124,31 @@ export default function BuildPlanner({
   }, { projectId }), [projectId, projectName]);
   const plan = buildPlan ?? previewPlan;
   const summary = useMemo(() => getBuildPlanSummary(plan), [plan]);
+  const readiness = useMemo(
+    () => getBuildPlanReadiness(plan, {
+      parts,
+      materials,
+      unit,
+      selectedMaterialId,
+      requiredStockQuantity,
+      toolRequirements,
+      tools,
+      supplyRequirements,
+      supplies,
+    }),
+    [
+      materials,
+      parts,
+      plan,
+      requiredStockQuantity,
+      selectedMaterialId,
+      supplies,
+      supplyRequirements,
+      toolRequirements,
+      tools,
+      unit,
+    ],
+  );
   const progressById = useMemo(
     () => new Map(summary.progress.map(item => [item.step.id, item])),
     [summary],
@@ -295,6 +334,69 @@ export default function BuildPlanner({
             <div className={`ws-metric-value${summary.blockedSteps ? ' secondary' : ''}`}>{summary.blockedSteps}</div>
           </div>
         </div>
+
+        <section className="ws-card ws-build-readiness">
+          <div className="ws-card-header">
+            <div className="ws-card-title"><ClipboardCheck size={18} /> Build readiness</div>
+            <span className={`ws-readiness-status ${readinessStatusClass(readiness.status)}`}>
+              {readiness.statusLabel}
+            </span>
+          </div>
+          <div className="ws-card-body">
+            <div className="ws-metrics-grid ws-build-readiness-metrics">
+              <div className="ws-metric-card">
+                <div className="ws-metric-label"><CheckCircle2 size={13} /> Ready</div>
+                <div className="ws-metric-value">{readiness.readySteps}</div>
+              </div>
+              <div className="ws-metric-card">
+                <div className="ws-metric-label"><AlertTriangle size={13} /> Needs review</div>
+                <div className={`ws-metric-value${readiness.reviewSteps ? ' secondary' : ''}`}>{readiness.reviewSteps}</div>
+              </div>
+              <div className="ws-metric-card">
+                <div className="ws-metric-label"><AlertTriangle size={13} /> Blocked</div>
+                <div className={`ws-metric-value${readiness.blockedSteps ? ' secondary' : ''}`}>{readiness.blockedSteps}</div>
+              </div>
+              <div className="ws-metric-card">
+                <div className="ws-metric-label"><CheckCircle2 size={13} /> Complete</div>
+                <div className="ws-metric-value">{readiness.completedSteps}<span className="ws-metric-unit"> / {readiness.totalSteps}</span></div>
+              </div>
+            </div>
+
+            {readiness.issueSteps.length > 0 ? (
+              <div className="ws-build-readiness-list" aria-label="Build steps needing attention">
+                {readiness.issueSteps.map(item => (
+                  <article className={`ws-build-readiness-row ${item.status}`} key={item.step.id}>
+                    <div className="ws-build-readiness-row-heading">
+                      <span className={`ws-build-readiness-badge ${item.status}`}>{item.statusLabel}</span>
+                      <div>
+                        <strong>{item.stageName}: {item.step.name}</strong>
+                        <span>Plan status: {optionLabel(BUILD_STEP_STATUSES, item.step.status)}</span>
+                      </div>
+                    </div>
+                    <ul>
+                      {item.issues.map((issue, index) => <li key={`${item.step.id}-${issue.type}-${index}`}>{issue.message}</li>)}
+                    </ul>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="ws-readiness-confirmation">
+                <CheckCircle2 size={16} />
+                <span>
+                  {readiness.status === 'not-started'
+                    ? 'Add build steps to calculate dependency and resource readiness.'
+                    : readiness.status === 'complete'
+                      ? 'All build steps are complete.'
+                      : 'All incomplete steps have their mapped dependencies and resources covered.'}
+                </span>
+              </div>
+            )}
+
+            <p className="ws-build-readiness-boundary">
+              Readiness uses the current project inventory screening and explicit step links. It does not allocate stock, assign physical tools or certify a safe workshop setup.
+            </p>
+          </div>
+        </section>
 
         {stageForm && (
           <form className="ws-card ws-build-form" onSubmit={handleStageSubmit}>

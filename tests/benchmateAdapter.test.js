@@ -61,6 +61,7 @@ import {
   updateBuildStep,
   validateBuildPlan,
 } from '../src/utils/buildPlanner.js';
+import { getBuildPlanReadiness } from '../src/utils/buildReadiness.js';
 
 const FIXED_NOW = '2026-07-31T00:00:00.000Z';
 
@@ -739,6 +740,142 @@ test('build planner stores ordered stages, dependencies and completion progress'
   assert.deepEqual(record.buildMethods, [plan]);
   assert.equal(validateBenchMateProject(record).valid, true);
   assert.deepEqual(parseBenchMateProject(JSON.stringify(record)).buildMethods, [plan]);
+});
+
+test('build readiness combines dependencies with material, tool and supply checks', () => {
+  const projectId = 'project_readiness';
+  const panel = {
+    id: 'part_panel',
+    name: 'Side panel',
+    width: 300,
+    height: 500,
+    thickness: 18,
+    qty: 1,
+    allowRotation: true,
+  };
+  const material = createMaterialStock({
+    id: 'stock_plywood',
+    category: 'sheet-goods',
+    name: '18 mm plywood',
+    dimensions: { length: 2440, width: 1220, thickness: 18 },
+    usableLength: 2440,
+    usableWidth: 1220,
+    quantity: 1,
+    source: 'owned',
+  }, { now: FIXED_NOW });
+  const measuringRequirement = createToolRequirement({
+    id: 'tool_requirement_measuring',
+    projectId,
+    capability: 'measuring',
+    quantity: 1,
+  }, { now: FIXED_NOW });
+  const missingToolRequirement = createToolRequirement({
+    id: 'tool_requirement_routing',
+    projectId,
+    capability: 'routing',
+    quantity: 1,
+  }, { now: FIXED_NOW });
+  const tapeMeasure = createTool({
+    id: 'tool_tape_measure',
+    name: 'Tape measure',
+    category: 'measuring',
+    owned: true,
+    availability: 'available',
+    condition: 'good',
+    capabilities: ['measuring'],
+  }, { now: FIXED_NOW });
+  const ownedScrews = createSupply({
+    id: 'supply_owned_screws',
+    category: 'hardware',
+    name: '50 mm screws',
+    unit: 'each',
+    quantity: 10,
+    source: 'owned',
+  }, { now: FIXED_NOW });
+  const plannedFinish = createSupply({
+    id: 'supply_planned_finish',
+    category: 'finish',
+    name: 'Clear coat',
+    unit: 'tin',
+    quantity: 1,
+    source: 'planned',
+  }, { now: FIXED_NOW });
+  const screwRequirement = createSupplyRequirement({
+    id: 'supply_requirement_screws',
+    projectId,
+    category: 'hardware',
+    name: '50 mm screws',
+    unit: 'each',
+    quantity: 4,
+  }, { now: FIXED_NOW });
+  const finishRequirement = createSupplyRequirement({
+    id: 'supply_requirement_finish',
+    projectId,
+    category: 'finish',
+    name: 'Clear coat',
+    unit: 'tin',
+    quantity: 1,
+  }, { now: FIXED_NOW });
+  const plan = createBuildPlan({
+    id: 'build_plan_readiness',
+    projectId,
+    name: 'Readiness test plan',
+    stages: [{ id: 'stage_build', name: 'Build', sequence: 1 }],
+    steps: [
+      {
+        id: 'step_mark',
+        stageId: 'stage_build',
+        name: 'Mark panel',
+        type: 'preparation',
+        partIds: [panel.id],
+        toolRequirementIds: [measuringRequirement.id],
+        supplyRequirementIds: [screwRequirement.id],
+      },
+      {
+        id: 'step_route',
+        stageId: 'stage_build',
+        name: 'Route edge',
+        type: 'joinery',
+        dependsOn: ['step_mark'],
+        toolRequirementIds: [missingToolRequirement.id],
+      },
+      {
+        id: 'step_finish',
+        stageId: 'stage_build',
+        name: 'Apply finish',
+        type: 'finishing',
+        supplyRequirementIds: [finishRequirement.id],
+      },
+    ],
+  }, { projectId, now: FIXED_NOW });
+
+  const readiness = getBuildPlanReadiness(plan, {
+    parts: [panel],
+    materials: [material],
+    unit: 'mm',
+    toolRequirements: [measuringRequirement, missingToolRequirement],
+    tools: [tapeMeasure],
+    supplyRequirements: [screwRequirement, finishRequirement],
+    supplies: [ownedScrews, plannedFinish],
+  });
+
+  assert.equal(readiness.status, 'blocked');
+  assert.equal(readiness.totalSteps, 3);
+  assert.equal(readiness.readySteps, 1);
+  assert.equal(readiness.reviewSteps, 1);
+  assert.equal(readiness.blockedSteps, 1);
+  assert.deepEqual(
+    readiness.steps.map(item => [item.step.id, item.status]),
+    [
+      ['step_mark', 'ready'],
+      ['step_route', 'blocked'],
+      ['step_finish', 'needs-review'],
+    ],
+  );
+  assert.equal(readiness.steps[1].blockers.length, 2);
+  assert.match(readiness.steps[1].issues[0].message, /Mark panel/);
+  assert.match(readiness.steps[1].issues[1].message, /routing/);
+  assert.match(readiness.steps[2].reviews[0].message, /planned stock/);
 });
 
 test('project supply requirements persist and separate owned, planned and missing matches', () => {
