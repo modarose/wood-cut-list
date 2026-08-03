@@ -347,3 +347,16 @@ The page responsibilities are kept focused without adding a new top-level route:
 - **Build planner** remains the place for user-authored stages, dependencies and build steps.
 
 The generated cut sequence is still derived from the same deterministic optimisation result. Moving its full presentation does not duplicate or relocate calculation logic.
+
+## 24. Phase 3 build readiness report
+
+The build planner now derives a non-persisted readiness report from the saved plan and the existing inventory matchers:
+
+- `src/utils/buildReadiness.js` combines dependency progress with the project material, tool and supply checks.
+- A step is `ready` when its incomplete dependencies and explicitly linked resources are covered.
+- A step is `blocked` when a dependency, part, material, tool or supply is missing, or when the user has marked the step blocked.
+- A step is `needs-review` when a linked resource depends on a planned purchase or an unresolved inventory state.
+- A completed step remains complete unless its current references reveal a blocking or review condition; the user-authored step status is preserved separately.
+- `src/components/WorkshopMode.jsx` presents the derived status in the existing Workshop view, lets the user focus on one step at a time and persists explicit start/complete status changes through the existing project plan handler.
+
+The report is derived at runtime and is not stored as authoritative project data. Workshop mode does not allocate inventory, assign physical tools or certify a safe workshop setup. Automatic build-method generation and resource reservation per step remain future slices.

@@ -764,8 +764,14 @@ export default function App() {
           projectName={projectName}
           buildPlan={buildPlan}
           parts={parts}
+          materials={materials}
+          unit={unit}
+          selectedMaterialId={selectedMaterialId}
+          requiredStockQuantity={optimizationResult?.totalSheetsCount ?? 0}
           toolRequirements={toolRequirements}
+          tools={tools}
           supplyRequirements={supplyRequirements}
+          supplies={supplies}
           onChange={handleBuildPlanChange}
           onBack={handleCloseBuildPlanner}
         />
@@ -788,6 +794,16 @@ export default function App() {
             onBack={handleCloseWorkshop}
             cutResult={optimizationResult}
             cutUnit={unit}
+            buildPlan={buildPlan}
+            parts={parts}
+            materials={materials}
+            unit={unit}
+            selectedMaterialId={selectedMaterialId}
+            requiredStockQuantity={optimizationResult?.totalSheetsCount ?? 0}
+            toolRequirements={toolRequirements}
+            supplyRequirements={supplyRequirements}
+            supplies={supplies}
+            onBuildPlanChange={handleBuildPlanChange}
           />
       </div>
     );

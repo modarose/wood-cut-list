@@ -1,8 +1,8 @@
 # BenchMate Roadmap
 
 **Foundation:** Existing WoodCut Studio application  
-**Roadmap status:** Phase 3 build-planner initial slice in progress
-**Date:** 2026-08-02
+**Roadmap status:** Phase 3 build-planner readiness slice in progress
+**Date:** 2026-08-03
 
 ## Product strategy
 
@@ -132,7 +132,9 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 - The first slice supports user-authored stages, ordered steps, dependencies, work and wait durations, notes, safety reminders and completion status.
 - Steps can reference existing cut-list parts, project tool requirements and project supply requirements without duplicating inventory records.
 - Dependency progress is derived deterministically; a step waiting on an incomplete dependency is shown as blocked or not yet ready.
-- Automatic build-method generation, step-level tool allocation, full resource readiness and large-control workshop mode remain future work.
+- The Build Planner now derives a step-level readiness report from dependency progress plus the existing material, tool and supply matchers. Missing references and uncovered resources are blocked; planned purchases and unresolved inventory states require review. The report is derived at runtime and does not allocate stock or certify tool safety.
+- The existing Workshop view now includes a large-control execution panel for the saved build plan. Users can focus a current step and explicitly mark ready steps in progress or complete; blocked and review states remain non-actionable until resolved.
+- Automatic build-method generation, step-level tool allocation and per-step reservations remain future work.
 
 ## Phase 4 — Costing and manual suppliers
 
