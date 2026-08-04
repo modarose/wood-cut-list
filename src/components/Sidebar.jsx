@@ -1,5 +1,14 @@
 import React from 'react';
-import { ClipboardList, FolderOpen, HelpCircle, LayoutGrid, Package, Settings, Wrench } from 'lucide-react';
+import {
+  Calculator,
+  ClipboardList,
+  FolderOpen,
+  HelpCircle,
+  LayoutGrid,
+  Package,
+  Settings,
+  Wrench,
+} from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'optimizer', label: 'Optimizer', icon: LayoutGrid, enabled: true },
@@ -7,6 +16,7 @@ const NAV_ITEMS = [
   { id: 'inventory', label: 'Inventory', icon: Package, enabled: true },
   { id: 'workshop', label: 'Workshop', icon: Wrench, enabled: true },
   { id: 'build-planner', label: 'Build planner', icon: ClipboardList, enabled: true },
+  { id: 'costing', label: 'Costing', icon: Calculator, enabled: true },
 ];
 
 export default function Sidebar({ activeSection, projectName, onNavigate }) {

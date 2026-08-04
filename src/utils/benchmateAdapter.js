@@ -2,6 +2,7 @@ import { convertDimension, UNITS } from './unitConverter.js';
 import { createSupplyRequirement, validateSupplyRequirement } from './supplyRequirements.js';
 import { createToolRequirement, validateToolRequirement } from './toolRequirements.js';
 import { createBuildPlan, validateBuildPlan } from './buildPlanner.js';
+import { createCostItem, validateCostItem } from './costing.js';
 
 export const BENCHMATE_SCHEMA_VERSION = 1;
 export const CANONICAL_UNITS = UNITS.MM;
@@ -284,6 +285,18 @@ function mapBuildPlan(buildPlanInput, projectId, now) {
   });
 }
 
+function mapCostItems(itemsInput, projectId, now) {
+  if (!Array.isArray(itemsInput)) return [];
+
+  return itemsInput.map(item => createCostItem(item, {
+    id: item?.id,
+    projectId,
+    createdAt: item?.createdAt ?? now,
+    updatedAt: now,
+    now,
+  }));
+}
+
 export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
   const sourceSession = isObject(session) ? session : {};
   const warnings = [];
@@ -356,6 +369,7 @@ export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
     now,
   );
   const buildPlan = mapBuildPlan(options.buildPlan, projectId, now);
+  const costItems = mapCostItems(options.costItems, projectId, now);
 
   const revisionWarnings = [...warnings];
   const revisionStatus = revisionWarnings.length > 0 ? 'needs-review' : 'draft';
@@ -374,6 +388,7 @@ export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
     supplyRequirementIds: supplyRequirements.map(requirement => requirement.id),
     toolRequirementIds: toolRequirements.map(requirement => requirement.id),
     buildMethodIds: buildPlan ? [buildPlan.id] : [],
+    costItemIds: costItems.map(item => item.id),
     journalEntryIds: [],
     readiness: revisionWarnings.length > 0 ? 'needs-review' : 'ready',
     createdAt: now,
@@ -409,6 +424,7 @@ export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
     supplyRequirements,
     toolRequirements,
     buildMethods: buildPlan ? [buildPlan] : [],
+    costItems,
     cutStock,
     cutSettings: {
       strategy: sourceSession.strategy ?? 'bssf',
@@ -479,6 +495,10 @@ export function validateBenchMateProject(record) {
     if (record.project.buildMethodIds !== undefined
       && !Array.isArray(record.project.buildMethodIds)) {
       errors.push('project.buildMethodIds must be an array.');
+    }
+    if (record.project.costItemIds !== undefined
+      && !Array.isArray(record.project.costItemIds)) {
+      errors.push('project.costItemIds must be an array.');
     }
   }
 
@@ -570,6 +590,32 @@ export function validateBenchMateProject(record) {
       if (projectBuildMethodIds.length !== buildMethodIds.size
         || projectBuildMethodIds.some(id => !buildMethodIds.has(id))) {
         errors.push('project.buildMethodIds must reference the saved build methods.');
+      }
+    }
+  }
+
+  const costItems = record.costItems ?? [];
+  if (!Array.isArray(costItems)) {
+    errors.push('costItems must be an array.');
+  } else {
+    const costItemIds = new Set();
+    for (const [index, item] of costItems.entries()) {
+      const validation = validateCostItem(item);
+      if (!validation.valid) {
+        errors.push(...validation.errors.map(error => `costItems[${index}]: ${error}`));
+      }
+      if (costItemIds.has(item?.id)) errors.push(`costItems[${index}].id must be unique.`);
+      if (item?.id) costItemIds.add(item.id);
+      if (item?.projectId !== record.project?.id) {
+        errors.push(`costItems[${index}].projectId must match project.id.`);
+      }
+    }
+
+    const projectCostItemIds = record.project?.costItemIds ?? [];
+    if (Array.isArray(record.project?.costItemIds)) {
+      if (projectCostItemIds.length !== costItemIds.size
+        || projectCostItemIds.some(id => !costItemIds.has(id))) {
+        errors.push('project.costItemIds must reference the saved cost items.');
       }
     }
   }
@@ -688,10 +734,15 @@ export function parseBenchMateProject(serialized) {
         ?? (Array.isArray(record.buildMethods)
           ? record.buildMethods.map(buildMethod => buildMethod?.id).filter(Boolean)
           : []),
+      costItemIds: record.project?.costItemIds
+        ?? (Array.isArray(record.costItems)
+          ? record.costItems.map(item => item?.id).filter(Boolean)
+          : []),
     },
     supplyRequirements: record.supplyRequirements ?? [],
     toolRequirements: record.toolRequirements ?? [],
     buildMethods: record.buildMethods ?? [],
+    costItems: record.costItems ?? [],
   };
 
   const validation = validateBenchMateProject(normalizedRecord);

@@ -1,7 +1,7 @@
 # BenchMate Roadmap
 
 **Foundation:** Existing WoodCut Studio application  
-**Roadmap status:** Phase 3 build-planner readiness slice in progress
+**Roadmap status:** Phase 4 manual costing slice in progress
 **Date:** 2026-08-03
 
 ## Product strategy
@@ -156,6 +156,14 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 
 - A project can produce a transparent estimate and purchase list without relying on external APIs.
 
+### Phase 4 initial implementation notes
+
+- Costing is available from the existing desktop sidebar and remains part of the same single-page workspace.
+- Manual cost items are stored in the project envelope as costItems[] and referenced through project.costItemIds. The optional field keeps older schema version 1 records compatible.
+- Each item records a category, name, positive quantity, explicit unit, owned/planned/missing status, optional AUD unit cost, supplier, product reference, URL, checked-at date and notes.
+- The first summary reports purchase estimate, owned value, estimated total, unknown prices and a shopping list. Missing items and non-owned items without prices remain review conditions.
+- Cost items are project-specific manual snapshots. The slice does not call live supplier APIs, confirm availability, reserve inventory or infer costs from optimizer output.
+
 ## Phase 5 — Bunnings integration
 
 ### Objectives
@@ -218,7 +226,7 @@ The MVP should be reached by the end of Phase 4:
 - Tools and materials can be recorded.
 - The planner identifies missing resources.
 - A build sequence can be created.
-- A transparent cost estimate and shopping list can be exported.
+- A transparent cost estimate and shopping list can be generated.
 
 ## Explicitly deferred
 

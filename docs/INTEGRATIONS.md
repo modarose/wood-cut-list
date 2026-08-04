@@ -1,7 +1,7 @@
 # BenchMate Integrations
 
-**Status:** Integration strategy  
-**Date:** 2026-07-31
+**Status:** Integration strategy with Phase 4 manual costing boundary
+**Date:** 2026-08-03
 
 ## 1. Integration priorities
 
@@ -141,6 +141,8 @@ Manual supplier records should support:
 - User notes.
 
 This also allows future Mitre 10, specialty timber, hardware or finishing suppliers without changing the core costing model.
+
+The current Phase 4 implementation uses these manual records in the project Costing view. Supplier name, product reference, product URL, unit price and checked-at date are stored as a dated snapshot. No live supplier API is called yet, and missing prices or availability remain visible for manual review.
 
 ## 6. Optional AI integration
 

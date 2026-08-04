@@ -62,6 +62,11 @@ import {
   validateBuildPlan,
 } from '../src/utils/buildPlanner.js';
 import { getBuildPlanReadiness } from '../src/utils/buildReadiness.js';
+import {
+  createCostItem,
+  getCostingSummary,
+  validateCostItem,
+} from '../src/utils/costing.js';
 
 const FIXED_NOW = '2026-07-31T00:00:00.000Z';
 
@@ -963,4 +968,77 @@ test('project supply requirements persist and separate owned, planned and missin
   ]);
   assert.deepEqual(record.supplyRequirements, [requirement, missingRequirement]);
   assert.equal(validateBenchMateProject(record).valid, true);
+});
+
+test('manual cost items summarize purchases and persist with the project envelope', () => {
+  const owned = createCostItem({
+    id: 'cost_owned_sheet',
+    projectId: 'project_costing',
+    category: 'sheet-goods',
+    name: 'Plywood sheet',
+    quantity: 1,
+    unit: 'sheet',
+    status: 'owned',
+    unitCost: 80,
+    supplier: 'Existing stock',
+    checkedAt: FIXED_NOW,
+  }, { now: FIXED_NOW });
+  const planned = createCostItem({
+    id: 'cost_planned_screws',
+    projectId: 'project_costing',
+    category: 'hardware',
+    name: '50 mm screws',
+    quantity: 2,
+    unit: 'box',
+    status: 'planned',
+    unitCost: 12,
+    supplier: 'Hardware store',
+    checkedAt: FIXED_NOW,
+  }, { now: FIXED_NOW });
+  const missing = createCostItem({
+    id: 'cost_missing_finish',
+    projectId: 'project_costing',
+    category: 'finish',
+    name: 'Clear coat',
+    quantity: 1,
+    unit: 'tin',
+    status: 'missing',
+  }, { now: FIXED_NOW });
+
+  assert.equal(validateCostItem(owned).valid, true);
+  assert.equal(validateCostItem(planned).valid, true);
+  assert.equal(validateCostItem(missing).valid, true);
+
+  const summary = getCostingSummary([owned, planned, missing]);
+  assert.equal(summary.status, 'needs-review');
+  assert.equal(summary.purchaseTotal, 24);
+  assert.equal(summary.ownedValue, 80);
+  assert.equal(summary.estimatedTotal, 104);
+  assert.equal(summary.shoppingItems, 2);
+  assert.equal(summary.unknownPriceCount, 1);
+  assert.equal(summary.missingItems, 1);
+  assert.deepEqual(summary.supplierNames, ['Hardware store']);
+
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [],
+  }, {
+    projectId: 'project_costing',
+    costItems: [owned, planned, missing],
+    now: FIXED_NOW,
+  });
+
+  assert.deepEqual(record.project.costItemIds, [
+    'cost_owned_sheet',
+    'cost_planned_screws',
+    'cost_missing_finish',
+  ]);
+  assert.deepEqual(record.costItems, [owned, planned, missing]);
+  assert.equal(validateBenchMateProject(record).valid, true);
+  assert.deepEqual(parseBenchMateProject(serializeBenchMateProject(record)).costItems, [
+    owned,
+    planned,
+    missing,
+  ]);
 });
