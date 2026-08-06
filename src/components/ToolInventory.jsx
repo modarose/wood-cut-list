@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   MapPin,
   Pencil,
@@ -12,7 +11,6 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import ActionMenu from './ActionMenu';
 import CutSequence from './CutSequence';
 import WorkshopMode from './WorkshopMode';
 import {
@@ -69,7 +67,6 @@ export default function ToolInventory({
   tools,
   onSaveTool,
   onDeleteTool,
-  onBack,
   cutResult,
   cutUnit,
   buildPlan,
@@ -196,12 +193,6 @@ export default function ToolInventory({
               Keep capabilities and availability clear before a build plan depends on a tool.
             </p>
           </div>
-          <ActionMenu
-            ariaLabel="Workshop actions"
-            items={[
-              { key: 'optimizer', label: 'Optimizer', icon: ArrowLeft, onClick: onBack },
-            ]}
-          />
         </div>
 
         <div className="ws-tool-toolbar">

@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   MapPin,
   Package,
@@ -11,7 +10,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import ActionMenu from './ActionMenu';
+import InventoryModeSwitch from './InventoryModeSwitch';
 import {
   createSupply,
   SUPPLY_CATEGORIES,
@@ -61,7 +60,6 @@ export default function SupplyInventory({
   onSaveSupply,
   onDeleteSupply,
   onOpenMaterials,
-  onBack,
 }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSupply, setEditingSupply] = useState(null);
@@ -161,12 +159,9 @@ export default function SupplyInventory({
               Track hardware, adhesives, finishes and abrasives without inventing prices or project requirements.
             </p>
           </div>
-          <ActionMenu
-            ariaLabel="Supplies actions"
-            items={[
-              { key: 'materials', label: 'Materials', icon: Package, onClick: onOpenMaterials, variant: 'primary' },
-              { key: 'optimizer', label: 'Optimizer', icon: ArrowLeft, onClick: onBack },
-            ]}
+          <InventoryModeSwitch
+            activeMode="supplies"
+            onOpenMaterials={onOpenMaterials}
           />
         </div>
 

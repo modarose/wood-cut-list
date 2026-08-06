@@ -330,6 +330,72 @@ input[type=number] {
   flex-shrink: 0;
 }
 
+.ws-page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ws-inventory-mode-switch {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 3px 5px;
+  border: 1px solid var(--ws-outline-variant);
+  border-radius: var(--ws-radius-lg);
+  background: var(--ws-surface-container-lowest);
+  color: var(--ws-primary);
+}
+
+.ws-inventory-mode-switch > svg {
+  flex-shrink: 0;
+}
+
+.ws-inventory-mode-options {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ws-inventory-mode-option {
+  padding: 5px 9px;
+  border: none;
+  border-radius: var(--ws-radius);
+  background: transparent;
+  color: var(--ws-on-surface-variant);
+  font-family: var(--ws-font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.ws-inventory-mode-option.active {
+  background: var(--ws-primary);
+  color: var(--ws-on-primary);
+  box-shadow: var(--ws-shadow-sm);
+}
+
+.ws-inventory-mode-option:hover:not(.active) {
+  background: var(--ws-surface-container-high);
+  color: var(--ws-on-surface);
+}
+
+.ws-inventory-mode-option:focus-visible {
+  outline: 2px solid var(--ws-primary);
+  outline-offset: 1px;
+}
+
+.ws-inventory-mode-divider {
+  color: var(--ws-outline);
+  user-select: none;
+}
+
 .ws-action-menu-toggle {
   color: var(--ws-primary);
 }
@@ -2201,12 +2267,13 @@ input[type=number] {
     flex-direction: column;
   }
 
-  .ws-inventory-heading > .ws-action-menu,
-  .ws-project-heading > .ws-action-menu,
-  .ws-optimizer-heading > .ws-action-menu,
-  .ws-tool-heading > .ws-action-menu,
-  .ws-build-heading > .ws-action-menu,
-  .ws-cost-heading > .ws-action-menu {
+  .ws-inventory-heading > .ws-page-actions,
+  .ws-inventory-heading > .ws-inventory-mode-switch,
+  .ws-project-heading > .ws-page-actions,
+  .ws-optimizer-heading > .ws-page-actions,
+  .ws-tool-heading > .ws-page-actions,
+  .ws-build-heading > .ws-page-actions,
+  .ws-cost-heading > .ws-page-actions {
     align-self: flex-end;
   }
 

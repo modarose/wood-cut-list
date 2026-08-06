@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Header from './components/Header';
 import SheetSettings from './components/SheetSettings';
 import CutListInput from './components/CutListInput';
@@ -132,6 +132,17 @@ export default function App() {
     setSaveError('');
   };
 
+  useEffect(() => {
+    const handleBeforeUnload = event => {
+      if (!isDirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
   // Handle Unit Switching (MM <-> Inches) with automatic dimension recalculation
   const handleUnitChange = (newUnit) => {
     if (newUnit === unit) return;
@@ -211,13 +222,12 @@ export default function App() {
     markDirty();
   };
 
-  const canLeaveWorkspace = () => {
+  const canReplaceProject = () => {
     if (!isDirty) return true;
-    return window.confirm('You have unsaved project changes. Leave without saving?');
+    return window.confirm('You have unsaved project changes. Replace them without saving?');
   };
 
   const handleOpenProjects = () => {
-    if (!canLeaveWorkspace()) return;
     setIsInventoryOpen(false);
     setIsWorkshopOpen(false);
     setIsBuildPlannerOpen(false);
@@ -225,12 +235,7 @@ export default function App() {
     setIsProjectsOpen(true);
   };
 
-  const handleCloseProjects = () => {
-    setIsProjectsOpen(false);
-  };
-
   const handleOpenInventory = () => {
-    if (isCostingOpen && !canLeaveWorkspace()) return;
     setIsProjectsOpen(false);
     setIsWorkshopOpen(false);
     setIsBuildPlannerOpen(false);
@@ -245,7 +250,6 @@ export default function App() {
   };
 
   const handleOpenSupplies = () => {
-    if (isCostingOpen && !canLeaveWorkspace()) return;
     setIsProjectsOpen(false);
     setIsWorkshopOpen(false);
     setIsBuildPlannerOpen(false);
@@ -259,7 +263,6 @@ export default function App() {
   };
 
   const handleOpenWorkshop = () => {
-    if (isCostingOpen && !canLeaveWorkspace()) return;
     setIsProjectsOpen(false);
     setIsInventoryOpen(false);
     setIsSuppliesOpen(false);
@@ -273,7 +276,6 @@ export default function App() {
   };
 
   const handleOpenBuildPlanner = () => {
-    if (!canLeaveWorkspace()) return;
     setIsProjectsOpen(false);
     setIsInventoryOpen(false);
     setIsSuppliesOpen(false);
@@ -283,12 +285,10 @@ export default function App() {
   };
 
   const handleCloseBuildPlanner = () => {
-    if (!canLeaveWorkspace()) return;
     setIsBuildPlannerOpen(false);
   };
 
   const handleOpenCosting = () => {
-    if (!canLeaveWorkspace()) return;
     setIsProjectsOpen(false);
     setIsInventoryOpen(false);
     setIsSuppliesOpen(false);
@@ -298,7 +298,6 @@ export default function App() {
   };
 
   const handleCloseCosting = () => {
-    if (!canLeaveWorkspace()) return;
     setIsCostingOpen(false);
   };
 
@@ -329,7 +328,7 @@ export default function App() {
     }
 
     if (section === 'optimizer') {
-      if (isProjectsOpen && canLeaveWorkspace()) setIsProjectsOpen(false);
+      if (isProjectsOpen) setIsProjectsOpen(false);
       if (isInventoryOpen) handleCloseInventory();
       if (isWorkshopOpen) handleCloseWorkshop();
       if (isBuildPlannerOpen) handleCloseBuildPlanner();
@@ -376,7 +375,7 @@ export default function App() {
   };
 
   const handleOpenProject = (record) => {
-    if (!canLeaveWorkspace()) return;
+    if (!canReplaceProject()) return;
 
     try {
       const session = toWoodCutSession(record);
@@ -405,7 +404,7 @@ export default function App() {
   };
 
   const handleCreateProject = () => {
-    if (!canLeaveWorkspace()) return;
+    if (!canReplaceProject()) return;
 
     const preset = PROJECT_PRESETS[0];
     setProjectId(createProjectId());
@@ -430,6 +429,8 @@ export default function App() {
   };
 
   const handleDuplicateProject = (record) => {
+    if (!canReplaceProject()) return;
+
     try {
       const session = toWoodCutSession(record);
       const now = new Date().toISOString();
@@ -768,12 +769,13 @@ export default function App() {
         />
         <ProjectDashboard
           projects={savedProjects}
-          onClose={handleCloseProjects}
           onCreate={handleCreateProject}
           onOpen={handleOpenProject}
           onDuplicate={handleDuplicateProject}
           onArchive={handleArchiveProject}
           onRestore={handleRestoreProject}
+          onSaveProject={handleSaveProject}
+          isDirty={isDirty}
           workspace={{
             name: projectName,
             status: projectStatus,
@@ -825,7 +827,6 @@ export default function App() {
             onSaveSupply={handleSaveSupply}
             onDeleteSupply={handleDeleteSupply}
             onOpenMaterials={handleOpenMaterials}
-            onBack={handleCloseInventory}
           />
         ) : (
           <MaterialInventory
@@ -837,7 +838,6 @@ export default function App() {
             onDeleteMaterial={handleDeleteMaterial}
             onUseMaterial={handleUseMaterial}
             onOpenSupplies={handleOpenSupplies}
-            onBack={handleCloseInventory}
           />
         )}
       </div>
@@ -859,7 +859,8 @@ export default function App() {
           materials={materials}
           supplies={supplies}
           onChange={handleCostItemsChange}
-          onBack={handleCloseCosting}
+          onSaveProject={handleSaveProject}
+          isDirty={isDirty}
           onCreateSupply={handleCreateSupplyFromCostItem}
           onOpenInventory={handleOpenInventory}
           onPrint={handlePrint}
@@ -890,7 +891,8 @@ export default function App() {
           supplyRequirements={supplyRequirements}
           supplies={supplies}
           onChange={handleBuildPlanChange}
-          onBack={handleCloseBuildPlanner}
+          onSaveProject={handleSaveProject}
+          isDirty={isDirty}
         />
       </div>
     );
@@ -908,7 +910,6 @@ export default function App() {
             tools={tools}
             onSaveTool={handleSaveTool}
             onDeleteTool={handleDeleteTool}
-            onBack={handleCloseWorkshop}
             cutResult={optimizationResult}
             cutUnit={unit}
             buildPlan={buildPlan}
@@ -943,7 +944,6 @@ export default function App() {
 
           <Header
             onOpenPresets={() => setIsPresetsOpen(true)}
-            onOpenProjects={handleOpenProjects}
             onSaveProject={handleSaveProject}
             isDirty={isDirty}
             onExportCSV={handleExportCSV}

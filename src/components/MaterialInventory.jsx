@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowLeft,
   ArrowRight,
   CheckCircle2,
   MapPin,
@@ -12,7 +11,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import ActionMenu from './ActionMenu';
+import InventoryModeSwitch from './InventoryModeSwitch';
 import {
   createMaterialStock,
   getAvailableQuantity,
@@ -89,7 +88,6 @@ export default function MaterialInventory({
   onDeleteMaterial,
   onUseMaterial,
   onOpenSupplies,
-  onBack,
 }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
@@ -179,18 +177,15 @@ export default function MaterialInventory({
       <div className="ws-content ws-inventory-content">
         <div className="ws-inventory-heading">
           <div>
-            <div className="ws-page-eyebrow">WoodCut Studio workshop</div>
+            <div className="ws-page-eyebrow">WoodCut Studio inventory</div>
             <h1 className="ws-page-title">Material inventory</h1>
             <p className="ws-page-copy">
               Record the boards, sheets and offcuts you actually have before planning purchases.
             </p>
           </div>
-          <ActionMenu
-            ariaLabel="Inventory actions"
-            items={[
-              { key: 'supplies', label: 'Supplies', icon: Package, onClick: onOpenSupplies, variant: 'primary' },
-              { key: 'optimizer', label: 'Optimizer', icon: ArrowLeft, onClick: onBack },
-            ]}
+          <InventoryModeSwitch
+            activeMode="materials"
+            onOpenSupplies={onOpenSupplies}
           />
         </div>
 

@@ -1,10 +1,9 @@
 import React from 'react';
-import { Download, FolderOpen, LayoutDashboard, Printer, Save, Trash2 } from 'lucide-react';
-import ActionMenu from './ActionMenu';
+import { Download, FolderOpen, Printer, Save, Trash2 } from 'lucide-react';
+import PageActions from './PageActions';
 
 export default function Header({
   onOpenPresets,
-  onOpenProjects,
   onSaveProject,
   isDirty,
   onExportCSV,
@@ -21,19 +20,21 @@ export default function Header({
         </p>
       </div>
 
-      <ActionMenu
+      <PageActions
         ariaLabel="Optimizer actions"
-        items={[
-          { key: 'projects', label: 'Projects', icon: LayoutDashboard, onClick: onOpenProjects },
+        visible={[
           {
             key: 'save',
-            label: 'Save',
+            label: 'Save changes',
             icon: Save,
             onClick: onSaveProject,
             title: isDirty ? 'Save project' : 'Project is already saved',
             disabled: !isDirty,
+            variant: 'primary',
           },
           { key: 'presets', label: 'Presets', icon: FolderOpen, onClick: onOpenPresets },
+        ]}
+        overflow={[
           { key: 'csv', label: 'Export CSV', icon: Download, onClick: onExportCSV },
           { key: 'print', label: 'Print / PDF', icon: Printer, onClick: onPrint },
           { key: 'reset', label: 'Reset all data', icon: Trash2, onClick: onClearAll, variant: 'danger' },

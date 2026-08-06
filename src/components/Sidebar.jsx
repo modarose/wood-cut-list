@@ -11,12 +11,12 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { id: 'optimizer', label: 'Optimizer', icon: LayoutGrid, enabled: true },
   { id: 'projects', label: 'Projects', icon: FolderOpen, enabled: true },
+  { id: 'optimizer', label: 'Optimizer', icon: LayoutGrid, enabled: true },
   { id: 'inventory', label: 'Inventory', icon: Package, enabled: true },
-  { id: 'workshop', label: 'Workshop', icon: Wrench, enabled: true },
-  { id: 'build-planner', label: 'Build planner', icon: ClipboardList, enabled: true },
   { id: 'costing', label: 'Costing', icon: Calculator, enabled: true },
+  { id: 'build-planner', label: 'Build Planner', icon: ClipboardList, enabled: true },
+  { id: 'workshop', label: 'Workshop', icon: Wrench, enabled: true },
 ];
 
 export default function Sidebar({ activeSection, projectName, onNavigate }) {
