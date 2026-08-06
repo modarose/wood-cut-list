@@ -181,6 +181,7 @@ For each item, record:
 - Name, quantity and unit
 - Status: **Owned**, **Planned purchase** or **Needs sourcing**
 - Optional AUD unit cost
+- Optional actual spend for the line item and the date it was checked after purchase
 - Supplier, product reference, URL, checked-at date and notes
 
 The page calculates:
@@ -188,7 +189,12 @@ The page calculates:
 - **Purchase estimate** for priced non-owned items
 - **Owned value** for priced owned items
 - **Estimated total** combining both
+- **Actual spend** recorded against cost items, with estimate-versus-actual variance
 - **Price review** count for shopping items without a price
+
+### Set a purchase budget
+
+Enter an optional **Budget (AUD)** above the Costing metrics. The budget compares planned and needs-sourcing purchases only; owned inventory value is shown separately and is not counted against the purchase budget. Add **Actual spent (AUD)** to each purchased line when you have the receipt or final amount. The page then reports whether the estimate or recorded spend is within budget, over the estimate, or over budget. A zero-dollar actual is still treated as a recorded amount.
 
 The shopping list includes every planned or needs-sourcing item, including items whose price is still unknown.
 
@@ -206,7 +212,7 @@ Use the link button on a cost item to select a compatible material or supplies r
 
 Open Costing's **Menu** for:
 
-- **Export CSV** with item, quantity, status, supplier, reference, checked date, prices, totals, shopping-list classification, review notes and product URL.
+- **Export CSV** with item, quantity, status, supplier, reference, checked dates, estimate and actual prices, variance, shopping-list classification, review notes, product URL and supplier snapshot fields.
 - **Print / PDF** with the estimate and a separate shopping-list page when purchases exist.
 
 ## 7. Build Planner
@@ -297,6 +303,7 @@ The following sidebar items or product areas are planned future work rather than
 6. Add a supply requirement for screws or glue and a tool requirement for the operations you expect to perform.
 7. Record actual tools and supplies in Inventory, then review owned, planned and missing matches.
 8. Add Costing records for sheet goods, hardware and finishes; link compatible inventory and enter price snapshots.
-9. Export the Costing CSV or print the estimate and shopping list.
-10. Create Build Planner stages and steps, link resources and dependencies, then use Workshop mode while building.
-11. Save after each meaningful planning milestone and keep the printed/CSV reports with the project notes.
+9. Set a purchase budget, then add actual spend as items are bought so the estimate-versus-actual status stays current.
+10. Export the Costing CSV or print the estimate and shopping list.
+11. Create Build Planner stages and steps, link resources and dependencies, then use Workshop mode while building.
+12. Save after each meaningful planning milestone and keep the printed/CSV reports with the project notes.

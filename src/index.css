@@ -1272,6 +1272,85 @@ input[type=number] {
   font-size: 11px;
 }
 
+.ws-cost-budget-card {
+  margin-top: var(--ws-space-md);
+  margin-bottom: var(--ws-space-md);
+}
+
+.ws-cost-budget-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) repeat(3, minmax(0, 1fr));
+  gap: var(--ws-space-md);
+}
+
+.ws-cost-budget-stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 62px;
+  padding: 10px 12px;
+  border: 1px solid var(--ws-outline-variant);
+  border-radius: var(--ws-radius);
+  background: var(--ws-surface-container-low);
+}
+
+.ws-cost-budget-stat span {
+  color: var(--ws-on-surface-variant);
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ws-cost-budget-stat strong {
+  color: var(--ws-primary);
+  font-family: var(--ws-font-mono);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.ws-cost-budget-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: var(--ws-radius-full);
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ws-cost-budget-status.not-set {
+  background: var(--ws-surface-container-high);
+  color: var(--ws-on-surface-variant);
+}
+
+.ws-cost-budget-status.within-budget {
+  background: color-mix(in srgb, var(--ws-primary) 12%, var(--ws-surface-container-highest));
+  color: var(--ws-primary);
+}
+
+.ws-cost-budget-status.estimate-over,
+.ws-cost-budget-status.over-budget,
+.ws-cost-budget-status.invalid {
+  background: color-mix(in srgb, var(--ws-secondary) 12%, var(--ws-surface-container-highest));
+  color: var(--ws-secondary);
+}
+
+.ws-cost-budget-note {
+  margin: var(--ws-space-md) 0 0;
+  color: var(--ws-on-surface-variant);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ws-cost-variance-over {
+  color: var(--ws-secondary);
+}
+
 .ws-cost-status-banner {
   display: flex;
   align-items: flex-start;
@@ -1321,6 +1400,39 @@ input[type=number] {
   color: var(--ws-on-surface-variant);
 }
 
+.ws-cost-snapshot-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ws-space-sm);
+  margin: var(--ws-space-md) 0;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--ws-secondary) 40%, var(--ws-outline-variant));
+  border-radius: var(--ws-radius);
+  background: color-mix(in srgb, var(--ws-secondary) 6%, var(--ws-surface-container-low));
+  color: var(--ws-secondary);
+}
+
+.ws-cost-snapshot-banner > svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ws-cost-snapshot-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ws-cost-snapshot-banner strong {
+  color: var(--ws-on-surface);
+  font-size: 13px;
+}
+
+.ws-cost-snapshot-banner span {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .ws-cost-form {
   overflow: visible;
   margin-bottom: var(--ws-space-md);
@@ -1343,6 +1455,12 @@ input[type=number] {
 .ws-cost-notes {
   resize: vertical;
   line-height: 1.45;
+}
+
+.ws-cost-form-help {
+  color: var(--ws-on-surface-variant);
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .ws-cost-form-actions {
@@ -1376,6 +1494,25 @@ input[type=number] {
   font-size: 11px;
 }
 
+.ws-cost-snapshot-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  color: var(--ws-primary);
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.ws-cost-snapshot-meta span {
+  color: var(--ws-on-surface-variant);
+}
+
+.ws-cost-snapshot-meta.needs-review {
+  color: var(--ws-secondary);
+}
+
 .ws-cost-status {
   display: inline-flex;
   padding: 4px 7px;
@@ -1405,6 +1542,72 @@ input[type=number] {
 
 .ws-shopping-list-card {
   margin-top: var(--ws-space-md);
+}
+
+.ws-cost-group-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--ws-space-sm);
+  padding: var(--ws-space-md) var(--ws-space-md) var(--ws-space-md);
+}
+
+.ws-cost-group {
+  padding: 12px;
+  border: 1px solid var(--ws-outline-variant);
+  border-radius: var(--ws-radius);
+  background: var(--ws-surface-container-low);
+}
+
+.ws-cost-group-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ws-space-md);
+}
+
+.ws-cost-group-heading > div:first-child,
+.ws-cost-group-total {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ws-cost-group-heading strong {
+  overflow: hidden;
+  color: var(--ws-on-surface);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-cost-group-heading span,
+.ws-cost-group-total span,
+.ws-cost-group-meta {
+  color: var(--ws-on-surface-variant);
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+}
+
+.ws-cost-group-total {
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.ws-cost-group-total strong {
+  color: var(--ws-primary);
+  font-size: 14px;
+}
+
+.ws-cost-group-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 10px;
+}
+
+.ws-cost-group-meta span:not(:first-child) {
+  color: var(--ws-secondary);
 }
 
 .ws-cost-boundary {
@@ -2595,6 +2798,10 @@ input[type=number] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .ws-cost-budget-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .ws-build-step-resources {
     grid-template-columns: 1fr 1fr;
   }
@@ -2729,6 +2936,14 @@ input[type=number] {
   }
 
   .ws-cost-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ws-cost-budget-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ws-cost-group-list {
     grid-template-columns: 1fr;
   }
 
@@ -3992,6 +4207,11 @@ input[type=number] {
 
   .print-cost-table {
     margin-top: 0.8rem;
+  }
+
+  .print-cost-group-table {
+    margin-top: 0.8rem;
+    margin-bottom: 1rem;
   }
 
   .print-cost-table tr {

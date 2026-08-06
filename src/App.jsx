@@ -19,6 +19,7 @@ import { UNITS, convertDimension } from './utils/unitConverter';
 import { optimizeCutList, STRATEGIES, CUT_PREFERENCES } from './utils/cutOptimizer';
 import { PROJECT_PRESETS } from './utils/presets';
 import { createBenchMateProjectFromWoodCut, toWoodCutSession } from './utils/benchmateAdapter.js';
+import { createProjectBudget } from './utils/budget.js';
 import { cloneBuildPlan } from './utils/buildPlanner.js';
 import { createProjectId, loadStoredProjects, saveStoredProjects, upsertStoredProject } from './utils/projectStorage.js';
 import {
@@ -112,6 +113,9 @@ export default function App() {
   );
   const [costItems, setCostItems] = useState(
     () => initialProject?.costItems ?? [],
+  );
+  const [budget, setBudget] = useState(
+    () => initialProject?.project.budget ?? null,
   );
   const [tools, setTools] = useState(() => loadStoredTools());
   const [selectedMaterialId, setSelectedMaterialId] = useState(
@@ -384,6 +388,7 @@ export default function App() {
       toolRequirements,
       buildPlan,
       costItems,
+      budget,
       now,
     });
     const result = upsertStoredProject(record, savedProjects);
@@ -421,6 +426,7 @@ export default function App() {
       setToolRequirements(record.toolRequirements ?? []);
       setBuildPlan(record.buildMethods?.[0] ?? null);
       setCostItems(record.costItems ?? []);
+      setBudget(record.project.budget ?? null);
       setStrategy(session.strategy ?? STRATEGIES.BSSF);
       setCutPreference(session.cutPreference ?? CUT_PREFERENCES.RIP_FIRST);
       setIsDirty(false);
@@ -447,9 +453,10 @@ export default function App() {
     setSelectedMaterialId(null);
     setSupplyRequirements([]);
     setToolRequirements([]);
-    setBuildPlan(null);
-    setCostItems([]);
-    setStrategy(STRATEGIES.BSSF);
+      setBuildPlan(null);
+      setCostItems([]);
+      setBudget(null);
+      setStrategy(STRATEGIES.BSSF);
     setCutPreference(CUT_PREFERENCES.RIP_FIRST);
     setIsDirty(true);
     setSaveError('');
@@ -486,6 +493,7 @@ export default function App() {
           id: undefined,
           projectId: undefined,
         })),
+        budget: record.project.budget ?? null,
         now,
       });
       const result = upsertStoredProject(duplicate, savedProjects);
@@ -510,6 +518,7 @@ export default function App() {
       setToolRequirements(duplicate.toolRequirements ?? []);
       setBuildPlan(duplicate.buildMethods?.[0] ?? null);
       setCostItems(duplicate.costItems ?? []);
+      setBudget(duplicate.project.budget ?? null);
       setStrategy(session.strategy ?? STRATEGIES.BSSF);
       setCutPreference(session.cutPreference ?? CUT_PREFERENCES.RIP_FIRST);
       setIsDirty(false);
@@ -684,6 +693,15 @@ export default function App() {
   const handleCostItemsChange = (nextItems) => {
     setCostItems(nextItems);
     markDirty();
+  };
+
+  const handleBudgetChange = (nextBudget) => {
+    try {
+      setBudget(createProjectBudget(nextBudget));
+      markDirty();
+    } catch (error) {
+      setSaveError(error.message);
+    }
   };
 
   const handleSaveTool = (input, existingTool) => {
@@ -897,9 +915,11 @@ export default function App() {
           projectId={projectId}
           projectName={projectName}
           costItems={costItems}
+          budget={budget}
           materials={materials}
           supplies={supplies}
           onChange={handleCostItemsChange}
+          onBudgetChange={handleBudgetChange}
           onSaveProject={handleSaveProject}
           isDirty={isDirty}
           onCreateSupply={handleCreateSupplyFromCostItem}

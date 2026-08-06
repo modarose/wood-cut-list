@@ -3,6 +3,7 @@ import { createSupplyRequirement, validateSupplyRequirement } from './supplyRequ
 import { createToolRequirement, validateToolRequirement } from './toolRequirements.js';
 import { createBuildPlan, validateBuildPlan } from './buildPlanner.js';
 import { createCostItem, validateCostItem } from './costing.js';
+import { createProjectBudget, validateProjectBudget } from './budget.js';
 
 export const BENCHMATE_SCHEMA_VERSION = 1;
 export const CANONICAL_UNITS = UNITS.MM;
@@ -370,6 +371,9 @@ export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
   );
   const buildPlan = mapBuildPlan(options.buildPlan, projectId, now);
   const costItems = mapCostItems(options.costItems, projectId, now);
+  const projectBudget = options.budget === undefined
+    ? undefined
+    : createProjectBudget(options.budget);
 
   const revisionWarnings = [...warnings];
   const revisionStatus = revisionWarnings.length > 0 ? 'needs-review' : 'draft';
@@ -394,6 +398,7 @@ export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
     createdAt: now,
     updatedAt: now,
   };
+  if (projectBudget !== undefined) project.budget = projectBudget;
 
   const designRevision = {
     id: revisionId,
@@ -499,6 +504,12 @@ export function validateBenchMateProject(record) {
     if (record.project.costItemIds !== undefined
       && !Array.isArray(record.project.costItemIds)) {
       errors.push('project.costItemIds must be an array.');
+    }
+    if (record.project.budget !== undefined && record.project.budget !== null) {
+      const budgetValidation = validateProjectBudget(record.project.budget);
+      if (!budgetValidation.valid) {
+        errors.push(...budgetValidation.errors.map(error => `project.budget: ${error}`));
+      }
     }
   }
 

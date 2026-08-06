@@ -1,7 +1,7 @@
 # BenchMate Integrations
 
-**Status:** Integration strategy with Phase 4 manual costing boundary
-**Date:** 2026-08-03
+**Status:** Integration strategy with Phase 5 supplier snapshot foundation
+**Date:** 2026-08-06
 
 ## 1. Integration priorities
 
@@ -113,6 +113,12 @@ Bunnings API access uses OAuth 2.0. Developer registration and app creation are 
 - Preserve manual product links as a fallback.
 - Do not assume price lookup implies checkout or ordering capability.
 
+### Current repository boundary
+
+The first Phase 5 slice is deliberately provider-neutral and browser-safe. `src/utils/supplierSnapshots.js` validates the provider, external item number, store metadata and explicit availability state used by Costing. The Costing view derives freshness from its checked-at date and flags stale, unchecked or unknown-availability records for review.
+
+This metadata is a project-local snapshot. Choosing Bunnings in the form records the intended source; it does not call Bunnings, confirm a store quantity or expose credentials. The repository still has no backend or serverless function, so OAuth token handling and live API requests remain deferred until that server boundary is introduced.
+
 ### Provider interface
 
 ```text
@@ -142,7 +148,9 @@ Manual supplier records should support:
 
 This also allows future Mitre 10, specialty timber, hardware or finishing suppliers without changing the core costing model.
 
-The current Phase 4 implementation uses these manual records in the project Costing view. Supplier name, product reference, product URL, unit price and checked-at date are stored as a dated snapshot. No live supplier API is called yet, and missing prices or availability remain visible for manual review.
+The current implementation uses these manual records in the project Costing view. Supplier name, product reference, product URL, unit price and checked-at date are stored as a dated snapshot, with optional provider, store and availability metadata. No live supplier API is called yet, and missing prices or availability remain visible for manual review.
+
+The Shopping List groups these project snapshots by supplier, provider and store for purchasing review. Group totals use known manual prices only; unpriced items remain visible and are not silently estimated.
 
 Cost records may carry an explicit link to a compatible material or supply inventory record. This is a reference only; inventory remains the source of truth for stock quantities, dimensions and availability.
 

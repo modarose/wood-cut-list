@@ -381,3 +381,27 @@ Creating a link initially adopts the linked inventory source as the Costing stat
 Existing linked items expose an explicit reconciliation action when their Costing status differs from the current Inventory source. Reconciliation updates the project snapshot status only and leaves Inventory quantities, dimensions and reservations unchanged.
 
 This slice uses AUD and does not call supplier APIs, expose credentials, infer prices from inventory, reserve stock or allocate optimizer sheets. A future supplier provider can map into the same manual record shape through a server-side integration boundary without changing the Costing component.
+
+## 26. Phase 5 supplier snapshot boundary
+
+Phase 5 begins with a provider-neutral contract rather than a browser-side Bunnings client:
+
+- `src/utils/supplierSnapshots.js` owns provider and availability vocabularies, validation, normalisation and derived freshness status.
+- `src/utils/costing.js` keeps the existing manual price fields and accepts an optional `supplierSnapshot` metadata object for provider, external item, store and availability details.
+- `src/utils/costing.js` derives `getShoppingListGroups()` from validated shopping rows so supplier/source/store grouping remains a presentation calculation rather than a second persistence model.
+- `src/components/Costing.jsx` exposes manual, Bunnings and other-supplier source labels, store metadata and availability entry. It shows snapshot review conditions without claiming live supplier truth.
+- Older cost records without the optional object remain valid and continue through the existing project adapter and browser-local persistence.
+
+The current Vite repository has no API, serverless function, environment-variable convention or supplier credentials. The next live-integration slice must add a server-side boundary for OAuth and supplier requests, then map successful responses into this contract. API failures, unavailable access and stale data must leave the manual record intact.
+
+## 27. Phase 5 purchase budget boundary
+
+The optional budget and actual-spend slice remains local-first and supplier-neutral:
+
+- src/utils/budget.js owns budget validation, AUD normalisation and deterministic estimate-versus-actual comparison.
+- project.budget is an optional project-envelope value. The existing adapter only writes it when supplied, so older records without a budget remain unchanged and valid.
+- Cost items may carry actualCost and actualCheckedAt; these are line-level user-entered purchase snapshots, not inventory transactions.
+- src/utils/costing.js derives purchase actuals, line variances and budget status from validated rows. The comparison excludes owned inventory value and does not reserve or decrement stock.
+- Costing print and CSV outputs use the same derived summary as the screen, keeping estimate, actual and variance values on one calculation path.
+
+This slice does not introduce a backend, account system, receipt import or automatic actual-price capture. Those would require a separate persistence and integration decision.

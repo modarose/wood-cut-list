@@ -32,6 +32,11 @@ import {
   getCostingSummary,
   updateCostItem,
 } from '../utils/costing.js';
+import {
+  SUPPLIER_AVAILABILITY_STATUSES,
+  SUPPLIER_SNAPSHOT_PROVIDERS,
+  getSupplierSnapshotReview,
+} from '../utils/supplierSnapshots.js';
 
 const EMPTY_FORM = {
   name: '',
@@ -44,6 +49,12 @@ const EMPTY_FORM = {
   productReference: '',
   url: '',
   checkedAt: '',
+  actualCost: '',
+  actualCheckedAt: '',
+  provider: 'manual',
+  storeName: '',
+  storeId: '',
+  availability: 'unknown',
   notes: '',
 };
 
@@ -52,6 +63,7 @@ function optionLabel(options, value) {
 }
 
 function toForm(item) {
+  const supplierSnapshot = item.supplierSnapshot ?? {};
   return {
     name: item.name,
     category: item.category,
@@ -63,6 +75,12 @@ function toForm(item) {
     productReference: item.productReference ?? '',
     url: item.url ?? '',
     checkedAt: item.checkedAt ? item.checkedAt.slice(0, 10) : '',
+    actualCost: item.actualCost === null || item.actualCost === undefined ? '' : String(item.actualCost),
+    actualCheckedAt: item.actualCheckedAt ? item.actualCheckedAt.slice(0, 10) : '',
+    provider: supplierSnapshot.provider ?? 'manual',
+    storeName: supplierSnapshot.storeName ?? '',
+    storeId: supplierSnapshot.storeId ?? '',
+    availability: supplierSnapshot.availability ?? 'unknown',
     notes: item.notes ?? '',
   };
 }
@@ -71,6 +89,22 @@ function formatDate(value) {
   if (!value) return 'Not checked';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString('en-AU');
+}
+
+function formatCostVariance(value) {
+  if (!Number.isFinite(value)) return 'Not recorded';
+  if (value === 0) return formatAud(0);
+  return value > 0
+    ? `${formatAud(value)} over`
+    : `${formatAud(Math.abs(value))} under`;
+}
+
+function formatBudgetVariance(value) {
+  if (!Number.isFinite(value)) return 'Not recorded';
+  if (value === 0) return 'On budget';
+  return value > 0
+    ? `${formatAud(value)} remaining`
+    : `${formatAud(Math.abs(value))} over`;
 }
 
 function statusClass(status) {
@@ -90,11 +124,33 @@ function statusText(status) {
 }
 
 function buildPayload(form) {
+  const hasSupplierSnapshot = Boolean(
+    form.provider !== 'manual'
+    || form.supplier.trim()
+    || form.productReference.trim()
+    || form.url.trim()
+    || form.checkedAt
+    || form.storeName.trim()
+    || form.storeId.trim()
+    || form.availability !== 'unknown',
+  );
+
   return {
     ...form,
     quantity: form.quantity === '' ? null : Number(form.quantity),
     unitCost: form.unitCost === '' ? null : Number(form.unitCost),
     checkedAt: form.checkedAt || null,
+    actualCost: form.actualCost === '' ? null : Number(form.actualCost),
+    actualCheckedAt: form.actualCheckedAt || null,
+    supplierSnapshot: hasSupplierSnapshot
+      ? {
+        provider: form.provider,
+        externalItemNumber: form.productReference || null,
+        storeName: form.storeName || null,
+        storeId: form.storeId || null,
+        availability: form.availability,
+      }
+      : null,
   };
 }
 
@@ -141,6 +197,9 @@ function CostingPrintReport({ projectName, summary }) {
           <div><span>PURCHASE ESTIMATE</span><strong>{formatAud(summary.purchaseTotal)}</strong></div>
           <div><span>OWNED VALUE</span><strong>{formatAud(summary.ownedValue)}</strong></div>
           <div><span>ESTIMATED TOTAL</span><strong>{formatAud(summary.estimatedTotal)}</strong></div>
+          <div><span>ACTUAL SPEND</span><strong>{summary.actualPurchaseItemCount ? formatAud(summary.actualPurchaseTotal) : 'Not recorded'}</strong></div>
+          <div><span>PURCHASE BUDGET</span><strong>{summary.budgetComparison.budgetAmount !== null ? formatAud(summary.budgetComparison.budgetAmount) : 'Not set'}</strong></div>
+          <div><span>BUDGET STATUS</span><strong>{summary.budgetComparison.label}</strong></div>
           <div><span>PRICE REVIEW</span><strong>{summary.unknownPriceCount}</strong></div>
         </div>
 
@@ -155,11 +214,13 @@ function CostingPrintReport({ projectName, summary }) {
               <th>Supplier</th>
               <th>Unit cost</th>
               <th>Line total</th>
+              <th>Actual</th>
+              <th>Variance</th>
             </tr>
           </thead>
           <tbody>
             {summary.rows.length === 0 && (
-              <tr><td colSpan="7">No cost items recorded.</td></tr>
+              <tr><td colSpan="9">No cost items recorded.</td></tr>
             )}
             {summary.rows.map(row => {
               const item = row.item ?? {};
@@ -175,9 +236,21 @@ function CostingPrintReport({ projectName, summary }) {
                   <td>{row.valid ? optionLabel(COST_ITEM_CATEGORIES, item.category) : 'Review'}</td>
                   <td className="print-nowrap">{row.valid ? formatCostItemQuantity(item) : '—'}</td>
                   <td>{row.valid ? statusText(item.status) : 'Review'}</td>
-                  <td>{row.valid ? (item.supplier || 'Not recorded') : '—'}</td>
+                  <td>
+                    <div>{row.valid ? (item.supplier || 'Not recorded') : '—'}</div>
+                    {row.valid && (() => {
+                      const supplierReview = getSupplierSnapshotReview(item);
+                      return supplierReview.snapshot && (
+                        <div className="print-cost-reference">
+                          {supplierReview.providerLabel} · {supplierReview.storeLabel} · {supplierReview.availabilityLabel}
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="print-nowrap">{row.valid && item.unitCost !== null ? formatAud(item.unitCost) : 'TBC'}</td>
                   <td className="print-nowrap">{row.valid && row.lineTotal !== null ? formatAud(row.lineTotal) : 'TBC'}</td>
+                  <td className="print-nowrap">{row.valid && row.actualCost !== null ? formatAud(row.actualCost) : '—'}</td>
+                  <td className="print-nowrap">{row.valid ? formatCostVariance(row.actualVariance) : '—'}</td>
                 </tr>
               );
             })}
@@ -200,6 +273,33 @@ function CostingPrintReport({ projectName, summary }) {
             {summary.shoppingItems} item{summary.shoppingItems === 1 ? '' : 's'} &middot; excludes owned inventory records
           </p>
 
+          <table className="print-parts-table print-cost-group-table">
+            <thead>
+              <tr>
+                <th>Supplier</th>
+                <th>Source / store</th>
+                <th>Items</th>
+                <th>Known total</th>
+                <th>Review</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summary.shoppingGroups.map(group => (
+                <tr key={'print-group-' + group.key}>
+                  <td>{group.supplier}</td>
+                  <td>{group.providerLabel} · {group.storeLabel}</td>
+                  <td>{group.itemCount}</td>
+                  <td className="print-nowrap">{formatAud(group.knownTotal)}</td>
+                  <td>
+                    {group.unknownPriceCount || group.reviewCount
+                      ? `${group.unknownPriceCount} price · ${group.reviewCount} snapshot`
+                      : 'Ready'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
           <table className="print-parts-table print-cost-table">
             <thead>
               <tr>
@@ -209,6 +309,8 @@ function CostingPrintReport({ projectName, summary }) {
                 <th>Supplier / reference</th>
                 <th>Checked</th>
                 <th>Estimate</th>
+                <th>Actual</th>
+                <th>Variance</th>
               </tr>
             </thead>
             <tbody>
@@ -222,10 +324,20 @@ function CostingPrintReport({ projectName, summary }) {
                     {row.item.productReference && (
                       <div className="print-cost-reference">{row.item.productReference}</div>
                     )}
+                    {(() => {
+                      const supplierReview = getSupplierSnapshotReview(row.item);
+                      return supplierReview.snapshot && (
+                        <div className="print-cost-reference">
+                          {supplierReview.providerLabel} · {supplierReview.storeLabel} · {supplierReview.availabilityLabel}
+                        </div>
+                      );
+                    })()}
                     {row.item.url && <div className="print-cost-url">{row.item.url}</div>}
                   </td>
                   <td className="print-nowrap">{formatDate(row.item.checkedAt)}</td>
                   <td className="print-nowrap">{row.lineTotal !== null ? formatAud(row.lineTotal) : 'TBC'}</td>
+                  <td className="print-nowrap">{row.actualCost !== null ? formatAud(row.actualCost) : '—'}</td>
+                  <td className="print-nowrap">{formatCostVariance(row.actualVariance)}</td>
                 </tr>
               ))}
             </tbody>
@@ -234,6 +346,10 @@ function CostingPrintReport({ projectName, summary }) {
           <div className="print-cost-total">
             <span>Purchase estimate</span>
             <strong>{formatAud(summary.purchaseTotal)}</strong>
+          </div>
+          <div className="print-cost-total">
+            <span>Actual purchase spend</span>
+            <strong>{summary.actualPurchaseItemCount ? formatAud(summary.actualPurchaseTotal) : 'Not recorded'}</strong>
           </div>
         </section>
       )}
@@ -245,9 +361,11 @@ export default function Costing({
   projectId,
   projectName,
   costItems,
+  budget = null,
   materials = [],
   supplies = [],
   onChange,
+  onBudgetChange,
   onSaveProject,
   isDirty,
   onCreateSupply,
@@ -261,7 +379,7 @@ export default function Costing({
   const [linkingItem, setLinkingItem] = useState(null);
   const [linkError, setLinkError] = useState('');
 
-  const summary = useMemo(() => getCostingSummary(costItems), [costItems]);
+  const summary = useMemo(() => getCostingSummary(costItems, budget), [costItems, budget]);
   const inventoryCandidates = useMemo(
     () => getCostItemInventoryCandidates(linkingItem, materials, supplies),
     [linkingItem, materials, supplies],
@@ -434,6 +552,55 @@ export default function Costing({
           </button>
         </div>
 
+        <section className="ws-card ws-cost-budget-card">
+          <div className="ws-card-header">
+            <div className="ws-card-title"><ReceiptText size={17} /> Purchase budget</div>
+            <span className={'ws-cost-budget-status ' + summary.budgetComparison.status}>
+              {summary.budgetComparison.label}
+            </span>
+          </div>
+          <div className="ws-card-body">
+            <div className="ws-cost-budget-grid">
+              <label className="ws-input-group">
+                <span className="ws-label">Budget (AUD)</span>
+                <input
+                  className="ws-input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={budget?.amount ?? ''}
+                  onChange={event => onBudgetChange?.(
+                    event.target.value === ''
+                      ? null
+                      : { amount: Number(event.target.value), currency: 'AUD' },
+                  )}
+                  placeholder="Optional"
+                />
+              </label>
+              <div className="ws-cost-budget-stat">
+                <span>Purchase estimate</span>
+                <strong>{formatAud(summary.purchaseTotal)}</strong>
+              </div>
+              <div className="ws-cost-budget-stat">
+                <span>Actual spend</span>
+                <strong>{summary.actualPurchaseItemCount ? formatAud(summary.actualPurchaseTotal) : 'Not recorded'}</strong>
+              </div>
+              <div className="ws-cost-budget-stat">
+                <span>{summary.budgetComparison.actualTracked ? 'Actual variance' : 'Estimate variance'}</span>
+                <strong>{formatBudgetVariance(
+                  summary.budgetComparison.actualTracked
+                    ? summary.budgetComparison.actualVariance
+                    : summary.budgetComparison.estimatedVariance,
+                )}</strong>
+              </div>
+            </div>
+            <p className="ws-cost-budget-note">
+              Budget compares planned purchases only; owned inventory value is shown separately and is not included.
+              {summary.actualPendingCount > 0 && ` ${summary.actualPendingCount} shopping item${summary.actualPendingCount === 1 ? '' : 's'} still have no actual spend recorded.`}
+            </p>
+          </div>
+        </section>
+
         <div className="ws-metrics-grid ws-cost-metrics">
           <div className="ws-metric-card">
             <div className="ws-metric-label"><ShoppingCart size={13} /> Purchase estimate</div>
@@ -451,6 +618,13 @@ export default function Costing({
             <div className="ws-cost-metric-note">Owned value plus purchases</div>
           </div>
           <div className="ws-metric-card">
+            <div className="ws-metric-label"><CheckCircle2 size={13} /> Actual spend</div>
+            <div className={'ws-metric-value' + (summary.actualPurchaseItemCount ? '' : ' secondary')}>
+              {summary.actualPurchaseItemCount ? formatAud(summary.actualPurchaseTotal) : '—'}
+            </div>
+            <div className="ws-cost-metric-note">{summary.actualPurchaseItemCount} recorded purchase{summary.actualPurchaseItemCount === 1 ? '' : 's'}</div>
+          </div>
+          <div className="ws-metric-card">
             <div className="ws-metric-label"><AlertTriangle size={13} /> Price review</div>
             <div className={'ws-metric-value' + (summary.unknownPriceCount ? ' secondary' : '')}>
               {summary.unknownPriceCount}
@@ -466,6 +640,16 @@ export default function Costing({
             <span>{getCostingStatusMessage(summary)}</span>
           </div>
         </div>
+
+        {summary.supplierReviewCount > 0 && (
+          <div className="ws-cost-snapshot-banner">
+            <AlertTriangle size={16} />
+            <div>
+              <strong>{summary.supplierReviewCount} supplier snapshot{summary.supplierReviewCount === 1 ? '' : 's'} need review</strong>
+              <span>Check the source date and availability before relying on the recorded price or store information.</span>
+            </div>
+          </div>
+        )}
 
         {isFormOpen && (
           <form className="ws-card ws-cost-form" onSubmit={handleSubmit}>
@@ -516,9 +700,30 @@ export default function Costing({
                   <span className="ws-label">Unit cost (AUD)</span>
                   <input className="ws-input" type="number" min="0" step="0.01" name="unitCost" value={form.unitCost} onChange={handleFormChange} placeholder="Optional" />
                 </label>
+                <label className="ws-input-group">
+                  <span className="ws-label">Actual spent (AUD)</span>
+                  <input className="ws-input" type="number" min="0" step="0.01" name="actualCost" value={form.actualCost} onChange={handleFormChange} placeholder="After purchase" />
+                </label>
+                <label className="ws-input-group">
+                  <span className="ws-label">Actual checked</span>
+                  <input className="ws-input" type="date" name="actualCheckedAt" value={form.actualCheckedAt} onChange={handleFormChange} />
+                </label>
                 <label className="ws-input-group ws-cost-field-wide">
                   <span className="ws-label">Supplier</span>
                   <input className="ws-input" name="supplier" value={form.supplier} onChange={handleFormChange} placeholder="Supplier or store" />
+                </label>
+                <label className="ws-input-group">
+                  <span className="ws-label">Supplier source</span>
+                  <select className="ws-select" name="provider" value={form.provider} onChange={handleFormChange}>
+                    {SUPPLIER_SNAPSHOT_PROVIDERS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                  <span className="ws-cost-form-help">Manual entry remains available when a live connector is unavailable.</span>
+                </label>
+                <label className="ws-input-group">
+                  <span className="ws-label">Availability</span>
+                  <select className="ws-select" name="availability" value={form.availability} onChange={handleFormChange}>
+                    {SUPPLIER_AVAILABILITY_STATUSES.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
                 </label>
                 <label className="ws-input-group">
                   <span className="ws-label">Product reference</span>
@@ -531,6 +736,14 @@ export default function Costing({
                 <label className="ws-input-group ws-cost-field-wide">
                   <span className="ws-label">Product URL</span>
                   <input className="ws-input" type="url" name="url" value={form.url} onChange={handleFormChange} placeholder="https://" />
+                </label>
+                <label className="ws-input-group">
+                  <span className="ws-label">Store name</span>
+                  <input className="ws-input" name="storeName" value={form.storeName} onChange={handleFormChange} placeholder="Optional store or delivery region" />
+                </label>
+                <label className="ws-input-group">
+                  <span className="ws-label">Store/location ID</span>
+                  <input className="ws-input" name="storeId" value={form.storeId} onChange={handleFormChange} placeholder="Optional" />
                 </label>
                 <label className="ws-input-group ws-cost-field-full">
                   <span className="ws-label">Notes</span>
@@ -670,12 +883,15 @@ export default function Costing({
                     <th>Supplier</th>
                     <th>Unit cost</th>
                     <th>Line total</th>
+                    <th>Actual</th>
+                    <th>Variance</th>
                     <th aria-label="Actions" />
                   </tr>
                 </thead>
                 <tbody>
                   {summary.rows.map(row => {
                     const item = row.item;
+                    const supplierReview = row.valid ? getSupplierSnapshotReview(item) : null;
                     const linkedStatusForRow = row.valid
                       ? getCostItemInventoryStatus(item.inventoryLink, materials, supplies)
                       : null;
@@ -710,9 +926,21 @@ export default function Costing({
                         <td>
                           {row.valid && <span className={statusClass(item.status)}>{statusText(item.status)}</span>}
                         </td>
-                        <td>{item?.supplier || '—'}</td>
+                        <td>
+                          <div>{item?.supplier || '—'}</div>
+                          {supplierReview?.snapshot && (
+                            <div className={'ws-cost-snapshot-meta ' + supplierReview.status}>
+                              {supplierReview.providerLabel} · {supplierReview.freshness.label}
+                              <span>{supplierReview.storeLabel} · {supplierReview.availabilityLabel}</span>
+                            </div>
+                          )}
+                        </td>
                         <td>{row.valid && item.unitCost !== null ? formatAud(item.unitCost) : 'TBC'}</td>
                         <td>{row.lineTotal !== null ? formatAud(row.lineTotal) : 'TBC'}</td>
+                        <td>{row.actualCost !== null ? formatAud(row.actualCost) : '—'}</td>
+                        <td className={row.actualVariance !== null && row.actualVariance > 0 ? 'ws-cost-variance-over' : ''}>
+                          {formatCostVariance(row.actualVariance)}
+                        </td>
                         <td>
                           <div className="ws-inventory-actions">
                             {rowStatusMismatch && (
@@ -770,41 +998,77 @@ export default function Costing({
             <span className="ws-card-badge">{summary.shoppingItems} items</span>
           </div>
           {summary.shoppingRows.length ? (
-            <div className="ws-cost-table-wrap">
-              <table className="ws-table ws-cost-table">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Quantity</th>
-                    <th>Supplier</th>
-                    <th>Checked</th>
-                    <th>Estimate</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
-                  {summary.shoppingRows.map(row => (
-                    <tr key={'shopping-' + row.id}>
-                      <td>
-                        <div className="ws-cost-item-name">{row.item.name}</div>
-                        <div className="ws-inventory-meta">{optionLabel(COST_ITEM_CATEGORIES, row.item.category)}</div>
-                      </td>
-                      <td>{formatCostItemQuantity(row.item)}</td>
-                      <td>{row.item.supplier || 'Supplier not recorded'}</td>
-                      <td>{formatDate(row.item.checkedAt)}</td>
-                      <td>{row.lineTotal !== null ? formatAud(row.lineTotal) : 'TBC'}</td>
-                      <td>
-                        {row.item.url && (
-                          <a className="ws-btn ws-btn-icon" href={row.item.url} target="_blank" rel="noreferrer" title="Open product link">
-                            <ExternalLink size={15} />
-                          </a>
-                        )}
-                      </td>
+            <>
+              <div className="ws-cost-group-list" aria-label="Shopping list purchase groups">
+                {summary.shoppingGroups.map(group => (
+                  <div className="ws-cost-group" key={group.key}>
+                    <div className="ws-cost-group-heading">
+                      <div>
+                        <strong>{group.supplier}</strong>
+                        <span>{group.providerLabel} · {group.storeLabel}</span>
+                      </div>
+                      <div className="ws-cost-group-total">
+                        <strong>{formatAud(group.knownTotal)}</strong>
+                        <span>Known total</span>
+                      </div>
+                    </div>
+                    <div className="ws-cost-group-meta">
+                      <span>{group.itemCount} item{group.itemCount === 1 ? '' : 's'}</span>
+                      {group.unknownPriceCount > 0 && <span>{group.unknownPriceCount} price review</span>}
+                      {group.reviewCount > 0 && <span>{group.reviewCount} snapshot review</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="ws-cost-table-wrap">
+                <table className="ws-table ws-cost-table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Quantity</th>
+                      <th>Supplier</th>
+                      <th>Checked</th>
+                      <th>Estimate</th>
+                      <th>Actual</th>
+                      <th />
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {summary.shoppingRows.map(row => (
+                      <tr key={'shopping-' + row.id}>
+                        <td>
+                          <div className="ws-cost-item-name">{row.item.name}</div>
+                          <div className="ws-inventory-meta">{optionLabel(COST_ITEM_CATEGORIES, row.item.category)}</div>
+                        </td>
+                        <td>{formatCostItemQuantity(row.item)}</td>
+                        <td>
+                          <div>{row.item.supplier || 'Supplier not recorded'}</div>
+                          {(() => {
+                            const supplierReview = getSupplierSnapshotReview(row.item);
+                            return supplierReview.snapshot ? (
+                              <div className={'ws-cost-snapshot-meta ' + supplierReview.status}>
+                                {supplierReview.providerLabel} · {supplierReview.freshness.label}
+                                <span>{supplierReview.storeLabel} · {supplierReview.availabilityLabel}</span>
+                              </div>
+                            ) : null;
+                          })()}
+                        </td>
+                        <td>{formatDate(row.item.checkedAt)}</td>
+                        <td>{row.lineTotal !== null ? formatAud(row.lineTotal) : 'TBC'}</td>
+                        <td>{row.actualCost !== null ? formatAud(row.actualCost) : '—'}</td>
+                        <td>
+                          {row.item.url && (
+                            <a className="ws-btn ws-btn-icon" href={row.item.url} target="_blank" rel="noreferrer" title="Open product link">
+                              <ExternalLink size={15} />
+                            </a>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
             <div className="ws-inventory-empty ws-inventory-empty-compact">
               <span>No planned purchases yet. Owned records stay out of this shopping list.</span>
