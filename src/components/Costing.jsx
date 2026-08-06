@@ -391,7 +391,7 @@ export default function Costing({
       <div className="ws-content ws-cost-content no-print">
         <div className="ws-cost-heading">
           <div>
-            <div className="ws-page-eyebrow">BenchMate project costs</div>
+            <div className="ws-page-eyebrow">WoodCut Studio project costs</div>
             <h1 className="ws-page-title">Costing</h1>
             <p className="ws-page-copy">
               Keep a transparent manual estimate for {projectName || 'this project'}.

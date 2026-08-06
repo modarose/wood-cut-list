@@ -179,7 +179,7 @@ export default function MaterialInventory({
       <div className="ws-content ws-inventory-content">
         <div className="ws-inventory-heading">
           <div>
-            <div className="ws-page-eyebrow">WoodCut Studio workshop</div>
+            <div className="ws-page-eyebrow">WoodCut Studio inventory</div>
             <h1 className="ws-page-title">Material inventory</h1>
             <p className="ws-page-copy">
               Record the boards, sheets and offcuts you actually have before planning purchases.

@@ -285,7 +285,7 @@ export default function BuildPlanner({
       <div className="ws-content ws-build-content">
         <div className="ws-build-heading">
           <div>
-            <div className="ws-page-eyebrow">BenchMate workshop</div>
+            <div className="ws-page-eyebrow">WoodCut Studio workshop</div>
             <h1 className="ws-page-title">Build planner</h1>
             <p className="ws-page-copy">
               Turn the cut list into ordered workshop steps for {projectName || 'this project'}.
