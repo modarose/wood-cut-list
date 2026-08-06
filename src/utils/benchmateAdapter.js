@@ -196,7 +196,7 @@ function mapPart(partInput, index, sourceUnit, revisionId, usedIds) {
   if (!materialRequirementId) {
     warnings.push(createWarning(
       'material-mapping-missing',
-      'No BenchMate material requirement is mapped to this part.',
+      'No WoodCut Studio material requirement is mapped to this part.',
       `parts[${index}].materialRequirementId`,
     ));
   }
@@ -441,7 +441,7 @@ export function createBenchMateProjectFromWoodCut(session = {}, options = {}) {
 export function toWoodCutSession(record, options = {}) {
   const validation = validateBenchMateProject(record);
   if (!validation.valid) {
-    throw new Error(`Invalid BenchMate project: ${validation.errors.join(' ')}`);
+    throw new Error(`Invalid WoodCut Studio project: ${validation.errors.join(' ')}`);
   }
 
   const requestedUnit = normalizeUnit(options.unit ?? record.project.units) ?? UNITS.MM;
@@ -714,7 +714,7 @@ export function validateBenchMateProject(record) {
 export function serializeBenchMateProject(record) {
   const validation = validateBenchMateProject(record);
   if (!validation.valid) {
-    throw new Error(`Cannot serialize invalid BenchMate project: ${validation.errors.join(' ')}`);
+    throw new Error(`Cannot serialize invalid WoodCut Studio project: ${validation.errors.join(' ')}`);
   }
 
   return JSON.stringify(record, null, 2);
@@ -726,7 +726,7 @@ export function parseBenchMateProject(serialized) {
   try {
     record = typeof serialized === 'string' ? JSON.parse(serialized) : serialized;
   } catch {
-    throw new Error('BenchMate project JSON could not be parsed.');
+    throw new Error('WoodCut Studio project JSON could not be parsed.');
   }
 
   const normalizedRecord = {
@@ -758,7 +758,7 @@ export function parseBenchMateProject(serialized) {
 
   const validation = validateBenchMateProject(normalizedRecord);
   if (!validation.valid) {
-    throw new Error(`Invalid BenchMate project JSON: ${validation.errors.join(' ')}`);
+    throw new Error(`Invalid WoodCut Studio project JSON: ${validation.errors.join(' ')}`);
   }
 
   return normalizedRecord;

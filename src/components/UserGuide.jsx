@@ -28,7 +28,7 @@ function GuideSection({ id, number, icon: Icon, title, intro, children }) {
       <div className="ws-guide-section-heading">
         <div className="ws-guide-number">{number}</div>
         <div>
-          <div className="ws-page-eyebrow"><Icon size={13} /> BenchMate workflow</div>
+          <div className="ws-page-eyebrow"><Icon size={13} /> WoodCut Studio workflow</div>
           <h2>{title}</h2>
           <p>{intro}</p>
         </div>
@@ -53,7 +53,7 @@ export default function UserGuide({ projectName }) {
       <div className="ws-content ws-guide-content">
         <header className="ws-guide-hero">
           <div>
-            <div className="ws-page-eyebrow"><BookOpen size={14} /> BenchMate help</div>
+            <div className="ws-page-eyebrow"><BookOpen size={14} /> WoodCut Studio help</div>
             <h1 className="ws-page-title">User guide</h1>
             <p className="ws-guide-lead">
               Follow one complete woodworking project from the default Custom Bookshelf preset
@@ -332,7 +332,7 @@ export default function UserGuide({ projectName }) {
           number="09"
           icon={Save}
           title="Understand saving, storage and limits"
-          intro="BenchMate is currently local-first. Knowing what is saved, and when, prevents surprises when changing browsers or devices."
+          intro="WoodCut Studio is currently local-first. Knowing what is saved, and when, prevents surprises when changing browsers or devices."
         >
           <div className="ws-guide-data-grid ws-guide-storage-grid">
             <div><span>Projects</span><strong>Saved with Save project</strong><small>Projects, requirements, build plans and costing records</small></div>

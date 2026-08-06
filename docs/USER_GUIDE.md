@@ -1,6 +1,6 @@
-# BenchMate / WoodCut Studio user guide
+# WoodCut Studio user guide
 
-BenchMate is a local-first woodworking project planner built around the existing WoodCut Studio cut-list optimiser. WoodCut Studio calculates rectangular sheet layouts; BenchMate keeps the surrounding project, inventory, cost, build-planning and workshop information together.
+WoodCut Studio is a local-first woodworking project planner with an integrated cut-list optimiser. It calculates rectangular sheet layouts and keeps the surrounding project, inventory, costing, build-planning and workshop information together.
 
 This guide uses the default **Custom Bookshelf** preset so the workflow can be followed without designing a project first.
 
@@ -281,6 +281,8 @@ The current application has no account, backend database or cloud synchronisatio
 | Tool inventory | Saved in `benchmate.tools.v1` as inventory changes |
 
 Records belong to the current browser profile and application origin. Clearing site data, changing browsers or using another device will not carry them across. CSV and printed reports are useful working records, but they are not a complete project backup.
+
+The benchmate storage-key prefix is a legacy technical name retained so existing browser-local records continue to load.
 
 ## 10. Features not available yet
 

@@ -1,10 +1,10 @@
-# BenchMate / WoodCut Studio
+# WoodCut Studio
 
 ## Project identity
 
-This repository is evolving from **WoodCut Studio**, an existing woodworking cut-list planner, into **BenchMate**, a broader woodworking project and workshop-planning application.
+This repository extends **WoodCut Studio** from a woodworking cut-list planner into a broader project and workshop-planning application. **BenchMate** was the early working name for that expansion and is retained only in legacy technical identifiers where necessary for compatibility.
 
-WoodCut Studio remains the specialised cut-list and board-optimisation capability. BenchMate adds the surrounding project, inventory, costing, tooling, build-planning and journal workflows.
+WoodCut Studio includes the specialised cut-list and board-optimisation capability alongside project, inventory, costing, tooling, build-planning and journal workflows.
 
 Do not create a second copied codebase. Extend the existing application incrementally and preserve the existing WoodCut Studio behaviour unless a change is explicitly agreed.
 
@@ -35,11 +35,11 @@ The target product contains these conceptual areas:
 - SketchUp design import
 - Build journal and optional YouTube/content workflow
 
-Keep these areas modular. A user should be able to use the cut-list planner without configuring every other BenchMate feature.
+Keep these areas modular. A user should be able to use the cut-list planner without configuring every other project-planning feature.
 
 ## Development workflow
 
-1. Read `docs/BENCHMATE_PROJECT_PLAN.md` and the relevant supporting document before changing behaviour.
+1. Read `docs/BENCHMATE_PROJECT_PLAN.md` (legacy filename) and the relevant supporting document before changing behaviour.
 2. Inspect the existing application before deciding where new code belongs.
 3. Update the relevant documentation when a product or data-model decision changes.
 4. Implement one vertical slice at a time.
@@ -63,4 +63,4 @@ At minimum, changes should be checked for:
 
 ## Safety and domain limits
 
-BenchMate may organise woodworking information and suggest possible methods, but it is not a substitute for tool manuals, training, supervision or safe workshop practice. Do not present an automatically generated tool substitution as guaranteed safe. Safety-critical steps require user confirmation and should link to the relevant manufacturer guidance where available.
+WoodCut Studio may organise woodworking information and suggest possible methods, but it is not a substitute for tool manuals, training, supervision or safe workshop practice. Do not present an automatically generated tool substitution as guaranteed safe. Safety-critical steps require user confirmation and should link to the relevant manufacturer guidance where available.

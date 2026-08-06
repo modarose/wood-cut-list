@@ -84,7 +84,7 @@ export default function App() {
   const [initialState] = useState(() => getInitialProjectState());
   const initialProject = initialState.initialProject;
 
-  // BenchMate project shell state
+  // WoodCut Studio project workspace state
   const [savedProjects, setSavedProjects] = useState(initialState.savedProjects);
   const [projectId, setProjectId] = useState(() => initialProject?.project.id ?? createProjectId());
   const [revisionId, setRevisionId] = useState(() => initialProject?.project.activeRevisionId ?? null);

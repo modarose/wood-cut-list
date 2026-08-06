@@ -1,13 +1,13 @@
-# BenchMate Architecture
+# WoodCut Studio Architecture
 
 **Status:** Incremental Phase 4 manual costing slice implemented
 **Foundation:** Existing WoodCut Studio application
 
 ## 1. Architectural decision
 
-BenchMate will be built by extending the existing WoodCut Studio project. It is not a copied second application.
+WoodCut Studio is extended incrementally; it is not a copied second application.
 
-The current WoodCut Studio experience should remain usable while new BenchMate modules are added around it.
+The current optimiser remains usable while project, inventory, costing and workshop modules are added around it.
 
 ## 2. Conceptual layers
 
@@ -70,7 +70,7 @@ WoodCut Studio should own:
 - Board or sheet optimisation.
 - Cutting layouts and output representations.
 
-BenchMate should own:
+WoodCut Studio should own:
 
 - Project identity and revisions.
 - Tool and material inventory.
@@ -145,7 +145,7 @@ Start with the least complex persistence that protects the user's work:
 
 Project data should be exportable so the user is not trapped in the application.
 
-Phase 1 establishes browser-local persistence under the `benchmate.projects.v1` local storage key. Saved records use the canonical project envelope, invalid records are ignored when loaded, and saving is explicit from the workspace. Cloud sync, authentication and cross-device persistence remain deferred.
+Phase 1 establishes browser-local persistence under the legacy `benchmate.projects.v1` local storage key. Saved records use the canonical project envelope, invalid records are ignored when loaded, and saving is explicit from the workspace. Cloud sync, authentication and cross-device persistence remain deferred.
 
 ## 9. Server boundary
 
@@ -221,7 +221,7 @@ The current `main` baseline was commit `85e8b90`. Phase 0 work is being performe
 Phase 0 adds `src/utils/benchmateAdapter.js` without changing the existing UI or optimizer. It defines a versioned, JSON-serializable envelope:
 
 ```text
-BenchMate project envelope
+Canonical WoodCut Studio project envelope
   project
   designRevisions[]
   parts[]
@@ -233,7 +233,7 @@ BenchMate project envelope
 
 The adapter converts the current WoodCut session into canonical millimetres and preserves the original display unit in `sourceUnit`. The legacy fields map as follows:
 
-| WoodCut Studio | BenchMate Phase 0 |
+| WoodCut Studio optimiser | Project workspace |
 |---|---|
 | `stock.width` | `cutStock.dimensions.width` |
 | `stock.height` | `cutStock.dimensions.length` |
@@ -269,7 +269,7 @@ The first inventory slice is a browser-local workshop collection rather than pro
 
 - `src/utils/materialInventory.js` owns the metric material-stock schema, validation, storage and dimensional screening matcher.
 - `src/components/MaterialInventory.jsx` provides add, edit and remove workflows for sheet goods, solid timber and offcuts.
-- Records are stored under `benchmate.materials.v1`, separately from project envelopes under `benchmate.projects.v1`.
+- Records are stored under the legacy `benchmate.materials.v1` key, separately from project envelopes under `benchmate.projects.v1`.
 - Stock records retain canonical fields for dimensions, usable dimensions, quantity, reserved quantity, source, condition, location and notes.
 - Inventory quantities and reservations are validated before persistence; invalid or negative records are not silently accepted.
 - An owned or planned material can be selected as the optimizer's stock template; the selection uses usable dimensions and preserves the existing kerf and margin settings.
@@ -281,7 +281,7 @@ The first inventory slice is a browser-local workshop collection rather than pro
 
 The Workshop view provides a separate browser-local tool collection:
 
-- `src/utils/toolInventory.js` owns the tool schema, validation, capability vocabulary and storage under `benchmate.tools.v1`.
+- `src/utils/toolInventory.js` owns the tool schema, validation, capability vocabulary and storage under the legacy `benchmate.tools.v1` key.
 - `src/components/ToolInventory.jsx` provides add, edit, remove, search and category/availability filtering.
 - Tool records preserve ownership, availability, condition, location, accessories and maintenance notes.
 - Capabilities are selected from a normalised vocabulary so a future build planner can match requirements consistently.
@@ -300,7 +300,7 @@ The optimizer workspace now includes a project-level resource check:
 
 Hardware, adhesives, finishes, abrasives and other workshop consumables are stored as a separate browser-local collection:
 
-- `src/utils/supplyInventory.js` owns the validated supply schema and storage under `benchmate.supplies.v1`.
+- `src/utils/supplyInventory.js` owns the validated supply schema and storage under the legacy `benchmate.supplies.v1` key.
 - `src/components/SupplyInventory.jsx` provides local add, edit, remove, search and category/source filtering workflows.
 - Each record has an explicit category, quantity, quantity unit, source, location and optional brand/reference/notes fields.
 - Quantities may be fractional for units such as litres or metres, but cannot be negative. The collection does not infer prices, supplier availability or project demand.

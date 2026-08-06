@@ -1,4 +1,4 @@
-# BenchMate Integrations
+# WoodCut Studio Integrations
 
 **Status:** Integration strategy with Phase 5 supplier snapshot foundation
 **Date:** 2026-08-06
@@ -20,34 +20,34 @@ This order validates the product before external credentials and model APIs beco
 
 ### Recommendation
 
-Keep WoodCut Studio in the existing repository and treat it as the cut-list engine inside BenchMate.
+Keep the existing WoodCut Studio optimiser in this repository as part of the same application.
 
 ### Integration approach
 
-Start with an adapter that converts the current WoodCut Studio data into the canonical BenchMate `DesignRevision` and `Part` structures.
+Start with an adapter that converts current optimiser data into the canonical project, design-revision and part structures.
 
 Possible stages:
 
 1. Identify the existing cut-list data shape.
 2. Add an explicit export function if one does not exist.
-3. Add a BenchMate import adapter.
+3. Add a WoodCut Studio import adapter.
 4. Confirm calculation results match before and after integration.
 5. Move shared calculation logic behind a stable domain boundary only when needed.
 
-Do not duplicate the optimisation algorithm in the BenchMate project layer.
+Do not duplicate the optimisation algorithm in the project layer.
 
 ## 3. SketchUp
 
 ### Preferred first route: SketchUp Desktop extension
 
-Build a small Ruby extension that runs inside SketchUp Desktop and sends a structured manifest to BenchMate or exports JSON.
+Build a small Ruby extension that runs inside SketchUp Desktop and sends a structured manifest to WoodCut Studio or exports JSON.
 
 The extension can eventually:
 
 - Traverse groups and components.
 - Read dimensions, materials, tags and names.
-- Read BenchMate custom attributes.
-- Add a “Send to BenchMate” command.
+- Read WoodCut Studio custom attributes.
+- Add a “Send to WoodCut Studio” command.
 - Export a project thumbnail and source metadata.
 
 SketchUp provides official extension APIs, including a Ruby API for desktop extensions. Its developer documentation also describes attaching custom data to model entities. [SketchUp Developer Center](https://developer.sketchup.com/), [SketchUp Entity Overview](https://developer.sketchup.com/article-entity-overview)
@@ -81,7 +81,7 @@ SketchUp for Web stores models in Trimble Connect. Trimble Connect provides APIs
 
 ### 3D Warehouse boundary
 
-Do not create a public BenchMate catalogue that copies or aggregates third-party 3D Warehouse models. SketchUp’s official terms FAQ states that incorporating 3D Warehouse models into a website for members is impermissible aggregation. [3D Warehouse Terms FAQ](https://help.sketchup.com/en/3d-warehouse/3d-warehouse-terms-use-faq)
+Do not create a public WoodCut Studio catalogue that copies or aggregates third-party 3D Warehouse models. SketchUp’s official terms FAQ states that incorporating 3D Warehouse models into a website for members is impermissible aggregation. [3D Warehouse Terms FAQ](https://help.sketchup.com/en/3d-warehouse/3d-warehouse-terms-use-faq)
 
 The supported product direction is user-owned models, manually downloaded files, or designs explicitly licensed for the workflow.
 
@@ -133,7 +133,7 @@ The provider adapter should return normalised `SupplierProduct` data to the appl
 
 ## 5. Manual supplier fallback
 
-BenchMate must remain useful without live Bunnings access.
+WoodCut Studio must remain useful without live Bunnings access.
 
 Manual supplier records should support:
 

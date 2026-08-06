@@ -1,8 +1,8 @@
-# BenchMate
+# WoodCut Studio
 
-BenchMate is a local-first woodworking project and workshop planner built around the existing WoodCut Studio cut-list engine.
+WoodCut Studio is a local-first woodworking project and workshop planner with an integrated 2D cut-list and sheet optimiser.
 
-WoodCut Studio remains the specialised 2D cut-list and sheet-optimisation capability. BenchMate adds the surrounding project, material inventory, tool inventory, build-planning, costing and journaling workflows incrementally.
+It brings project management, material and tool inventory, build planning, costing, shopping lists and workshop workflows into the same application as the optimiser. BenchMate was the earlier working name for this expansion and remains only in legacy technical identifiers where changing them would break existing saved data.
 
 ## Current status
 
@@ -36,12 +36,12 @@ Phase 2 is complete at the inventory-screening level. Phase 3 build-planner and 
 - Workshop-oriented cut sequence instructions with check-off controls.
 - Project and stock presets, CSV export, and browser print/PDF output.
 
-### BenchMate project workspace
+### Project workspace
 
 - Sidebar navigation for Optimizer, Projects, Inventory, Costing, Build Planner, Workshop and User Guide.
 - Create, open, duplicate, archive and restore projects.
 - Project name, status and notes.
-- Explicit project save/reopen using the canonical BenchMate project envelope.
+- Explicit project save/reopen using the canonical project envelope.
 
 ### Material inventory
 
@@ -142,6 +142,8 @@ Current saved data is kept in the browser's local storage. It is not stored in s
 
 Storage is specific to the browser profile and application origin. Clearing site data, changing browsers or using another device will not carry these records across. Cloud backup, account sync and project JSON import/export are not implemented yet.
 
+The storage-key names beginning with benchmate are retained only for backward compatibility with existing browser-local data.
+
 ## Architecture
 
 - Framework and build tool: React 19 with Vite 8.
@@ -149,7 +151,7 @@ Storage is specific to the browser profile and application origin. Clearing site
 - Entry point: index.html -> src/main.jsx -> src/App.jsx.
 - UI: React components in src/components and application styling in src/index.css and src/App.css.
 - Calculation logic: src/utils/cutOptimizer.js, src/utils/unitConverter.js, src/utils/costing.js and src/utils/budget.js.
-- BenchMate adapter and persistence: src/utils/benchmateAdapter.js, src/utils/projectStorage.js, src/utils/materialInventory.js, src/utils/toolInventory.js, src/utils/supplyInventory.js, src/utils/supplyRequirements.js, src/utils/buildPlanner.js and src/utils/supplierSnapshots.js.
+- Project adapter and persistence: src/utils/benchmateAdapter.js, src/utils/projectStorage.js, src/utils/materialInventory.js, src/utils/toolInventory.js, src/utils/supplyInventory.js, src/utils/supplyRequirements.js, src/utils/buildPlanner.js and src/utils/supplierSnapshots.js.
 - Tests: tests/ using Node's built-in test runner.
 - Routing: there is currently no router; the single-page shell switches sections through application state.
 
@@ -169,7 +171,7 @@ The app builds as a static Vite site. No deployment provider configuration or en
 
 ## Documentation
 
-- [BenchMate project plan](docs/BENCHMATE_PROJECT_PLAN.md)
+- [Project plan](docs/BENCHMATE_PROJECT_PLAN.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Data model](docs/DATA_MODEL.md)
 - [Roadmap](docs/ROADMAP.md)

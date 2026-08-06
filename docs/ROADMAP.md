@@ -1,4 +1,4 @@
-# BenchMate Roadmap
+# WoodCut Studio Roadmap
 
 **Foundation:** Existing WoodCut Studio application  
 **Roadmap status:** Phase 5 supplier integration foundation in progress
@@ -48,7 +48,7 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 - The restored desktop sidebar connects the Optimizer, Projects and Inventory views while clearly marking future modules as unavailable.
 - The shell currently persists one active draft revision per project; revision comparison and approval history remain future work.
 
-## Phase 1 — BenchMate project shell
+## Phase 1 — Project workspace
 
 ### Objectives
 
@@ -202,13 +202,13 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 
 ### Objectives
 
-- Send structured design information from SketchUp to BenchMate.
+- Send structured design information from SketchUp to WoodCut Studio.
 - Reduce manual re-entry without claiming perfect geometry interpretation.
 
 ### Deliverables
 
 - SketchUp extension proof of concept.
-- BenchMate component naming/metadata convention.
+- WoodCut Studio component naming/metadata convention.
 - JSON manifest export.
 - Import review and warning screen.
 - Revision comparison.

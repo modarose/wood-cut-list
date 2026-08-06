@@ -48,7 +48,7 @@
         },
         {
           "code": "material-mapping-missing",
-          "message": "No BenchMate material requirement is mapped to this part.",
+          "message": "No WoodCut Studio material requirement is mapped to this part.",
           "path": "parts[0].materialRequirementId"
         },
         {
@@ -117,7 +117,7 @@
         },
         {
           "code": "material-mapping-missing",
-          "message": "No BenchMate material requirement is mapped to this part.",
+          "message": "No WoodCut Studio material requirement is mapped to this part.",
           "path": "parts[0].materialRequirementId"
         },
         {

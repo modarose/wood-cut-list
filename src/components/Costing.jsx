@@ -187,7 +187,7 @@ function CostingPrintReport({ projectName, summary }) {
   return (
     <div className="print-only print-report ws-cost-print-report">
       <section className="print-page print-cost-page">
-        <div className="print-report-kicker">BENCHMATE · COST REPORT</div>
+        <div className="print-report-kicker">WOODCUT STUDIO · COST REPORT</div>
         <h1>Project cost estimate</h1>
         <p className="print-report-subtitle">
           {projectName || 'Untitled project'} &middot; AUD &middot; generated from the current manual estimate
@@ -498,7 +498,7 @@ export default function Costing({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = fileSegment(projectName || projectId, 'benchmate-project') + '-costing.csv';
+    link.download = fileSegment(projectName || projectId, 'woodcut-studio-project') + '-costing.csv';
     document.body.appendChild(link);
     link.click();
     link.remove();

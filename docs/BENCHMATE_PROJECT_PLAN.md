@@ -1,15 +1,17 @@
-# BenchMate Project Plan
+# WoodCut Studio Project Plan
 
 **Status:** Draft foundation plan  
 **Date:** 2026-07-31  
-**Product:** BenchMate  
+**Product:** WoodCut Studio
 **Foundation:** Existing WoodCut Studio application
+
+> Historical note: BenchMate was the early working name for the planned expansion. WoodCut Studio is the product name used throughout the application.
 
 ## 1. Product direction
 
-BenchMate is a personal woodworking project planner that connects design, cut-list optimisation, workshop inventory, material sourcing, costing and the actual build process.
+WoodCut Studio is a personal woodworking project planner that connects design, cut-list optimisation, workshop inventory, material sourcing, costing and the actual build process.
 
-WoodCut Studio is not being discarded. It becomes the core cut-list capability inside BenchMate.
+The existing WoodCut Studio cut-list capability remains part of the same application.
 
 The product should answer one practical question:
 
@@ -26,7 +28,7 @@ Woodworking projects often spread information across SketchUp, handwritten notes
 - Prices and stock availability are difficult to keep current.
 - Build steps, changes and lessons are not recorded consistently.
 
-BenchMate brings those decisions into one project workspace.
+WoodCut Studio brings those decisions into one project workspace.
 
 ## 3. Goals
 
@@ -60,7 +62,7 @@ BenchMate brings those decisions into one project workspace.
 
 ## 5. Product structure
 
-BenchMate should be organised into focused modules:
+WoodCut Studio should be organised into focused modules:
 
 | Module | Responsibility |
 |---|---|
@@ -88,7 +90,7 @@ BenchMate should be organised into focused modules:
 
 ### Journey B: Start from SketchUp
 
-1. Model the project in SketchUp using BenchMate-friendly components.
+1. Model the project in SketchUp using WoodCut Studio-friendly components.
 2. Export or send a structured design manifest.
 3. Review imported parts and resolve warnings.
 4. Map components to materials, stock and joinery methods.
@@ -99,7 +101,7 @@ BenchMate should be organised into focused modules:
 
 1. Select a project idea or imported design.
 2. Filter designs by available stock and tools.
-3. Ask BenchMate to identify feasible construction methods.
+3. Ask WoodCut Studio to identify feasible construction methods.
 4. Prioritise existing boards and offcuts.
 5. Show what must be purchased.
 6. Adjust the design if stock or tools are insufficient.

@@ -1,4 +1,4 @@
-# BenchMate Data Model
+# WoodCut Studio Data Model
 
 **Status:** Canonical model with Phase 4 manual costing slice
 **Date:** 2026-08-03
@@ -207,7 +207,7 @@ Prices and availability must show their source and timestamp. A stale or failed 
 
 The first integration should use an adapter rather than a rewrite:
 
-| WoodCut Studio concept | BenchMate concept |
+| Optimiser concept | Project workspace concept |
 |---|---|
 | Cut-list row | `Part` |
 | Material/board definition | `MaterialRequirement` or `MaterialStock` |
@@ -279,11 +279,11 @@ The project shell adds two workflow fields without changing the cut-list part co
 
 `readiness` describes whether the current revision still has unresolved review warnings. `archivedAt` is an ISO 8601 timestamp when a project is archived, or `null`/absent while active. Archived projects remain stored and can be restored.
 
-Project records are persisted as complete canonical envelopes in browser-local storage under `benchmate.projects.v1`. Persistence is explicit; editing the workspace marks the draft as dirty until the user saves it.
+Project records are persisted as complete canonical envelopes in browser-local storage under the legacy `benchmate.projects.v1` key. Persistence is explicit; editing the workspace marks the draft as dirty until the user saves it.
 
 ## 14. Phase 2 material inventory
 
-The first inventory slice uses the existing `MaterialStock` shape as a separate workshop collection. It is stored in browser-local storage under `benchmate.materials.v1`. A project stores an optional `cutStock.sourceMaterialStockId` reference when an inventory item is selected as the optimizer stock template; the full workshop collection remains separate from the project envelope.
+The first inventory slice uses the existing `MaterialStock` shape as a separate workshop collection. It is stored in browser-local storage under the legacy `benchmate.materials.v1` key. A project stores an optional `cutStock.sourceMaterialStockId` reference when an inventory item is selected as the optimizer stock template; the full workshop collection remains separate from the project envelope.
 
 Each stored record includes:
 
@@ -313,7 +313,7 @@ Dimensions are stored in millimetres. Quantity and reserved quantity must be non
 
 ## 15. Phase 2 tool inventory
 
-Tool records are stored separately from project envelopes in browser-local storage under `benchmate.tools.v1`:
+Tool records are stored separately from project envelopes in browser-local storage under the legacy `benchmate.tools.v1` key:
 
 ```json
 {
@@ -337,7 +337,7 @@ Categories, availability values and capabilities are validated against the vocab
 
 ## 16. Phase 2 supplies inventory
 
-Supplies are stored separately from dimensional material stock and project envelopes under `benchmate.supplies.v1`:
+Supplies are stored separately from dimensional material stock and project envelopes under the legacy `benchmate.supplies.v1` key:
 
 ```json
 {
