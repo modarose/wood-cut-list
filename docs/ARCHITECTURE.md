@@ -254,7 +254,7 @@ The current stock settings are treated as a cut-stock template, not owned invent
 The project shell is implemented around the existing single-page workspace without adding a router:
 
 - The workspace loads the first active saved project when browser-local storage contains one; otherwise it opens the existing WoodCut Studio preset workflow as an unsaved draft.
-- The shared desktop sidebar presents the primary workflow in order: Projects, Optimizer, Inventory, Costing, Build Planner and Workshop. Settings and Support remain visible as explicitly disabled future sections.
+- The shared desktop sidebar presents the primary workflow in order: Projects, Optimizer, Inventory, Costing, Build Planner and Workshop. User Guide is available above the disabled Settings and Support sections.
 - `ProjectDetails` owns editable project name, status and notes while `Header` exposes project navigation and explicit save.
 - Module navigation preserves unsaved in-memory project edits; the replacement guard is reserved for opening, creating or duplicating another project. A browser close or reload still receives a dirty-state warning.
 - `ProjectDashboard` provides new, open, duplicate, archive and restore actions.

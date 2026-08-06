@@ -6,7 +6,7 @@ WoodCut Studio remains the specialised 2D cut-list and sheet-optimisation capabi
 
 ## Current status
 
-Phase 3 build-planner work is in progress. The current application provides:
+Phase 4 manual-costing work is in progress. The current application provides:
 
 - The WoodCut Studio optimiser.
 - A project workspace with save and reopen behaviour.
@@ -18,8 +18,10 @@ Phase 3 build-planner work is in progress. The current application provides:
 - Project-specific tool requirements with capability and availability feasibility matching.
 - A project-level resource check separating owned-stock candidates, planned purchases, unresolved parts and review rows, with quantity checks for the selected stock record and supply requirements.
 - A saved Build planner with ordered stages, steps, dependencies, durations, completion status, notes and links to project parts, tool requirements and supply requirements.
+- Manual project Costing with AUD estimates, shopping lists, inventory links, CSV export and print/PDF reports.
+- An in-app User Guide with a complete Custom Bookshelf walkthrough.
 
-Phase 2 is complete at the inventory-screening level. Phase 3 has started with the first build-planner vertical slice; broader UI improvements and deeper readiness checks will follow. See the [roadmap](docs/ROADMAP.md) for the planned sequence.
+Phase 2 is complete at the inventory-screening level. Phase 3 build-planner work is established and Phase 4 costing is underway; broader UI improvements and deeper integrations will follow. See the [roadmap](docs/ROADMAP.md) for the planned sequence.
 
 ## What is available
 
@@ -35,7 +37,7 @@ Phase 2 is complete at the inventory-screening level. Phase 3 has started with t
 
 ### BenchMate project workspace
 
-- Sidebar navigation for Optimizer, Projects, Inventory, Workshop and Build planner.
+- Sidebar navigation for Optimizer, Projects, Inventory, Costing, Build Planner, Workshop and User Guide.
 - Create, open, duplicate, archive and restore projects.
 - Project name, status and notes.
 - Explicit project save/reopen using the canonical BenchMate project envelope.
@@ -75,12 +77,18 @@ Capability tags are planning metadata, not safety certification or a guarantee t
 - Add dependencies and see which steps are ready, complete or waiting on earlier work.
 - Mark step progress while keeping the plan user-authored and separate from automatic safety certification.
 
+### Costing
+
+- Record manual AUD price snapshots for materials, hardware, finishes and consumables.
+- Link compatible cost items to material and supplies inventory without copying stock records.
+- Review purchase estimate, owned value, estimated total and price-review conditions.
+- Export the estimate to CSV or print a report with a separate shopping-list page.
+
 ## Deferred work and current limitations
 
 The following are planned rather than implemented:
 
 - Step-level tool assignment and feasibility decisions, automatic plan generation, readiness checks and workshop execution mode refinements.
-- Costing, shopping lists and manual supplier records.
 - Supplier integrations, including store-aware pricing and availability.
 - SketchUp import and review.
 - Journal, photos and creator-workflow features.
@@ -145,7 +153,7 @@ The project keeps calculation logic separate from UI components and uses a versi
 ## Data and safety conventions
 
 - Dimensions are stored internally in millimetres; the UI can display millimetres or inches.
-- Australian dollars are the planned costing currency; costing is not implemented yet.
+- Australian dollars are the costing currency for manual project estimates; live supplier pricing is not implemented yet.
 - External supplier information will need a source and checked-at timestamp when integrations are added.
 - Tool and material records describe workshop planning information. They do not replace manufacturer instructions, training, supervision or safe workshop practice.
 
@@ -160,6 +168,7 @@ The app builds as a static Vite site. No deployment provider configuration or en
 - [Data model](docs/DATA_MODEL.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Integration notes](docs/INTEGRATIONS.md)
+- [User guide](docs/USER_GUIDE.md)
 
 ## License
 

@@ -13,6 +13,7 @@ import ToolInventory from './components/ToolInventory';
 import BuildPlanner from './components/BuildPlanner';
 import Costing from './components/Costing';
 import Sidebar from './components/Sidebar';
+import UserGuide from './components/UserGuide';
 
 import { UNITS, convertDimension } from './utils/unitConverter';
 import { optimizeCutList, STRATEGIES, CUT_PREFERENCES } from './utils/cutOptimizer';
@@ -97,6 +98,7 @@ export default function App() {
   const [isWorkshopOpen, setIsWorkshopOpen] = useState(false);
   const [isBuildPlannerOpen, setIsBuildPlannerOpen] = useState(false);
   const [isCostingOpen, setIsCostingOpen] = useState(false);
+  const [isUserGuideOpen, setIsUserGuideOpen] = useState(false);
   const [materials, setMaterials] = useState(() => loadStoredMaterials());
   const [supplies, setSupplies] = useState(() => loadStoredSupplies());
   const [supplyRequirements, setSupplyRequirements] = useState(
@@ -232,6 +234,7 @@ export default function App() {
     setIsWorkshopOpen(false);
     setIsBuildPlannerOpen(false);
     setIsCostingOpen(false);
+    setIsUserGuideOpen(false);
     setIsProjectsOpen(true);
   };
 
@@ -240,6 +243,7 @@ export default function App() {
     setIsWorkshopOpen(false);
     setIsBuildPlannerOpen(false);
     setIsCostingOpen(false);
+    setIsUserGuideOpen(false);
     setIsInventoryOpen(true);
     setIsSuppliesOpen(false);
   };
@@ -254,6 +258,7 @@ export default function App() {
     setIsWorkshopOpen(false);
     setIsBuildPlannerOpen(false);
     setIsCostingOpen(false);
+    setIsUserGuideOpen(false);
     setIsInventoryOpen(true);
     setIsSuppliesOpen(true);
   };
@@ -268,6 +273,7 @@ export default function App() {
     setIsSuppliesOpen(false);
     setIsBuildPlannerOpen(false);
     setIsCostingOpen(false);
+    setIsUserGuideOpen(false);
     setIsWorkshopOpen(true);
   };
 
@@ -281,6 +287,7 @@ export default function App() {
     setIsSuppliesOpen(false);
     setIsWorkshopOpen(false);
     setIsCostingOpen(false);
+    setIsUserGuideOpen(false);
     setIsBuildPlannerOpen(true);
   };
 
@@ -294,6 +301,7 @@ export default function App() {
     setIsSuppliesOpen(false);
     setIsWorkshopOpen(false);
     setIsBuildPlannerOpen(false);
+    setIsUserGuideOpen(false);
     setIsCostingOpen(true);
   };
 
@@ -301,7 +309,26 @@ export default function App() {
     setIsCostingOpen(false);
   };
 
+  const handleOpenUserGuide = () => {
+    setIsProjectsOpen(false);
+    setIsInventoryOpen(false);
+    setIsSuppliesOpen(false);
+    setIsWorkshopOpen(false);
+    setIsBuildPlannerOpen(false);
+    setIsCostingOpen(false);
+    setIsUserGuideOpen(true);
+  };
+
+  const handleCloseUserGuide = () => {
+    setIsUserGuideOpen(false);
+  };
+
   const handleSidebarNavigate = (section) => {
+    if (section === 'user-guide') {
+      handleOpenUserGuide();
+      return;
+    }
+
     if (section === 'projects') {
       handleOpenProjects();
       return;
@@ -333,6 +360,7 @@ export default function App() {
       if (isWorkshopOpen) handleCloseWorkshop();
       if (isBuildPlannerOpen) handleCloseBuildPlanner();
       if (isCostingOpen) handleCloseCosting();
+      if (isUserGuideOpen) handleCloseUserGuide();
     }
   };
 
@@ -758,6 +786,19 @@ export default function App() {
   };
 
   const totalRequestedPartsCount = parts.reduce((sum, p) => sum + (parseInt(p.qty) || 0), 0);
+
+  if (isUserGuideOpen) {
+    return (
+      <div className="ws-shell">
+        <Sidebar
+          activeSection="user-guide"
+          projectName={projectName}
+          onNavigate={handleSidebarNavigate}
+        />
+        <UserGuide projectName={projectName} />
+      </div>
+    );
+  }
 
   if (isProjectsOpen) {
     return (
