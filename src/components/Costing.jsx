@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowLeft,
   Calculator,
   CheckCircle2,
   Download,
@@ -12,11 +11,12 @@ import {
   Plus,
   Printer,
   ReceiptText,
+  Save,
   ShoppingCart,
   Trash2,
   X,
 } from 'lucide-react';
-import ActionMenu from './ActionMenu';
+import PageActions from './PageActions';
 import {
   COST_ITEM_CATEGORIES,
   COST_ITEM_STATUSES,
@@ -248,7 +248,8 @@ export default function Costing({
   materials = [],
   supplies = [],
   onChange,
-  onBack,
+  onSaveProject,
+  isDirty,
   onCreateSupply,
   onOpenInventory,
   onPrint,
@@ -398,10 +399,18 @@ export default function Costing({
               Prices are snapshots, not live supplier availability.
             </p>
           </div>
-          <ActionMenu
+          <PageActions
             ariaLabel="Costing actions"
-            items={[
-              { key: 'optimizer', label: 'Optimizer', icon: ArrowLeft, onClick: onBack },
+            visible={[
+              {
+                key: 'save',
+                label: 'Save changes',
+                icon: Save,
+                onClick: onSaveProject,
+                title: isDirty ? 'Save project' : 'Project is already saved',
+                disabled: !isDirty,
+                variant: 'primary',
+              },
               { key: 'csv', label: 'Export CSV', icon: Download, onClick: handleExportCsv },
               { key: 'print', label: 'Print / PDF', icon: Printer, onClick: onPrint },
             ]}

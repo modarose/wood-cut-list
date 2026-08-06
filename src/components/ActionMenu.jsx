@@ -33,7 +33,7 @@ export default function ActionMenu({ items, ariaLabel = 'Page actions' }) {
     <div className="ws-action-menu" ref={menuRef}>
       <button
         type="button"
-        className="ws-btn ws-btn-sm ws-action-menu-toggle"
+        className="ws-btn ws-action-menu-toggle"
         onClick={() => setIsMenuOpen(value => !value)}
         aria-expanded={isMenuOpen}
         aria-haspopup="true"

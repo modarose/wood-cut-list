@@ -235,10 +235,6 @@ export default function App() {
     setIsProjectsOpen(true);
   };
 
-  const handleCloseProjects = () => {
-    setIsProjectsOpen(false);
-  };
-
   const handleOpenInventory = () => {
     setIsProjectsOpen(false);
     setIsWorkshopOpen(false);
@@ -773,12 +769,13 @@ export default function App() {
         />
         <ProjectDashboard
           projects={savedProjects}
-          onClose={handleCloseProjects}
           onCreate={handleCreateProject}
           onOpen={handleOpenProject}
           onDuplicate={handleDuplicateProject}
           onArchive={handleArchiveProject}
           onRestore={handleRestoreProject}
+          onSaveProject={handleSaveProject}
+          isDirty={isDirty}
           workspace={{
             name: projectName,
             status: projectStatus,
@@ -830,7 +827,6 @@ export default function App() {
             onSaveSupply={handleSaveSupply}
             onDeleteSupply={handleDeleteSupply}
             onOpenMaterials={handleOpenMaterials}
-            onBack={handleCloseInventory}
           />
         ) : (
           <MaterialInventory
@@ -842,7 +838,6 @@ export default function App() {
             onDeleteMaterial={handleDeleteMaterial}
             onUseMaterial={handleUseMaterial}
             onOpenSupplies={handleOpenSupplies}
-            onBack={handleCloseInventory}
           />
         )}
       </div>
@@ -864,7 +859,8 @@ export default function App() {
           materials={materials}
           supplies={supplies}
           onChange={handleCostItemsChange}
-          onBack={handleCloseCosting}
+          onSaveProject={handleSaveProject}
+          isDirty={isDirty}
           onCreateSupply={handleCreateSupplyFromCostItem}
           onOpenInventory={handleOpenInventory}
           onPrint={handlePrint}
@@ -895,7 +891,8 @@ export default function App() {
           supplyRequirements={supplyRequirements}
           supplies={supplies}
           onChange={handleBuildPlanChange}
-          onBack={handleCloseBuildPlanner}
+          onSaveProject={handleSaveProject}
+          isDirty={isDirty}
         />
       </div>
     );
@@ -913,7 +910,6 @@ export default function App() {
             tools={tools}
             onSaveTool={handleSaveTool}
             onDeleteTool={handleDeleteTool}
-            onBack={handleCloseWorkshop}
             cutResult={optimizationResult}
             cutUnit={unit}
             buildPlan={buildPlan}
@@ -948,7 +944,6 @@ export default function App() {
 
           <Header
             onOpenPresets={() => setIsPresetsOpen(true)}
-            onOpenProjects={handleOpenProjects}
             onSaveProject={handleSaveProject}
             isDirty={isDirty}
             onExportCSV={handleExportCSV}

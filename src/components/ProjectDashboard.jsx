@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Archive, ArrowLeft, Copy, FolderOpen, Plus, RotateCcw } from 'lucide-react';
-import ActionMenu from './ActionMenu';
+import { Archive, Copy, FolderOpen, Plus, RotateCcw, Save } from 'lucide-react';
+import PageActions from './PageActions';
 import ProjectWorkspace from './ProjectWorkspace';
 
 function statusLabel(status) {
@@ -104,12 +104,13 @@ function ProjectCard({ projectRecord, archived, onOpen, onDuplicate, onArchive, 
 
 export default function ProjectDashboard({
   projects,
-  onClose,
   onCreate,
   onOpen,
   onDuplicate,
   onArchive,
   onRestore,
+  onSaveProject,
+  isDirty,
   workspace,
 }) {
   const [showArchived, setShowArchived] = useState(false);
@@ -127,10 +128,18 @@ export default function ProjectDashboard({
               </p>
             </div>
 
-            <ActionMenu
+            <PageActions
               ariaLabel="Project actions"
-              items={[
-                { key: 'back', label: 'Back to workspace', icon: ArrowLeft, onClick: onClose },
+              visible={[
+                {
+                  key: 'save',
+                  label: 'Save changes',
+                  icon: Save,
+                  onClick: onSaveProject,
+                  title: isDirty ? 'Save project' : 'Project is already saved',
+                  disabled: !isDirty,
+                  variant: 'primary',
+                },
               ]}
             />
           </div>

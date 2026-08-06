@@ -1,17 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   ClipboardCheck,
   ClipboardList,
   Clock3,
   Edit3,
   Plus,
+  Save,
   Trash2,
   X,
 } from 'lucide-react';
-import ActionMenu from './ActionMenu';
+import PageActions from './PageActions';
 import {
   addBuildStage,
   addBuildStep,
@@ -116,7 +116,8 @@ export default function BuildPlanner({
   supplyRequirements,
   supplies,
   onChange,
-  onBack,
+  onSaveProject,
+  isDirty,
 }) {
   const previewPlan = useMemo(() => createBuildPlan({
     projectId,
@@ -292,10 +293,18 @@ export default function BuildPlanner({
               Add only what you have confirmed; safety and tool suitability still need human review.
             </p>
           </div>
-          <ActionMenu
+          <PageActions
             ariaLabel="Build planner actions"
-            items={[
-              { key: 'optimizer', label: 'Optimizer', icon: ArrowLeft, onClick: onBack },
+            visible={[
+              {
+                key: 'save',
+                label: 'Save changes',
+                icon: Save,
+                onClick: onSaveProject,
+                title: isDirty ? 'Save project' : 'Project is already saved',
+                disabled: !isDirty,
+                variant: 'primary',
+              },
             ]}
           />
         </div>
