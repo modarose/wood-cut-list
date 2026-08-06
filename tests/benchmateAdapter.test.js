@@ -63,7 +63,10 @@ import {
 } from '../src/utils/buildPlanner.js';
 import { getBuildPlanReadiness } from '../src/utils/buildReadiness.js';
 import {
+  buildCostingCsv,
   createCostItem,
+  getCostItemInventoryCandidates,
+  getCostItemInventoryStatus,
   getCostingSummary,
   validateCostItem,
 } from '../src/utils/costing.js';
@@ -1041,4 +1044,121 @@ test('manual cost items summarize purchases and persist with the project envelop
     planned,
     missing,
   ]);
+});
+
+test('cost items can link to compatible inventory without copying inventory records', () => {
+  const material = createMaterialStock({
+    id: 'stock_cost_link',
+    category: 'sheet-goods',
+    name: 'Plywood sheet',
+    length: 2440,
+    width: 1220,
+    thickness: 18,
+    usableLength: 2440,
+    usableWidth: 1220,
+    quantity: 2,
+    source: 'owned',
+    condition: 'good',
+  }, { now: FIXED_NOW });
+  const supply = createSupply({
+    id: 'supply_cost_link',
+    category: 'hardware',
+    name: '50 mm screws',
+    unit: 'box',
+    quantity: 3,
+    source: 'owned',
+  }, { now: FIXED_NOW });
+  const costItem = createCostItem({
+    id: 'cost_linked_screws',
+    projectId: 'project_cost_links',
+    category: 'hardware',
+    name: '50 mm screws',
+    quantity: 1,
+    unit: 'box',
+    status: 'owned',
+    unitCost: 12,
+    inventoryLink: { type: 'supply', id: supply.id },
+  }, { now: FIXED_NOW });
+
+  const candidates = getCostItemInventoryCandidates(
+    costItem,
+    [material],
+    [supply],
+  );
+  assert.deepEqual(candidates.materials, []);
+  assert.deepEqual(candidates.supplies.map(candidate => candidate.id), [supply.id]);
+  assert.equal(
+    getCostItemInventoryStatus({ type: 'supply', id: supply.id }, [], [supply]),
+    'owned',
+  );
+  const plannedSupply = createSupply({
+    ...supply,
+    id: 'supply_cost_link_planned',
+    source: 'planned',
+  }, { now: FIXED_NOW });
+  assert.equal(
+    getCostItemInventoryStatus(
+      { type: 'supply', id: plannedSupply.id },
+      [],
+      [plannedSupply],
+    ),
+    'planned',
+  );
+  assert.equal(
+    getCostItemInventoryStatus({ type: 'material', id: material.id }, [material], []),
+    'owned',
+  );
+  assert.equal(validateCostItem(costItem).valid, true);
+  assert.throws(
+    () => createCostItem({
+      ...costItem,
+      inventoryLink: { type: 'unknown', id: 'record' },
+    }),
+    /inventoryLink type is invalid/,
+  );
+
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [],
+  }, {
+    projectId: 'project_cost_links',
+    costItems: [costItem],
+    now: FIXED_NOW,
+  });
+
+  assert.deepEqual(record.costItems[0].inventoryLink, {
+    type: 'supply',
+    id: supply.id,
+  });
+  assert.equal(validateBenchMateProject(record).valid, true);
+  assert.deepEqual(
+    parseBenchMateProject(serializeBenchMateProject(record)).costItems[0].inventoryLink,
+    costItem.inventoryLink,
+  );
+});
+
+test('costing csv includes estimate fields and escapes spreadsheet values', () => {
+  const item = createCostItem({
+    id: 'cost_csv_item',
+    projectId: 'project_csv',
+    category: 'hardware',
+    name: 'Screws, 50 mm',
+    quantity: 2,
+    unit: 'box',
+    status: 'planned',
+    unitCost: 12.5,
+    supplier: 'Wood "Co"',
+    productReference: 'SC-50',
+    url: 'https://example.com/sc-50',
+    checkedAt: '2026-08-04',
+  }, { now: FIXED_NOW });
+
+  const csv = buildCostingCsv(getCostingSummary([item]));
+
+  assert.match(csv, /"Item","Category","Quantity"/);
+  assert.match(csv, /"Screws, 50 mm","hardware","2","box","planned","Wood ""Co"""/);
+  assert.match(csv, /"12\.5","25","Shopping list"/);
+  assert.match(csv, /"2026-08-04"/);
+  assert.match(csv, /"https:\/\/example\.com\/sc-50"/);
 });

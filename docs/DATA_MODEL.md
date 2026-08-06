@@ -454,6 +454,10 @@ Each cost item has an explicit category, quantity unit, ownership/purchase statu
       "url": "https://example.com/product",
       "checkedAt": "2026-08-03",
       "notes": "Confirm grade and usable dimensions before buying.",
+      "inventoryLink": {
+        "type": "supply",
+        "id": "supply_01"
+      },
       "createdAt": "2026-08-03T00:00:00Z",
       "updatedAt": "2026-08-03T00:00:00Z"
     }
@@ -463,3 +467,9 @@ Valid categories include sheet goods, solid timber, hardware, adhesive, finish, 
 The costing summary uses known prices only. Purchase estimate sums priced planned and missing items, owned value sums priced owned items, and the shopping list contains all non-owned items. Missing items and non-owned items without a price remain visible as review conditions. Supplier, product reference and URL are source notes, not a guarantee of current price or availability.
 
 Cost items are optional for backward compatibility, so existing schema version 1 project records remain valid. The current slice does not call supplier APIs, import live availability, reserve inventory or automatically infer cost items from optimizer output.
+
+An optional inventoryLink points to an existing material or supply record by type and ID. The link is not a copy of that record and does not make Costing authoritative for inventory quantity, reservations, dimensions, condition or availability. Material records must be created in Inventory with their required dimensions; a compatible supply can be deliberately created from the Costing view and then linked.
+
+When a link is created, Costing adopts the linked record's owned or planned source as its initial status. The user may deliberately override that status for project-specific planning, but the Costing view flags the mismatch so it is not mistaken for the inventory source.
+
+Existing links can be reconciled from Costing with an explicit action that adopts the current linked Inventory source status. This updates the project cost snapshot's status only; it does not change the inventory record or reserve stock.

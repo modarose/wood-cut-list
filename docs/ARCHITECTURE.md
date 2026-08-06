@@ -367,9 +367,16 @@ The first costing slice stays inside the existing project workspace and canonica
 
 - src/utils/costing.js owns cost-item categories, units, statuses, validation and deterministic summaries.
 - src/components/Costing.jsx owns manual item entry, project totals, the shopping list and source links.
+- Costing's print-only report and CSV export are derived from the same validated summary, so printed and exported totals do not introduce a second calculation path.
 - src/App.jsx keeps costItems[] with the active project and passes them through the existing adapter when saving, opening or duplicating a project.
 - project.costItemIds references the records held in costItems[]. The field is optional so older schema version 1 records still load.
 
 The model records a manual snapshot rather than claiming supplier truth. A cost item may be owned, planned or missing; a null unit cost is allowed when the price still needs review. Purchase estimate sums priced non-owned items, owned value sums priced owned items, and the shopping list keeps all non-owned items visible. Supplier name, product reference, URL and checkedAt are traceability fields only.
+
+An optional inventoryLink connects a cost item to an existing material or supply ID. The link is explicit and type-aware; it does not duplicate the inventory record or make Costing responsible for dimensions, availability, quantities or reservations. Compatible supplies can be deliberately created from Costing, while materials must still be created in Inventory because their dimensions are required.
+
+Creating a link initially adopts the linked inventory source as the Costing status. A user can override that status for project-specific planning, but the UI marks the resulting mismatch for review.
+
+Existing linked items expose an explicit reconciliation action when their Costing status differs from the current Inventory source. Reconciliation updates the project snapshot status only and leaves Inventory quantities, dimensions and reservations unchanged.
 
 This slice uses AUD and does not call supplier APIs, expose credentials, infer prices from inventory, reserve stock or allocate optimizer sheets. A future supplier provider can map into the same manual record shape through a server-side integration boundary without changing the Costing component.

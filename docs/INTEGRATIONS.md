@@ -144,6 +144,8 @@ This also allows future Mitre 10, specialty timber, hardware or finishing suppli
 
 The current Phase 4 implementation uses these manual records in the project Costing view. Supplier name, product reference, product URL, unit price and checked-at date are stored as a dated snapshot. No live supplier API is called yet, and missing prices or availability remain visible for manual review.
 
+Cost records may carry an explicit link to a compatible material or supply inventory record. This is a reference only; inventory remains the source of truth for stock quantities, dimensions and availability.
+
 ## 6. Optional AI integration
 
 AI should be accessed through a server-side boundary when API credentials or user data require protection.
