@@ -1348,6 +1348,139 @@ input[type=number] {
   line-height: 1.5;
 }
 
+.ws-cost-link-panel {
+  margin-bottom: var(--ws-space-md);
+  overflow: visible;
+}
+
+.ws-cost-link-copy {
+  margin: 0;
+  color: var(--ws-on-surface-variant);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ws-cost-inventory-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-space-xs);
+  margin-top: var(--ws-space-md);
+}
+
+.ws-cost-inventory-group-label {
+  color: var(--ws-primary);
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ws-cost-inventory-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ws-space-md);
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ws-outline-variant);
+  border-radius: var(--ws-radius);
+  background: var(--ws-surface-container-low);
+  color: var(--ws-on-surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ws-cost-inventory-option:hover {
+  border-color: var(--ws-primary);
+  background: color-mix(in srgb, var(--ws-primary) 6%, var(--ws-surface-container-low));
+}
+
+.ws-cost-inventory-option > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ws-cost-inventory-option strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-cost-inventory-option small {
+  color: var(--ws-on-surface-variant);
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+}
+
+.ws-cost-inventory-option > svg {
+  flex-shrink: 0;
+  color: var(--ws-primary);
+}
+
+.ws-cost-link-empty {
+  margin-top: var(--ws-space-md);
+  padding: 10px 12px;
+  border: 1px dashed var(--ws-outline-variant);
+  border-radius: var(--ws-radius);
+  color: var(--ws-on-surface-variant);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ws-cost-link-status {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ws-space-sm);
+  margin-top: var(--ws-space-md);
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--ws-secondary) 45%, var(--ws-outline-variant));
+  border-radius: var(--ws-radius);
+  color: var(--ws-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ws-cost-link-status svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ws-cost-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ws-space-sm);
+  margin-top: var(--ws-space-lg);
+}
+
+.ws-cost-inventory-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  color: var(--ws-primary);
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+}
+
+.ws-cost-inventory-link.unavailable {
+  color: var(--ws-secondary);
+}
+
+.ws-cost-inventory-link.mismatch {
+  color: var(--ws-secondary);
+}
+
+.ws-cost-status-warning {
+  color: var(--ws-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .ws-build-readiness {
   overflow: visible;
 }
@@ -2173,6 +2306,15 @@ input[type=number] {
   }
 
   .ws-cost-form-actions .ws-btn {
+    width: 100%;
+  }
+
+  .ws-cost-link-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ws-cost-link-actions .ws-btn {
     width: 100%;
   }
 
@@ -3214,6 +3356,10 @@ input[type=number] {
     display: block !important;
   }
 
+  .ws-content.no-print {
+    display: none !important;
+  }
+
   .ram-card {
     overflow: visible !important;
   }
@@ -3354,6 +3500,76 @@ input[type=number] {
     margin-top: 10px;
     color: #b43b1b;
     font-size: 10px;
+  }
+
+  .print-cost-page {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  .print-cost-table {
+    margin-top: 0.8rem;
+  }
+
+  .print-cost-table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print-cost-table td {
+    vertical-align: top;
+  }
+
+  .print-cost-reference {
+    margin-top: 3px;
+    color: #68716e;
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+  }
+
+  .print-cost-url {
+    margin-top: 3px;
+    color: #68716e;
+    font-size: 9px;
+    overflow-wrap: anywhere;
+  }
+
+  .print-cost-review-note {
+    margin-top: 3px;
+    color: #b43b1b;
+    font-size: 9px;
+  }
+
+  .print-cost-invalid-row {
+    color: #b43b1b;
+  }
+
+  .print-cost-note {
+    margin-top: 1rem;
+    color: #68716e;
+    font-size: 10px;
+  }
+
+  .print-cost-shopping {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .print-cost-total {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    margin-top: 1.2rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid #242526;
+    font-size: 12px;
+  }
+
+  .print-cost-total span {
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .print-diagram-page {

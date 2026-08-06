@@ -30,9 +30,17 @@ export const COST_ITEM_STATUSES = Object.freeze([
   { value: 'missing', label: 'Needs sourcing' },
 ]);
 
+export const COST_ITEM_INVENTORY_TYPES = Object.freeze([
+  { value: 'material', label: 'Material inventory' },
+  { value: 'supply', label: 'Supplies inventory' },
+]);
+
 const VALID_CATEGORIES = new Set(COST_ITEM_CATEGORIES.map(option => option.value));
 const VALID_UNITS = new Set(COST_ITEM_UNITS.map(option => option.value));
 const VALID_STATUSES = new Set(COST_ITEM_STATUSES.map(option => option.value));
+const VALID_INVENTORY_TYPES = new Set(COST_ITEM_INVENTORY_TYPES.map(option => option.value));
+const MATERIAL_COST_CATEGORIES = new Set(['sheet-goods', 'solid-timber']);
+const SUPPLY_COST_CATEGORIES = new Set(['hardware', 'adhesive', 'finish', 'abrasive', 'consumable']);
 
 function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -55,6 +63,15 @@ function readDate(value) {
 
 function countLabel(value, singular, plural = `${singular}s`) {
   return `${value} ${value === 1 ? singular : plural}`;
+}
+
+function normalizeInventoryLink(value) {
+  if (value === undefined || value === null || value === '') return null;
+  if (!isObject(value)) return value;
+  return {
+    type: readText(value.type),
+    id: readText(value.id),
+  };
 }
 
 export function createCostItemId() {
@@ -87,6 +104,18 @@ export function validateCostItem(item) {
     && (!readText(item.checkedAt) || Number.isNaN(Date.parse(item.checkedAt)))) {
     errors.push('Cost item checkedAt must be null or a valid date.');
   }
+  if (item.inventoryLink !== null && item.inventoryLink !== undefined) {
+    if (!isObject(item.inventoryLink)) {
+      errors.push('Cost item inventoryLink must be null or an object.');
+    } else {
+      if (!VALID_INVENTORY_TYPES.has(item.inventoryLink.type)) {
+        errors.push('Cost item inventoryLink type is invalid.');
+      }
+      if (!readText(item.inventoryLink.id)) {
+        errors.push('Cost item inventoryLink id is required.');
+      }
+    }
+  }
 
   return { valid: errors.length === 0, errors };
 }
@@ -109,6 +138,7 @@ export function createCostItem(input = {}, options = {}) {
     url: readText(source.url),
     checkedAt: readDate(source.checkedAt),
     notes: readText(source.notes),
+    inventoryLink: normalizeInventoryLink(source.inventoryLink),
     createdAt: options.createdAt ?? source.createdAt ?? now,
     updatedAt: options.updatedAt ?? now,
   };
@@ -127,6 +157,49 @@ export function updateCostItem(existing, input = {}, options = {}) {
     projectId: options.projectId ?? existing.projectId,
     createdAt: existing.createdAt,
   });
+}
+
+function sortInventoryCandidates(records, item) {
+  const itemName = readText(item?.name).toLowerCase();
+  return [...records].sort((a, b) => {
+    const aNameMatch = readText(a.name).toLowerCase() === itemName ? 1 : 0;
+    const bNameMatch = readText(b.name).toLowerCase() === itemName ? 1 : 0;
+    if (aNameMatch !== bNameMatch) return bNameMatch - aNameMatch;
+    return readText(a.name).localeCompare(readText(b.name));
+  });
+}
+
+export function getCostItemInventoryCandidates(item, materials = [], supplies = []) {
+  const sourceMaterials = Array.isArray(materials) ? materials : [];
+  const sourceSupplies = Array.isArray(supplies) ? supplies : [];
+  const materialCandidates = MATERIAL_COST_CATEGORIES.has(item?.category)
+    ? sourceMaterials.filter(material => material.category === item.category)
+    : [];
+  const supplyCandidates = SUPPLY_COST_CATEGORIES.has(item?.category)
+    ? sourceSupplies.filter(supply => (
+      supply.category === item.category
+      && (supply.unit === item.unit || item.unit === 'other')
+    ))
+    : [];
+
+  return {
+    materials: sortInventoryCandidates(materialCandidates, item),
+    supplies: sortInventoryCandidates(supplyCandidates, item),
+  };
+}
+
+export function canCreateSupplyInventoryRecord(item) {
+  return SUPPLY_COST_CATEGORIES.has(item?.category);
+}
+
+export function getCostItemInventoryStatus(inventoryLink, materials = [], supplies = []) {
+  if (!inventoryLink?.type || !inventoryLink.id) return null;
+  const records = inventoryLink.type === 'material' ? materials : supplies;
+  const record = records.find(candidate => candidate.id === inventoryLink.id);
+  if (!record) return null;
+  if (record.source === 'owned') return 'owned';
+  if (record.source === 'planned') return 'planned';
+  return null;
 }
 
 function getLineTotal(item) {
@@ -212,4 +285,51 @@ export function getCostingStatusMessage(summary) {
     return `${countLabel(summary.missingItems, 'item')} still need sourcing before the build is ready to buy.`;
   }
   return 'The purchase total reflects priced items marked as planned or needing sourcing.';
+}
+
+function csvValue(value) {
+  if (value === null || value === undefined) return '';
+  return `"${String(value).replace(/"/g, '""')}"`;
+}
+
+export function buildCostingCsv(summary = {}) {
+  const rows = Array.isArray(summary.rows) ? summary.rows : [];
+  const header = [
+    'Item',
+    'Category',
+    'Quantity',
+    'Unit',
+    'Status',
+    'Supplier',
+    'Product reference',
+    'Checked at',
+    'Unit cost (AUD)',
+    'Line total (AUD)',
+    'List',
+    'Review note',
+    'Product URL',
+  ];
+  const lines = [header.map(csvValue).join(',')];
+
+  rows.forEach(row => {
+    const item = row.item ?? {};
+    const valid = row.valid === true;
+    lines.push([
+      item.name,
+      valid ? item.category : '',
+      valid ? item.quantity : '',
+      valid ? item.unit : '',
+      valid ? item.status : '',
+      valid ? item.supplier : '',
+      valid ? item.productReference : '',
+      valid ? item.checkedAt : '',
+      valid && item.unitCost !== null ? item.unitCost : '',
+      valid && row.lineTotal !== null ? row.lineTotal : '',
+      valid ? (item.status === 'owned' ? 'Owned' : 'Shopping list') : 'Review',
+      valid ? '' : row.reason,
+      valid ? item.url : '',
+    ].map(csvValue).join(','));
+  });
+
+  return lines.join('\r\n') + '\r\n';
 }

@@ -162,7 +162,11 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 - Manual cost items are stored in the project envelope as costItems[] and referenced through project.costItemIds. The optional field keeps older schema version 1 records compatible.
 - Each item records a category, name, positive quantity, explicit unit, owned/planned/missing status, optional AUD unit cost, supplier, product reference, URL, checked-at date and notes.
 - The first summary reports purchase estimate, owned value, estimated total, unknown prices and a shopping list. Missing items and non-owned items without prices remain review conditions.
+- Costing can print a separate estimate/shopping-list report or export the same rows to CSV for workshop or purchasing use.
 - Cost items are project-specific manual snapshots. The slice does not call live supplier APIs, confirm availability, reserve inventory or infer costs from optimizer output.
+- Cost items can now link explicitly to compatible material or supply records. A compatible supply may be created from Costing; materials still require a deliberate Inventory entry because dimensions are mandatory.
+- Linking adopts the existing Inventory source as the initial Costing status. Deliberate overrides remain possible but are flagged as a visible status mismatch.
+- Existing links can be explicitly reconciled from Costing when the Inventory source changes, without changing or reserving the inventory record.
 
 ## Phase 5 — Bunnings integration
 

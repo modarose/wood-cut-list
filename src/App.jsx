@@ -35,6 +35,8 @@ import {
   createSupply,
   loadStoredSupplies,
   removeStoredSupply,
+  SUPPLY_CATEGORIES,
+  SUPPLY_UNITS,
   updateSupply,
   upsertStoredSupply,
 } from './utils/supplyInventory.js';
@@ -582,6 +584,49 @@ export default function App() {
     }
   };
 
+  const handleCreateSupplyFromCostItem = (item) => {
+    try {
+      const category = SUPPLY_CATEGORIES.some(option => option.value === item.category)
+        ? item.category
+        : 'consumable';
+      const unit = SUPPLY_UNITS.some(option => option.value === item.unit)
+        ? item.unit
+        : 'other';
+      const source = item.status === 'owned' ? 'owned' : 'planned';
+      const notes = [
+        item.supplier ? 'Supplier: ' + item.supplier : '',
+        item.notes || '',
+      ].filter(Boolean).join('\n');
+      const supply = createSupply({
+        category,
+        name: item.name,
+        reference: item.productReference,
+        unit,
+        quantity: item.quantity,
+        source,
+        notes,
+        lastCheckedAt: item.checkedAt,
+      });
+      const result = upsertStoredSupply(supply, supplies);
+
+      if (!result.saved) {
+        return {
+          saved: false,
+          error: result.error || 'The supply could not be added to inventory.',
+        };
+      }
+
+      setSupplies(result.supplies);
+      return {
+        saved: true,
+        error: '',
+        inventoryLink: { type: 'supply', id: supply.id },
+      };
+    } catch (error) {
+      return { saved: false, error: error.message };
+    }
+  };
+
   const handleDeleteSupply = (supply) => {
     const result = removeStoredSupply(supply.id, supplies);
     if (!result.saved) {
@@ -811,8 +856,13 @@ export default function App() {
           projectId={projectId}
           projectName={projectName}
           costItems={costItems}
+          materials={materials}
+          supplies={supplies}
           onChange={handleCostItemsChange}
           onBack={handleCloseCosting}
+          onCreateSupply={handleCreateSupplyFromCostItem}
+          onOpenInventory={handleOpenInventory}
+          onPrint={handlePrint}
         />
       </div>
     );

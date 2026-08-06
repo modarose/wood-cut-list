@@ -4,9 +4,13 @@ import {
   ArrowLeft,
   Calculator,
   CheckCircle2,
+  Download,
   ExternalLink,
+  Link2,
+  PackagePlus,
   Pencil,
   Plus,
+  Printer,
   ReceiptText,
   ShoppingCart,
   Trash2,
@@ -17,9 +21,13 @@ import {
   COST_ITEM_CATEGORIES,
   COST_ITEM_STATUSES,
   COST_ITEM_UNITS,
+  canCreateSupplyInventoryRecord,
+  buildCostingCsv,
   createCostItem,
   formatAud,
   formatCostItemQuantity,
+  getCostItemInventoryCandidates,
+  getCostItemInventoryStatus,
   getCostingStatusMessage,
   getCostingSummary,
   updateCostItem,
@@ -90,19 +98,182 @@ function buildPayload(form) {
   };
 }
 
+function getLinkedInventory(link, materials, supplies) {
+  if (!link?.type || !link.id) return null;
+  const records = link.type === 'material' ? materials : supplies;
+  const record = records.find(candidate => candidate.id === link.id) ?? null;
+  return {
+    typeLabel: link.type === 'material' ? 'Material inventory' : 'Supplies inventory',
+    record,
+  };
+}
+
+function inventoryRecordMeta(type, record) {
+  if (!record) return 'Record unavailable';
+  if (type === 'material') {
+    const available = Math.max(0, (record.quantity ?? 0) - (record.reservedQuantity ?? 0));
+    return (record.quantity ?? 0) + ' owned · ' + available + ' available';
+  }
+  return (record.quantity ?? 0) + ' ' + record.unit + ' · '
+    + (record.source === 'owned' ? 'Owned' : 'Planned purchase');
+}
+
+function fileSegment(value, fallback) {
+  const segment = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return segment || fallback;
+}
+
+function CostingPrintReport({ projectName, summary }) {
+  return (
+    <div className="print-only print-report ws-cost-print-report">
+      <section className="print-page print-cost-page">
+        <div className="print-report-kicker">BENCHMATE · COST REPORT</div>
+        <h1>Project cost estimate</h1>
+        <p className="print-report-subtitle">
+          {projectName || 'Untitled project'} &middot; AUD &middot; generated from the current manual estimate
+        </p>
+
+        <div className="print-summary-grid">
+          <div><span>PURCHASE ESTIMATE</span><strong>{formatAud(summary.purchaseTotal)}</strong></div>
+          <div><span>OWNED VALUE</span><strong>{formatAud(summary.ownedValue)}</strong></div>
+          <div><span>ESTIMATED TOTAL</span><strong>{formatAud(summary.estimatedTotal)}</strong></div>
+          <div><span>PRICE REVIEW</span><strong>{summary.unknownPriceCount}</strong></div>
+        </div>
+
+        <h2>Project cost items</h2>
+        <table className="print-parts-table print-cost-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Category</th>
+              <th>Quantity</th>
+              <th>Status</th>
+              <th>Supplier</th>
+              <th>Unit cost</th>
+              <th>Line total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {summary.rows.length === 0 && (
+              <tr><td colSpan="7">No cost items recorded.</td></tr>
+            )}
+            {summary.rows.map(row => {
+              const item = row.item ?? {};
+              return (
+                <tr key={'print-cost-' + row.id} className={row.valid ? '' : 'print-cost-invalid-row'}>
+                  <td>
+                    <div>{item.name || 'Invalid cost item'}</div>
+                    {row.valid && item.productReference && (
+                      <div className="print-cost-reference">Ref: {item.productReference}</div>
+                    )}
+                    {!row.valid && <div className="print-cost-review-note">{row.reason}</div>}
+                  </td>
+                  <td>{row.valid ? optionLabel(COST_ITEM_CATEGORIES, item.category) : 'Review'}</td>
+                  <td className="print-nowrap">{row.valid ? formatCostItemQuantity(item) : '—'}</td>
+                  <td>{row.valid ? statusText(item.status) : 'Review'}</td>
+                  <td>{row.valid ? (item.supplier || 'Not recorded') : '—'}</td>
+                  <td className="print-nowrap">{row.valid && item.unitCost !== null ? formatAud(item.unitCost) : 'TBC'}</td>
+                  <td className="print-nowrap">{row.valid && row.lineTotal !== null ? formatAud(row.lineTotal) : 'TBC'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {summary.status !== 'estimated' && (
+          <p className="print-warning">{summary.statusLabel}: {getCostingStatusMessage(summary)}</p>
+        )}
+        {summary.shoppingRows.length === 0 && (
+          <p className="print-cost-note">No planned purchases or items needing sourcing are currently recorded.</p>
+        )}
+      </section>
+
+      {summary.shoppingRows.length > 0 && (
+        <section className="print-page print-cost-page print-cost-shopping">
+          <div className="print-report-kicker">SHOPPING LIST</div>
+          <h1>Items to buy</h1>
+          <p className="print-report-subtitle">
+            {summary.shoppingItems} item{summary.shoppingItems === 1 ? '' : 's'} &middot; excludes owned inventory records
+          </p>
+
+          <table className="print-parts-table print-cost-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Supplier / reference</th>
+                <th>Checked</th>
+                <th>Estimate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summary.shoppingRows.map(row => (
+                <tr key={'print-shopping-' + row.id}>
+                  <td>{row.item.name}</td>
+                  <td>{optionLabel(COST_ITEM_CATEGORIES, row.item.category)}</td>
+                  <td className="print-nowrap">{formatCostItemQuantity(row.item)}</td>
+                  <td>
+                    <div>{row.item.supplier || 'Supplier not recorded'}</div>
+                    {row.item.productReference && (
+                      <div className="print-cost-reference">{row.item.productReference}</div>
+                    )}
+                    {row.item.url && <div className="print-cost-url">{row.item.url}</div>}
+                  </td>
+                  <td className="print-nowrap">{formatDate(row.item.checkedAt)}</td>
+                  <td className="print-nowrap">{row.lineTotal !== null ? formatAud(row.lineTotal) : 'TBC'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="print-cost-total">
+            <span>Purchase estimate</span>
+            <strong>{formatAud(summary.purchaseTotal)}</strong>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
 export default function Costing({
   projectId,
   projectName,
   costItems,
+  materials = [],
+  supplies = [],
   onChange,
   onBack,
+  onCreateSupply,
+  onOpenInventory,
+  onPrint,
 }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [formError, setFormError] = useState('');
+  const [linkingItem, setLinkingItem] = useState(null);
+  const [linkError, setLinkError] = useState('');
 
   const summary = useMemo(() => getCostingSummary(costItems), [costItems]);
+  const inventoryCandidates = useMemo(
+    () => getCostItemInventoryCandidates(linkingItem, materials, supplies),
+    [linkingItem, materials, supplies],
+  );
+  const editingLinkedStatus = editingItem
+    ? getCostItemInventoryStatus(editingItem.inventoryLink, materials, supplies)
+    : null;
+  const linkingInventoryStatus = linkingItem
+    ? getCostItemInventoryStatus(linkingItem.inventoryLink, materials, supplies)
+    : null;
+  const linkingStatusMismatch = Boolean(
+    linkingInventoryStatus && linkingInventoryStatus !== linkingItem?.status,
+  );
 
   const openNewForm = () => {
     setEditingItem(null);
@@ -154,9 +325,70 @@ export default function Costing({
     onChange(costItems.filter(candidate => candidate.id !== item.id));
   };
 
+  const openInventoryLink = item => {
+    setLinkingItem(item);
+    setLinkError('');
+  };
+
+  const closeInventoryLink = () => {
+    setLinkingItem(null);
+    setLinkError('');
+  };
+
+  const saveInventoryLink = (item, inventoryLink) => {
+    try {
+      const linkedStatus = getCostItemInventoryStatus(inventoryLink, materials, supplies);
+      const nextItem = updateCostItem(item, {
+        inventoryLink,
+        ...(linkedStatus ? { status: linkedStatus } : {}),
+      }, { projectId });
+      onChange(costItems.map(candidate => (
+        candidate.id === item.id ? nextItem : candidate
+      )));
+      closeInventoryLink();
+    } catch (error) {
+      setLinkError(error.message);
+    }
+  };
+
+  const handleCreateSupply = () => {
+    if (!linkingItem || !onCreateSupply) return;
+    const result = onCreateSupply(linkingItem);
+    if (!result.saved) {
+      setLinkError(result.error || 'The supply could not be added to inventory.');
+      return;
+    }
+    if (result.inventoryLink) {
+      saveInventoryLink(linkingItem, result.inventoryLink);
+    }
+  };
+
+  const handleUnlink = item => {
+    saveInventoryLink(item, null);
+  };
+
+  const adoptInventoryStatus = item => {
+    const linkedStatus = getCostItemInventoryStatus(item.inventoryLink, materials, supplies);
+    if (!linkedStatus || linkedStatus === item.status) return;
+    saveInventoryLink(item, item.inventoryLink);
+  };
+
+  const handleExportCsv = () => {
+    const csv = buildCostingCsv(summary);
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileSegment(projectName || projectId, 'benchmate-project') + '-costing.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
   return (
     <main className="ws-main">
-      <div className="ws-content ws-cost-content">
+      <div className="ws-content ws-cost-content no-print">
         <div className="ws-cost-heading">
           <div>
             <div className="ws-page-eyebrow">BenchMate project costs</div>
@@ -170,6 +402,8 @@ export default function Costing({
             ariaLabel="Costing actions"
             items={[
               { key: 'optimizer', label: 'Optimizer', icon: ArrowLeft, onClick: onBack },
+              { key: 'csv', label: 'Export CSV', icon: Download, onClick: handleExportCsv },
+              { key: 'print', label: 'Print / PDF', icon: Printer, onClick: onPrint },
             ]}
           />
         </div>
@@ -253,6 +487,11 @@ export default function Costing({
                   <select className="ws-select" name="status" value={form.status} onChange={handleFormChange}>
                     {COST_ITEM_STATUSES.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
+                  {editingLinkedStatus && form.status !== editingLinkedStatus && (
+                    <span className="ws-cost-status-warning">
+                      This override differs from the linked Inventory source ({optionLabel(COST_ITEM_STATUSES, editingLinkedStatus)}).
+                    </span>
+                  )}
                 </label>
                 <label className="ws-input-group">
                   <span className="ws-label">Quantity</span>
@@ -299,6 +538,113 @@ export default function Costing({
           </form>
         )}
 
+        {linkingItem && (
+          <section className="ws-card ws-cost-link-panel">
+            <div className="ws-card-header">
+              <div className="ws-card-title">
+                <Link2 size={17} />
+                Link inventory record
+              </div>
+              <button type="button" className="ws-btn ws-btn-icon" onClick={closeInventoryLink} title="Close inventory linking">
+                <X size={17} />
+              </button>
+            </div>
+            <div className="ws-card-body">
+              <p className="ws-cost-link-copy">
+                Choose an existing inventory record for <strong>{linkingItem.name}</strong>.
+                The cost snapshot remains attached to this project.
+              </p>
+              {linkError && <div className="ws-form-error" role="alert">{linkError}</div>}
+              {linkingStatusMismatch && (
+                <div className="ws-cost-link-status">
+                  <AlertTriangle size={15} />
+                  <span>
+                    Costing is {statusText(linkingItem.status)} while the linked Inventory source is {statusText(linkingInventoryStatus)}.
+                  </span>
+                </div>
+              )}
+
+              {inventoryCandidates.materials.length > 0 && (
+                <div className="ws-cost-inventory-group">
+                  <div className="ws-cost-inventory-group-label">Material inventory</div>
+                  {inventoryCandidates.materials.map(record => (
+                    <button
+                      type="button"
+                      className="ws-cost-inventory-option"
+                      key={record.id}
+                      onClick={() => saveInventoryLink(linkingItem, { type: 'material', id: record.id })}
+                    >
+                      <span>
+                        <strong>{record.name}</strong>
+                        <small>{inventoryRecordMeta('material', record)}</small>
+                      </span>
+                      <Link2 size={15} />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {inventoryCandidates.supplies.length > 0 && (
+                <div className="ws-cost-inventory-group">
+                  <div className="ws-cost-inventory-group-label">Supplies inventory</div>
+                  {inventoryCandidates.supplies.map(record => (
+                    <button
+                      type="button"
+                      className="ws-cost-inventory-option"
+                      key={record.id}
+                      onClick={() => saveInventoryLink(linkingItem, { type: 'supply', id: record.id })}
+                    >
+                      <span>
+                        <strong>{record.name}</strong>
+                        <small>{inventoryRecordMeta('supply', record)}</small>
+                      </span>
+                      <Link2 size={15} />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {inventoryCandidates.materials.length === 0
+                && inventoryCandidates.supplies.length === 0 && (
+                  <div className="ws-cost-link-empty">
+                    No compatible inventory record is available yet.
+                    Materials must be created in Inventory with dimensions before they can be linked.
+                  </div>
+                )}
+
+              <div className="ws-cost-link-actions">
+                {linkingStatusMismatch && (
+                  <button
+                    type="button"
+                    className="ws-btn ws-btn-primary"
+                    onClick={() => saveInventoryLink(linkingItem, linkingItem.inventoryLink)}
+                  >
+                    <CheckCircle2 size={15} />
+                    Adopt Inventory status
+                  </button>
+                )}
+                {linkingItem.inventoryLink && (
+                  <button type="button" className="ws-btn ws-btn-danger" onClick={() => handleUnlink(linkingItem)}>
+                    Unlink record
+                  </button>
+                )}
+                {canCreateSupplyInventoryRecord(linkingItem) && onCreateSupply && (
+                  <button type="button" className="ws-btn" onClick={handleCreateSupply}>
+                    <PackagePlus size={15} />
+                    Add to supplies
+                  </button>
+                )}
+                {onOpenInventory && (
+                  <button type="button" className="ws-btn" onClick={onOpenInventory}>
+                    Open Inventory
+                  </button>
+                )}
+                <button type="button" className="ws-btn" onClick={closeInventoryLink}>Cancel</button>
+              </div>
+            </div>
+          </section>
+        )}
+
         <section className="ws-card">
           <div className="ws-card-header">
             <div className="ws-card-title"><ReceiptText size={17} /> Project cost items</div>
@@ -321,6 +667,10 @@ export default function Costing({
                 <tbody>
                   {summary.rows.map(row => {
                     const item = row.item;
+                    const linkedStatusForRow = row.valid
+                      ? getCostItemInventoryStatus(item.inventoryLink, materials, supplies)
+                      : null;
+                    const rowStatusMismatch = Boolean(linkedStatusForRow && linkedStatusForRow !== item.status);
                     return (
                       <tr key={row.id}>
                         <td>
@@ -328,6 +678,24 @@ export default function Costing({
                           <div className={row.valid ? 'ws-inventory-meta' : 'ws-cost-invalid'}>
                             {row.valid ? optionLabel(COST_ITEM_CATEGORIES, item.category) : row.reason}
                           </div>
+                          {row.valid && (() => {
+                            const linkedInventory = getLinkedInventory(item.inventoryLink, materials, supplies);
+                            const linkedStatus = getCostItemInventoryStatus(item.inventoryLink, materials, supplies);
+                            const statusMismatch = linkedStatus && linkedStatus !== item.status;
+                            return (
+                              <div className={'ws-cost-inventory-link'
+                                + (linkedInventory?.record ? '' : ' unavailable')
+                                + (statusMismatch ? ' mismatch' : '')}>
+                                <Link2 size={12} />
+                                {linkedInventory?.record
+                                  ? linkedInventory.typeLabel + ': ' + linkedInventory.record.name
+                                    + (statusMismatch ? ' · status differs' : '')
+                                  : item.inventoryLink
+                                    ? 'Inventory record unavailable'
+                                    : 'Not linked to inventory'}
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td>{row.valid ? formatCostItemQuantity(item) : '—'}</td>
                         <td>
@@ -338,6 +706,26 @@ export default function Costing({
                         <td>{row.lineTotal !== null ? formatAud(row.lineTotal) : 'TBC'}</td>
                         <td>
                           <div className="ws-inventory-actions">
+                            {rowStatusMismatch && (
+                              <button
+                                type="button"
+                                className="ws-btn ws-btn-icon"
+                                onClick={() => adoptInventoryStatus(item)}
+                                title={'Adopt linked Inventory status: ' + statusText(linkedStatusForRow)}
+                              >
+                                <CheckCircle2 size={15} />
+                              </button>
+                            )}
+                            {row.valid && (
+                              <button
+                                type="button"
+                                className="ws-btn ws-btn-icon"
+                                onClick={() => openInventoryLink(item)}
+                                title={item.inventoryLink ? 'Change inventory link' : 'Link to inventory'}
+                              >
+                                <Link2 size={15} />
+                              </button>
+                            )}
                             {row.valid && (
                               <button type="button" className="ws-btn ws-btn-icon" onClick={() => openEditForm(item)} title="Edit cost item">
                                 <Pencil size={15} />
@@ -421,6 +809,7 @@ export default function Costing({
           Project {projectId} keeps these records with its saved revisions.
         </p>
       </div>
+      <CostingPrintReport projectName={projectName} summary={summary} />
     </main>
   );
 }
