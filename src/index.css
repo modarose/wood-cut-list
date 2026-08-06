@@ -1002,6 +1002,30 @@ input[type=number] {
   font-size: 13px;
 }
 
+.ws-optimization-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: var(--ws-space-md);
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--ws-secondary) 40%, var(--ws-outline-variant));
+  border-radius: var(--ws-radius);
+  background: color-mix(in srgb, var(--ws-secondary) 10%, var(--ws-surface-container-lowest));
+  color: var(--ws-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ws-optimization-warning strong {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.ws-optimization-warning ul {
+  margin: 4px 0 0;
+  padding-left: 17px;
+}
+
 .ws-stock-source {
   display: flex;
   flex-direction: column;

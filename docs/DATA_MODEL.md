@@ -1,6 +1,6 @@
 # WoodCut Studio Data Model
 
-**Status:** Canonical model with Phase 4 manual costing slice
+**Status:** Canonical model with Phase 5 supplier snapshot and budget slices
 **Date:** 2026-08-03
 
 ## 1. Conventions

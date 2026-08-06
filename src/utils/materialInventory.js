@@ -269,12 +269,25 @@ export function upsertStoredMaterial(material, materials, storage = getDefaultSt
 }
 
 export function removeStoredMaterial(materialId, materials, storage = getDefaultStorage()) {
-  if (!Array.isArray(materials)) return { materials, saved: false };
+  if (!Array.isArray(materials)) {
+    return { materials, saved: false, error: 'Material stock records are invalid.' };
+  }
+
+  const material = materials.find(candidate => candidate.id === materialId);
+  if (material && ((Number.isInteger(material.reservedQuantity) && material.reservedQuantity > 0)
+    || (Array.isArray(material.reservations) && material.reservations.length > 0))) {
+    return {
+      materials,
+      saved: false,
+      error: 'Cannot remove material while active reservations exist. Release them first.',
+    };
+  }
 
   const nextMaterials = materials.filter(material => material.id !== materialId);
   return {
     materials: nextMaterials,
     saved: saveStoredMaterials(nextMaterials, storage),
+    error: '',
   };
 }
 

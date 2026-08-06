@@ -135,7 +135,11 @@ export default function CutListInput({ parts, onPartsChange, unit }) {
                         type="number"
                         min="1"
                         value={part.qty}
-                        onChange={e => handlePartChange(part.id, 'qty', Math.max(1, parseInt(e.target.value) || 1))}
+                        onChange={e => handlePartChange(
+                          part.id,
+                          'qty',
+                          e.target.value === '' ? '' : Number(e.target.value),
+                        )}
                         className="ws-input ws-qty-input num-tabular"
                         style={{ width: '3ch', textAlign: 'center', fontWeight: 600 }}
                       />

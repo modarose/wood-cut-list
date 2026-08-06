@@ -46,7 +46,7 @@ export default function CutSequence({ result, unit, preview = false, onOpenWorks
             <div className="ws-sequence-sheet" key={sheetIdx}>
               <div className="ws-sequence-sheet-header">
                 <div>
-                  <div className="ws-sequence-sheet-label">Sheet #{sheetIdx + 1}</div>
+                  <div className="ws-sequence-sheet-label">Sheet #{sheet.sheetIndex ?? sheetIdx + 1}</div>
                   <div className="ws-sequence-sheet-count">{sheet.cuts.length} cut passes · complete in order</div>
                 </div>
                 <div className="ws-sequence-sheet-note">
@@ -57,12 +57,14 @@ export default function CutSequence({ result, unit, preview = false, onOpenWorks
 
               <div className="ws-sequence-strip">
                 {displayedCuts.map((cut, cutIdx) => {
-                  const key = `s${sheetIdx}_c${cutIdx}`;
+                  const sheetNumber = sheet.sheetIndex ?? sheetIdx + 1;
+                  const key = `s${sheetNumber}_c${cutIdx}`;
                   const done = completedSteps.has(key);
-                  const label = cut.type === 'vertical' ? 'Cross Cut' : 'Rip Cut';
-                  const fence = cut.cutSize || (cut.type === 'vertical' ? cut.x : cut.y);
+                  const isRipCut = cut.type === 'vertical';
+                  const label = isRipCut ? 'Rip Cut' : 'Cross Cut';
+                  const fence = cut.cutSize ?? (isRipCut ? cut.x : cut.y);
                   const isFirstCut = cutIdx === 0;
-                  const length = cut.type === 'vertical'
+                  const length = isRipCut
                     ? (cut.y2 - cut.y1)
                     : (cut.x2 - cut.x1);
 
@@ -87,17 +89,17 @@ export default function CutSequence({ result, unit, preview = false, onOpenWorks
                       </div>
 
                       <div className="ws-sequence-card-title">
-                        {cut.type === 'vertical' ? 'Cross-cut at' : 'Set rip fence to'} {formatDimension(fence, unit)}
+                        {isRipCut ? 'Set rip fence to' : 'Cross-cut at'} {formatDimension(fence, unit)}
                       </div>
 
                       <div className="ws-sequence-card-desc">
                         {isFirstCut
-                          ? (cut.type === 'vertical'
-                            ? 'Reference the trimmed sheet edge, then cross-cut through the marked section.'
-                            : 'Reference the trimmed sheet edge, set the fence, then rip through the marked section.')
-                          : (cut.type === 'vertical'
-                            ? 'Reference the edge created by the previous pass, then cross-cut this section.'
-                            : 'Move the fence from the previous setup, then rip the remaining section.')}
+                          ? (isRipCut
+                            ? 'Reference the trimmed sheet edge, set the fence, then rip through the marked section.'
+                            : 'Reference the trimmed sheet edge, then cross-cut through the marked section.')
+                          : (isRipCut
+                            ? 'Move the fence from the previous setup, then rip the remaining section.'
+                            : 'Reference the edge created by the previous pass, then cross-cut this section.')}
                       </div>
 
                       <div className="ws-sequence-card-footer">

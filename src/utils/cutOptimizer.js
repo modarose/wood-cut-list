@@ -8,9 +8,20 @@ export const STRATEGIES = {
 };
 
 export const CUT_PREFERENCES = {
-  RIP_FIRST: 'rip_first',     // Horizontal full-length cut first
-  CROSS_FIRST: 'cross_first', // Vertical full-width cut first
+  RIP_FIRST: 'rip_first',     // Vertical lengthwise cut first
+  CROSS_FIRST: 'cross_first', // Horizontal cross-cut first
 };
+
+function readPositiveNumber(value) {
+  if (value === '' || value === null || value === undefined) return null;
+  const number = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+function readPositiveInteger(value) {
+  const number = readPositiveNumber(value);
+  return number !== null && Number.isInteger(number) ? number : null;
+}
 
 /**
  * Main calculation entry point
@@ -21,37 +32,87 @@ export function optimizeCutList(stockSheet, partsList, options = {}) {
   const strategy = options.strategy || STRATEGIES.BSSF;
   const cutPref = options.cutPreference || CUT_PREFERENCES.RIP_FIRST;
 
+  const invalidParts = [];
+  const validationErrors = [];
+  const itemsToPlace = [];
+  const sourceParts = Array.isArray(partsList) ? partsList : [];
+
+  if (!Array.isArray(partsList)) {
+    validationErrors.push('Cut-list parts must be an array.');
+  }
+
+  // Validate before expanding quantities. Invalid rows must not become zero-sized
+  // placements or silently turn a zero quantity into one requested part.
+  sourceParts.forEach((part, partIndex) => {
+    if (!part || typeof part !== 'object' || Array.isArray(part)) {
+      invalidParts.push({
+        id: `invalid_${partIndex}`,
+        name: `Part ${partIndex + 1}`,
+        reason: 'Part entry must be an object.',
+      });
+      return;
+    }
+
+    const width = readPositiveNumber(part.width);
+    const height = readPositiveNumber(part.height);
+    const quantityInput = part.qty === undefined
+      ? 1
+      : part.qty;
+    const quantity = readPositiveInteger(quantityInput);
+    const partName = part.name || `Part ${part.id ?? partIndex + 1}`;
+    const errors = [];
+
+    if (width === null) errors.push('Width must be a finite number greater than zero.');
+    if (height === null) errors.push('Length must be a finite number greater than zero.');
+    if (quantity === null) errors.push('Quantity must be a positive whole number.');
+
+    if (errors.length > 0) {
+      invalidParts.push({
+        id: part.id ?? `invalid_${partIndex}`,
+        name: partName,
+        width: part.width,
+        height: part.height,
+        qty: part.qty,
+        reason: errors.join(' '),
+      });
+      return;
+    }
+
+    for (let i = 0; i < quantity; i++) {
+      itemsToPlace.push({
+        id: `${part.id}_${i}`,
+        originalId: part.id,
+        name: partName,
+        width,
+        height,
+        allowRotation: part.allowRotation !== false,
+        color: part.color || '#3B82F6',
+        instanceIndex: i + 1,
+        totalQty: quantity,
+      });
+    }
+  });
+
   // Effective sheet size after edge trim margin
-  const usableWidth = Math.max(0, stockSheet.width - margin * 2);
-  const usableHeight = Math.max(0, stockSheet.height - margin * 2);
+  const stockWidth = readPositiveNumber(stockSheet?.width);
+  const stockHeight = readPositiveNumber(stockSheet?.height);
+  if (stockWidth === null) validationErrors.push('Stock width must be a finite number greater than zero.');
+  if (stockHeight === null) validationErrors.push('Stock length must be a finite number greater than zero.');
+
+  const usableWidth = stockWidth === null ? 0 : Math.max(0, stockWidth - margin * 2);
+  const usableHeight = stockHeight === null ? 0 : Math.max(0, stockHeight - margin * 2);
 
   if (usableWidth <= 0 || usableHeight <= 0) {
+    validationErrors.push('Stock dimensions and trim margin leave no usable cutting area.');
     return {
       sheets: [],
-      unplacedParts: partsList,
+      unplacedParts: itemsToPlace,
+      invalidParts,
+      validationErrors,
       overallEfficiency: 0,
       totalSheetsCount: 0,
     };
   }
-
-  // Expand parts based on quantity
-  let itemsToPlace = [];
-  partsList.forEach((part) => {
-    const qty = Math.max(1, parseInt(part.qty) || 1);
-    for (let i = 0; i < qty; i++) {
-      itemsToPlace.push({
-        id: `${part.id}_${i}`,
-        originalId: part.id,
-        name: part.name || `Part ${part.id}`,
-        width: Math.max(0, parseFloat(part.width) || 0),
-        height: Math.max(0, parseFloat(part.height) || 0),
-        allowRotation: part.allowRotation !== false,
-        color: part.color || '#3B82F6',
-        instanceIndex: i + 1,
-        totalQty: qty,
-      });
-    }
-  });
 
   // Sort items by size (Largest Area First for optimal packing heuristic)
   itemsToPlace.sort((a, b) => {
@@ -68,8 +129,8 @@ export function optimizeCutList(stockSheet, partsList, options = {}) {
   while (remainingItems.length > 0) {
     const sheetResult = packSingleSheet(
       sheetIndex,
-      stockSheet.width,
-      stockSheet.height,
+      stockWidth,
+      stockHeight,
       margin,
       kerf,
       remainingItems,
@@ -96,7 +157,7 @@ export function optimizeCutList(stockSheet, partsList, options = {}) {
   }
 
   // Overall Statistics Calculation
-  let totalSheetArea = sheets.length * stockSheet.width * stockSheet.height;
+  let totalSheetArea = sheets.length * stockWidth * stockHeight;
   let totalPartsArea = 0;
   let totalKerfArea = 0;
 
@@ -111,6 +172,8 @@ export function optimizeCutList(stockSheet, partsList, options = {}) {
   return {
     sheets,
     unplacedParts: remainingItems,
+    invalidParts,
+    validationErrors,
     totalSheetsCount: sheets.length,
     totalSheetArea,
     totalPartsArea,
@@ -262,7 +325,7 @@ function splitFreeRectangle(free, w, h, kerf, cutPref, cuts) {
   const bottomH = free.height - h - kerf;
 
   if (cutPref === CUT_PREFERENCES.RIP_FIRST) {
-    // Horizontal cut across full width first
+    // Vertical rip cut along the sheet length first
     if (rightW > 0) {
       newFree.push({
         x: free.x + w + kerf,
@@ -302,7 +365,7 @@ function splitFreeRectangle(free, w, h, kerf, cutPref, cuts) {
     }
 
   } else {
-    // Vertical cut across full height first
+    // Horizontal cross-cut across the sheet width first
     if (bottomH > 0) {
       newFree.push({
         x: free.x,

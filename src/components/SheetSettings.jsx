@@ -15,6 +15,7 @@ export default function SheetSettings({
   onCutPreferenceChange,
   selectedMaterial,
   hasMaterialMappings,
+  hasOptimizationIssues,
   requiredStockQuantity,
   projectReservation,
   onReserveMaterial,
@@ -204,6 +205,11 @@ export default function SheetSettings({
                   <AlertTriangle size={13} /> Cut-list parts do not identify a material mapping; thickness fit still needs review.
                 </div>
               )}
+              {hasOptimizationIssues && (
+                <div className="ws-stock-source-warning">
+                  <AlertTriangle size={13} /> Resolve invalid or unplaced cut-list parts before reserving stock.
+                </div>
+              )}
               <div className="ws-stock-source-actions">
                 <button
                   type="button"
@@ -212,8 +218,13 @@ export default function SheetSettings({
                   disabled={selectedMaterial.source !== 'owned'
                     || getAvailableQuantity(selectedMaterial) <= 0
                     || requiredStockQuantity <= 0
-                    || additionalReservationQuantity <= 0}
-                  title={selectedMaterial.source !== 'owned' ? 'Only owned stock can be reserved' : undefined}
+                    || additionalReservationQuantity <= 0
+                    || hasOptimizationIssues}
+                  title={hasOptimizationIssues
+                    ? 'Resolve cut-list validation issues first'
+                    : selectedMaterial.source !== 'owned'
+                      ? 'Only owned stock can be reserved'
+                      : undefined}
                 >
                   {projectReservation
                     ? additionalReservationQuantity > 0

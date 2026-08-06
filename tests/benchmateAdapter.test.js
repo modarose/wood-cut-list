@@ -20,6 +20,7 @@ import {
   loadStoredMaterials,
   MATERIAL_STORAGE_KEY,
   matchMaterialStockToParts,
+  removeStoredMaterial,
   releaseMaterialStock,
   reserveMaterialStock,
   saveStoredMaterials,
@@ -295,6 +296,32 @@ test('the existing optimizer is deterministic for identical inputs', () => {
   const second = optimizeCutList(stock, parts, { strategy: 'bssf', cutPreference: 'rip_first' });
 
   assert.deepEqual(first, second);
+});
+
+test('optimizer rejects invalid parts, reports oversized parts and preserves cut preference order', () => {
+  const result = optimizeCutList(
+    { width: 1000, height: 1000, kerf: 0, margin: 0 },
+    [
+      { id: 'zero-qty', name: 'Zero quantity', width: 100, height: 100, qty: 0 },
+      { id: 'zero-width', name: 'Zero width', width: 0, height: 100, qty: 1 },
+      { id: 'oversized', name: 'Oversized', width: 1200, height: 100, qty: 1 },
+      { id: 'valid', name: 'Valid panel', width: 100, height: 100, qty: 1 },
+    ],
+    { cutPreference: 'rip_first' },
+  );
+
+  assert.deepEqual(result.invalidParts.map(part => part.name), ['Zero quantity', 'Zero width']);
+  assert.equal(result.unplacedParts.length, 1);
+  assert.equal(result.unplacedParts[0].name, 'Oversized');
+  assert.equal(result.sheets[0].placements[0].name, 'Valid panel');
+  assert.equal(result.sheets[0].cuts[0].type, 'vertical');
+
+  const crossFirst = optimizeCutList(
+    { width: 1000, height: 1000, kerf: 0, margin: 0 },
+    [{ id: 'panel', name: 'Panel', width: 100, height: 100, qty: 1 }],
+    { cutPreference: 'cross_first' },
+  );
+  assert.equal(crossFirst.sheets[0].cuts[0].type, 'horizontal');
 });
 
 test('material stock requires positive dimensions and cannot reserve more than it owns', () => {
@@ -1139,6 +1166,42 @@ test('purchase budgets compare estimates with actual spend and persist with the 
     () => createProjectBudget({ amount: -1, currency: 'AUD' }),
     /non-negative/,
   );
+});
+
+test('reserved material cannot be deleted until its reservations are released', () => {
+  let serialized = null;
+  const storage = {
+    getItem() {
+      return serialized;
+    },
+    setItem(key, value) {
+      assert.equal(key, MATERIAL_STORAGE_KEY);
+      serialized = value;
+    },
+  };
+  const material = createMaterialStock({
+    id: 'stock_delete_guard',
+    category: 'sheet-goods',
+    name: 'Reserved plywood',
+    length: 2440,
+    width: 1220,
+    thickness: 18,
+    usableLength: 2440,
+    usableWidth: 1220,
+    quantity: 2,
+    source: 'owned',
+    condition: 'good',
+  }, { now: FIXED_NOW });
+  const reserved = reserveMaterialStock(material, 'project_delete_guard', 1, {
+    now: FIXED_NOW,
+    reservedAt: FIXED_NOW,
+  });
+
+  const result = removeStoredMaterial(reserved.id, [reserved], storage);
+  assert.equal(result.saved, false);
+  assert.deepEqual(result.materials, [reserved]);
+  assert.match(result.error, /active reservations/);
+  assert.equal(serialized, null);
 });
 
 test('cost items can link to compatible inventory without copying inventory records', () => {

@@ -219,6 +219,12 @@ export default function App() {
     });
   }, [stock, parts, strategy, cutPreference]);
 
+  const hasOptimizationIssues = Boolean(
+    (optimizationResult?.validationErrors?.length ?? 0) > 0
+      || (optimizationResult?.invalidParts?.length ?? 0) > 0
+      || (optimizationResult?.unplacedParts?.length ?? 0) > 0,
+  );
+
   // Load Preset Project
   const handleLoadPreset = (preset) => {
     setUnit(preset.unit);
@@ -735,6 +741,9 @@ export default function App() {
     if (!currentMaterial) {
       return { saved: false, error: 'Select an inventory material before reserving stock.' };
     }
+    if (hasOptimizationIssues) {
+      return { saved: false, error: 'Resolve invalid, unplaced, or stock-validation issues before reserving stock.' };
+    }
     if (requiredQuantity <= 0) {
       return { saved: false, error: 'Add valid cut-list parts before reserving stock.' };
     }
@@ -781,11 +790,22 @@ export default function App() {
 
   // Export CSV
   const handleExportCSV = () => {
-    let csvContent = `data:text/csv;charset=utf-8,Part Name,Width (${unit}),Length (${unit}),Quantity,Allow Rotation,Color\n`;
-    parts.forEach(p => {
-      csvContent += `"${p.name}",${p.width},${p.height},${p.qty},${p.allowRotation ? 'Yes' : 'No'},${p.color}\n`;
-    });
-    const encodedUri = encodeURI(csvContent);
+    const csvValue = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const csvRows = [
+      ['Part Name', `Width (${unit})`, `Length (${unit})`, 'Quantity', 'Allow Rotation', 'Color'],
+      ...parts.map(p => [
+        p.name,
+        p.width,
+        p.height,
+        p.qty,
+        p.allowRotation ? 'Yes' : 'No',
+        p.color,
+      ]),
+    ];
+    const csvContent = `data:text/csv;charset=utf-8,${encodeURIComponent(
+      csvRows.map(row => row.map(csvValue).join(',')).join('\n'),
+    )}`;
+    const encodedUri = csvContent;
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
     link.setAttribute('download', `wood_cut_list_${unit}.csv`);
@@ -1038,6 +1058,7 @@ export default function App() {
                 hasMaterialMappings={parts.length > 0 && parts.every(part => (
                   part.materialRequirementId || part.material || part.materialName
                 ))}
+                hasOptimizationIssues={hasOptimizationIssues}
                 requiredStockQuantity={optimizationResult?.totalSheetsCount ?? 0}
                 projectReservation={getProjectReservation(selectedMaterial, projectId)}
                 onReserveMaterial={handleReserveSelectedMaterial}

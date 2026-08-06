@@ -1,6 +1,6 @@
 # WoodCut Studio Architecture
 
-**Status:** Incremental Phase 4 manual costing slice implemented
+**Status:** Incremental Phase 5 supplier snapshot and budget slices implemented
 **Foundation:** Existing WoodCut Studio application
 
 ## 1. Architectural decision
@@ -212,7 +212,7 @@ The existing WoodCut Studio boundary is:
 - `src/utils/unitConverter.js`: owns metric/imperial conversion and display formatting.
 - `src/utils/presets.js`: owns static stock and project presets.
 
-Current state is in-memory React state. The application supports static preset loading, CSV export and browser print/PDF output, but not project persistence or JSON import/export. The repository has `dev`, `lint`, `test`, `build` and `preview` scripts after Phase 0; the test suite uses Node's built-in test runner and adds no dependency. The README recommends Vercel, but no deployment configuration or environment-variable convention exists in the repository.
+Current state uses React state backed by browser-local storage for projects, materials, tools and supplies. The application supports static preset loading, escaped CSV export and browser print/PDF output; JSON project import/export and live supplier requests remain deferred. Cut-list validation blocks zero-sized or otherwise invalid parts from optimisation, unplaced parts are surfaced for review, and active material reservations must be released before stock can be deleted. The repository has `dev`, `lint`, `test`, `build` and `preview` scripts; the test suite uses Node's built-in test runner and adds no dependency. The README recommends Vercel, but no deployment configuration or environment-variable convention exists in the repository.
 
 The current `main` baseline was commit `85e8b90`. Phase 0 work is being performed on the `codex/benchmate-phase0` branch. The planning documents and `AGENTS.md` were already present as untracked files before implementation.
 

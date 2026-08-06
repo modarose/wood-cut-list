@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { formatDimension, UNITS } from '../utils/unitConverter';
-import { ZoomIn, ZoomOut, RotateCcw, Layers } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Layers, AlertTriangle } from 'lucide-react';
 
 const SheetDiagram = ({ sheet, unit, svgPadding = 40, isPrint = false, onPartHover }) => {
   const { width: sheetW, height: sheetH, margin, kerf, placements, freeRects, cuts } = sheet;
@@ -280,12 +280,34 @@ export default function Visualizer({ result, unit }) {
     return () => el.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);
 
+  const validationErrors = result?.validationErrors ?? [];
+  const invalidParts = result?.invalidParts ?? [];
+  const unplacedParts = result?.unplacedParts ?? [];
+  const hasIssues = validationErrors.length > 0 || invalidParts.length > 0 || unplacedParts.length > 0;
+
   if (!result || !result.sheets || result.sheets.length === 0) {
     return (
       <div className="ram-card" style={{ minHeight: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--ram-text-muted)', background: 'var(--ram-surface)' }}>
         <Layers size={36} color="var(--ram-border-medium)" style={{ marginBottom: '0.75rem' }} />
         <div style={{ fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>NO CUT LAYOUT GENERATED</div>
-        <div style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Add parts to your cut list to calculate sheet layout.</div>
+        {!hasIssues && (
+          <div style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Add parts to your cut list to calculate sheet layout.</div>
+        )}
+        {hasIssues && (
+          <div className="ws-optimization-warning" style={{ maxWidth: '520px', margin: 'var(--ws-space-md)', textAlign: 'left' }}>
+            <AlertTriangle size={16} />
+            <div>
+              <strong>Resolve the issues below to generate a layout.</strong>
+              <ul>
+                {validationErrors.map((error, index) => <li key={`validation-${index}`}>{error}</li>)}
+                {invalidParts.map((part, index) => <li key={`invalid-${part.id}-${index}`}>{part.name}: {part.reason}</li>)}
+                {unplacedParts.length > 0 && (
+                  <li>{unplacedParts.length} valid part instance{unplacedParts.length === 1 ? '' : 's'} do not fit on the available stock.</li>
+                )}
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
