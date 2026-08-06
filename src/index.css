@@ -1189,8 +1189,10 @@ input[type=number] {
 
 .ws-inventory-empty-compact {
   align-items: flex-start;
-  padding: var(--ws-space-md) 0 0;
+  padding: var(--ws-space-md);
   text-align: left;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .ws-inventory-note {
