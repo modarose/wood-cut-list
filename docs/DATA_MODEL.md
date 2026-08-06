@@ -473,3 +473,49 @@ An optional inventoryLink points to an existing material or supply record by typ
 When a link is created, Costing adopts the linked record's owned or planned source as its initial status. The user may deliberately override that status for project-specific planning, but the Costing view flags the mismatch so it is not mistaken for the inventory source.
 
 Existing links can be reconciled from Costing with an explicit action that adopts the current linked Inventory source status. This updates the project cost snapshot's status only; it does not change the inventory record or reserve stock.
+
+## 20. Phase 5 supplier snapshot metadata
+
+Cost items may carry optional provider-neutral metadata alongside the existing manual price fields. The nested object does not replace the cost item's `supplier`, `productReference`, `unitCost` or `checkedAt` fields; it records how the snapshot was sourced and where availability was checked:
+
+    {
+      "supplierSnapshot": {
+        "provider": "bunnings",
+        "externalItemNumber": "1234567",
+        "storeId": "store-001",
+        "storeName": "Alexandria",
+        "availability": "in-stock"
+      }
+    }
+
+`provider` is `manual`, `bunnings` or `other`. `availability` is `unknown`, `in-stock`, `limited` or `out-of-stock`. The object is optional so existing Phase 4 cost items and schema version 1 projects remain valid. A selected provider is a source label only; it is not evidence that a live request succeeded.
+
+Costing derives snapshot freshness from the item's `checkedAt` date. The default review window is 14 days. Missing or invalid dates, dates outside the review window and `unknown` availability are shown as review conditions. Freshness is derived at runtime and is never used to invent a price or stock quantity.
+
+The Shopping List derives procurement groups at runtime using supplier name, provider and store identity. Each group reports its item count, known priced total, unpriced-item count and snapshot-review count. Groups are presentation and purchasing aids only; they do not allocate inventory, reserve stock or imply that items from one supplier are interchangeable.
+
+## 21. Optional purchase budget and actual spend
+
+The project envelope may carry an optional purchase budget. It is deliberately separate from material and supplies inventory:
+
+    {
+      "project": {
+        "budget": {
+          "amount": 250,
+          "currency": "AUD"
+        }
+      }
+    }
+
+project.budget is optional for backward compatibility. When present, amount must be a non-negative number and currency must be AUD. A null budget means that the project has no purchase target.
+
+Cost items may also carry optional actual-spend fields:
+
+    {
+      "actualCost": 24.5,
+      "actualCheckedAt": "2026-08-06"
+    }
+
+actualCost is the final total paid for that Costing line, not a second unit price. It may be zero or a non-negative number. actualCheckedAt records when the amount was confirmed and is optional. Older cost items without these fields remain valid.
+
+getCostingSummary() derives actual totals, line variance and budget comparison at runtime. Budget comparison uses planned and needs-sourcing items only; owned value is excluded. A budget is within-budget, estimate-over, over-budget, not-set or invalid. Actual spend is a user-entered project snapshot and does not change inventory quantities, reservations, supplier availability or optimiser allocation.

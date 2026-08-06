@@ -68,8 +68,20 @@ import {
   getCostItemInventoryCandidates,
   getCostItemInventoryStatus,
   getCostingSummary,
+  getShoppingListGroups,
   validateCostItem,
 } from '../src/utils/costing.js';
+import {
+  createProjectBudget,
+  getBudgetComparison,
+  validateProjectBudget,
+} from '../src/utils/budget.js';
+import {
+  createSupplierSnapshot,
+  getSupplierSnapshotFreshness,
+  getSupplierSnapshotReview,
+  validateSupplierSnapshot,
+} from '../src/utils/supplierSnapshots.js';
 
 const FIXED_NOW = '2026-07-31T00:00:00.000Z';
 
@@ -1046,6 +1058,89 @@ test('manual cost items summarize purchases and persist with the project envelop
   ]);
 });
 
+test('purchase budgets compare estimates with actual spend and persist with the project', () => {
+  const owned = createCostItem({
+    id: 'cost_budget_owned',
+    projectId: 'project_budget',
+    category: 'sheet-goods',
+    name: 'Plywood sheet',
+    quantity: 1,
+    unit: 'sheet',
+    status: 'owned',
+    unitCost: 80,
+    actualCost: 80,
+    actualCheckedAt: '2026-08-05',
+  }, { now: FIXED_NOW });
+  const purchase = createCostItem({
+    id: 'cost_budget_purchase',
+    projectId: 'project_budget',
+    category: 'hardware',
+    name: 'Screws',
+    quantity: 2,
+    unit: 'box',
+    status: 'planned',
+    unitCost: 12,
+    actualCost: 25,
+    actualCheckedAt: '2026-08-05',
+  }, { now: FIXED_NOW });
+  const budget = createProjectBudget({ amount: 30, currency: 'AUD' });
+
+  assert.deepEqual(budget, { amount: 30, currency: 'AUD' });
+  assert.equal(validateProjectBudget(budget).valid, true);
+  assert.equal(validateProjectBudget({ amount: 30, currency: 'USD' }).valid, false);
+  assert.deepEqual(getBudgetComparison(budget, 24, 25), {
+    status: 'within-budget',
+    label: 'Within budget',
+    budgetAmount: 30,
+    estimatedTotal: 24,
+    actualTotal: 25,
+    estimatedVariance: 6,
+    actualVariance: 5,
+    actualTracked: true,
+  });
+
+  const summary = getCostingSummary([owned, purchase], budget);
+  assert.equal(summary.purchaseTotal, 24);
+  assert.equal(summary.actualTotal, 105);
+  assert.equal(summary.actualPurchaseTotal, 25);
+  assert.equal(summary.actualPurchaseItemCount, 1);
+  assert.equal(summary.actualPendingCount, 0);
+  assert.equal(summary.rows[1].actualVariance, 1);
+  assert.equal(summary.budgetComparison.actualVariance, 5);
+
+  const zeroActual = createCostItem({
+    ...purchase,
+    id: 'cost_budget_zero',
+    actualCost: 0,
+  }, { now: FIXED_NOW });
+  const zeroSummary = getCostingSummary([zeroActual], createProjectBudget(0));
+  assert.equal(zeroSummary.actualPurchaseTotal, 0);
+  assert.equal(zeroSummary.budgetComparison.actualTracked, true);
+  assert.equal(zeroSummary.budgetComparison.actualTotal, 0);
+
+  const overBudget = getCostingSummary([purchase], createProjectBudget(20));
+  assert.equal(overBudget.budgetComparison.status, 'over-budget');
+  assert.equal(overBudget.budgetComparison.actualVariance, -5);
+
+  const record = createBenchMateProjectFromWoodCut({
+    unit: 'mm',
+    stock: { width: 600, height: 1200, kerf: 3, margin: 0 },
+    parts: [],
+  }, {
+    projectId: 'project_budget',
+    budget,
+    costItems: [owned, purchase],
+    now: FIXED_NOW,
+  });
+  assert.deepEqual(record.project.budget, budget);
+  assert.equal(validateBenchMateProject(record).valid, true);
+  assert.deepEqual(parseBenchMateProject(serializeBenchMateProject(record)).project.budget, budget);
+  assert.throws(
+    () => createProjectBudget({ amount: -1, currency: 'AUD' }),
+    /non-negative/,
+  );
+});
+
 test('cost items can link to compatible inventory without copying inventory records', () => {
   const material = createMaterialStock({
     id: 'stock_cost_link',
@@ -1158,7 +1253,139 @@ test('costing csv includes estimate fields and escapes spreadsheet values', () =
 
   assert.match(csv, /"Item","Category","Quantity"/);
   assert.match(csv, /"Screws, 50 mm","hardware","2","box","planned","Wood ""Co"""/);
-  assert.match(csv, /"12\.5","25","Shopping list"/);
+  assert.match(csv, /"12\.5","25","","","","Shopping list"/);
   assert.match(csv, /"2026-08-04"/);
   assert.match(csv, /"https:\/\/example\.com\/sc-50"/);
+});
+
+test('supplier snapshots preserve manual fallback metadata and flag stale or unknown data', () => {
+  const snapshot = createSupplierSnapshot({
+    provider: 'bunnings',
+    externalItemNumber: '1234567',
+    storeName: 'Alexandria',
+    storeId: 'store-001',
+    availability: 'in-stock',
+  });
+  assert.deepEqual(snapshot, {
+    provider: 'bunnings',
+    externalItemNumber: '1234567',
+    storeId: 'store-001',
+    storeName: 'Alexandria',
+    availability: 'in-stock',
+  });
+  assert.equal(validateSupplierSnapshot(snapshot).valid, true);
+  assert.throws(
+    () => createSupplierSnapshot({ provider: 'unsupported', availability: 'unknown' }),
+    /provider is invalid/,
+  );
+
+  const item = createCostItem({
+    id: 'cost_supplier_snapshot',
+    projectId: 'project_supplier_snapshot',
+    category: 'hardware',
+    name: 'Pocket-hole screws',
+    quantity: 1,
+    unit: 'box',
+    status: 'planned',
+    unitCost: 18.5,
+    supplier: 'Bunnings',
+    productReference: '1234567',
+    checkedAt: '2026-08-04T00:00:00.000Z',
+    supplierSnapshot: snapshot,
+  }, { now: FIXED_NOW });
+
+  assert.equal(
+    getSupplierSnapshotFreshness(item.checkedAt, { now: '2026-08-10T00:00:00.000Z' }).status,
+    'current',
+  );
+  assert.equal(
+    getSupplierSnapshotReview(item, { now: '2026-08-10T00:00:00.000Z' }).needsReview,
+    false,
+  );
+  assert.equal(
+    getSupplierSnapshotReview(item, { now: '2026-08-25T00:00:00.000Z' }).status,
+    'needs-review',
+  );
+
+  const unknownAvailability = {
+    ...item,
+    supplierSnapshot: { ...snapshot, availability: 'unknown' },
+  };
+  assert.equal(
+    getSupplierSnapshotReview(unknownAvailability, { now: '2026-08-10T00:00:00.000Z' }).needsReview,
+    true,
+  );
+});
+
+test('shopping lists group planned items by supplier, source and store', () => {
+  const makeItem = (input) => createCostItem({
+    projectId: 'project_shopping_groups',
+    category: 'hardware',
+    name: input.name,
+    quantity: 1,
+    unit: 'box',
+    status: input.status ?? 'planned',
+    unitCost: input.unitCost ?? null,
+    supplier: input.supplier ?? '',
+    checkedAt: input.checkedAt ?? null,
+    supplierSnapshot: input.supplierSnapshot ?? null,
+  }, { now: FIXED_NOW });
+
+  const bunningsAlexandria = {
+    provider: 'bunnings',
+    storeId: 'alexandria',
+    storeName: 'Alexandria',
+    availability: 'in-stock',
+  };
+  const items = [
+    makeItem({
+      name: 'Screws',
+      unitCost: 10,
+      supplier: 'Bunnings',
+      checkedAt: FIXED_NOW,
+      supplierSnapshot: bunningsAlexandria,
+    }),
+    makeItem({
+      name: 'Dowels',
+      supplier: 'Bunnings',
+      supplierSnapshot: bunningsAlexandria,
+    }),
+    makeItem({
+      name: 'Glue',
+      unitCost: 7,
+      supplier: 'Bunnings',
+      checkedAt: FIXED_NOW,
+      supplierSnapshot: {
+        ...bunningsAlexandria,
+        storeId: 'rockdale',
+        storeName: 'Rockdale',
+      },
+    }),
+    makeItem({ name: 'Sandpaper', unitCost: 2 }),
+    makeItem({
+      name: 'Owned screws',
+      unitCost: 100,
+      supplier: 'Bunnings',
+      status: 'owned',
+      supplierSnapshot: bunningsAlexandria,
+    }),
+  ];
+
+  const summary = getCostingSummary(items);
+  assert.equal(summary.shoppingGroupCount, 3);
+  assert.deepEqual(summary.shoppingGroups.map(group => [
+    group.supplier,
+    group.storeLabel,
+    group.itemCount,
+    group.knownTotal,
+    group.unknownPriceCount,
+  ]), [
+    ['Bunnings', 'Alexandria', 2, 10, 1],
+    ['Bunnings', 'Rockdale', 1, 7, 0],
+    ['Supplier not recorded', 'Store not recorded', 1, 2, 0],
+  ]);
+  assert.equal(getShoppingListGroups(summary.rows).length, 3);
+  const csv = buildCostingCsv(summary);
+  assert.match(csv, /"Purchase group","Group known total \(AUD\)"/);
+  assert.match(csv, /"Bunnings \/ Alexandria","10","1","1"/);
 });

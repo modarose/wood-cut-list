@@ -6,7 +6,7 @@ WoodCut Studio remains the specialised 2D cut-list and sheet-optimisation capabi
 
 ## Current status
 
-Phase 3 build-planner work is in progress. The current application provides:
+Phase 5 supplier-integration foundation work is in progress. The current application provides:
 
 - The WoodCut Studio optimiser.
 - A project workspace with save and reopen behaviour.
@@ -18,8 +18,11 @@ Phase 3 build-planner work is in progress. The current application provides:
 - Project-specific tool requirements with capability and availability feasibility matching.
 - A project-level resource check separating owned-stock candidates, planned purchases, unresolved parts and review rows, with quantity checks for the selected stock record and supply requirements.
 - A saved Build planner with ordered stages, steps, dependencies, durations, completion status, notes and links to project parts, tool requirements and supply requirements.
+- Manual project Costing with AUD estimates, optional purchase budgets, actual-spend tracking, shopping lists, inventory links, CSV export and print/PDF reports.
+- Provider-neutral supplier snapshots with manual, Bunnings or other-supplier source labels, store metadata, availability and freshness review.
+- An in-app User Guide with a complete Custom Bookshelf walkthrough.
 
-Phase 2 is complete at the inventory-screening level. Phase 3 has started with the first build-planner vertical slice; broader UI improvements and deeper readiness checks will follow. See the [roadmap](docs/ROADMAP.md) for the planned sequence.
+Phase 2 is complete at the inventory-screening level. Phase 3 build-planner and Phase 4 costing work are established; Phase 5 is beginning with the supplier boundary while live credentials and server-side requests remain deferred. See the [roadmap](docs/ROADMAP.md) for the planned sequence.
 
 ## What is available
 
@@ -35,7 +38,7 @@ Phase 2 is complete at the inventory-screening level. Phase 3 has started with t
 
 ### BenchMate project workspace
 
-- Sidebar navigation for Optimizer, Projects, Inventory, Workshop and Build planner.
+- Sidebar navigation for Optimizer, Projects, Inventory, Costing, Build Planner, Workshop and User Guide.
 - Create, open, duplicate, archive and restore projects.
 - Project name, status and notes.
 - Explicit project save/reopen using the canonical BenchMate project envelope.
@@ -75,18 +78,28 @@ Capability tags are planning metadata, not safety certification or a guarantee t
 - Add dependencies and see which steps are ready, complete or waiting on earlier work.
 - Mark step progress while keeping the plan user-authored and separate from automatic safety certification.
 
+### Costing
+
+- Record manual AUD price snapshots for materials, hardware, finishes and consumables.
+- Link compatible cost items to material and supplies inventory without copying stock records.
+- Review purchase estimate, owned value, estimated total and price-review conditions.
+- Set an optional purchase budget and record actual spend per cost item to see estimate-versus-actual variance.
+- Record an optional supplier source, store/location details and explicit availability without claiming live supplier confirmation.
+- See unchecked, stale or unknown-availability snapshots flagged for review.
+- See planned purchases grouped by supplier, source and store with known totals and review counts.
+- Export the estimate to CSV or print a report with a separate shopping-list page.
+
 ## Deferred work and current limitations
 
 The following are planned rather than implemented:
 
 - Step-level tool assignment and feasibility decisions, automatic plan generation, readiness checks and workshop execution mode refinements.
-- Costing, shopping lists and manual supplier records.
-- Supplier integrations, including store-aware pricing and availability.
+- Live supplier integrations, including store-aware pricing, availability and OAuth-backed refresh.
 - SketchUp import and review.
 - Journal, photos and creator-workflow features.
 - Authentication, cloud persistence and multi-device synchronisation.
 
-The application currently has no backend, database, account system or supplier API integration.
+The application currently has no backend, database, account system or live supplier API integration. Supplier source metadata is stored with project-local cost snapshots and manual entry remains the fallback.
 
 ## Quick start
 
@@ -135,8 +148,8 @@ Storage is specific to the browser profile and application origin. Clearing site
 - Package manager: npm.
 - Entry point: index.html -> src/main.jsx -> src/App.jsx.
 - UI: React components in src/components and application styling in src/index.css and src/App.css.
-- Calculation logic: src/utils/cutOptimizer.js and src/utils/unitConverter.js.
-- BenchMate adapter and persistence: src/utils/benchmateAdapter.js, src/utils/projectStorage.js, src/utils/materialInventory.js, src/utils/toolInventory.js, src/utils/supplyInventory.js, src/utils/supplyRequirements.js and src/utils/buildPlanner.js.
+- Calculation logic: src/utils/cutOptimizer.js, src/utils/unitConverter.js, src/utils/costing.js and src/utils/budget.js.
+- BenchMate adapter and persistence: src/utils/benchmateAdapter.js, src/utils/projectStorage.js, src/utils/materialInventory.js, src/utils/toolInventory.js, src/utils/supplyInventory.js, src/utils/supplyRequirements.js, src/utils/buildPlanner.js and src/utils/supplierSnapshots.js.
 - Tests: tests/ using Node's built-in test runner.
 - Routing: there is currently no router; the single-page shell switches sections through application state.
 
@@ -145,7 +158,8 @@ The project keeps calculation logic separate from UI components and uses a versi
 ## Data and safety conventions
 
 - Dimensions are stored internally in millimetres; the UI can display millimetres or inches.
-- Australian dollars are the planned costing currency; costing is not implemented yet.
+- Australian dollars are the costing currency for manual project estimates; live supplier pricing is not implemented yet.
+- The optional purchase budget compares planned or missing Costing items only; owned inventory value is reported separately. Actual spend is user-entered and remains a project snapshot.
 - External supplier information will need a source and checked-at timestamp when integrations are added.
 - Tool and material records describe workshop planning information. They do not replace manufacturer instructions, training, supervision or safe workshop practice.
 
@@ -160,6 +174,7 @@ The app builds as a static Vite site. No deployment provider configuration or en
 - [Data model](docs/DATA_MODEL.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Integration notes](docs/INTEGRATIONS.md)
+- [User guide](docs/USER_GUIDE.md)
 
 ## License
 

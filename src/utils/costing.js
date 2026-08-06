@@ -1,3 +1,11 @@
+import {
+  createSupplierSnapshot,
+  getSupplierSnapshotForCostItem,
+  getSupplierSnapshotReview,
+  validateSupplierSnapshot,
+} from './supplierSnapshots.js';
+import { getBudgetComparison } from './budget.js';
+
 export const COST_ITEM_CATEGORIES = Object.freeze([
   { value: 'sheet-goods', label: 'Sheet goods' },
   { value: 'solid-timber', label: 'Solid timber' },
@@ -104,6 +112,16 @@ export function validateCostItem(item) {
     && (!readText(item.checkedAt) || Number.isNaN(Date.parse(item.checkedAt)))) {
     errors.push('Cost item checkedAt must be null or a valid date.');
   }
+  if (item.actualCost !== null
+    && item.actualCost !== undefined
+    && (!Number.isFinite(item.actualCost) || item.actualCost < 0)) {
+    errors.push('Cost item actualCost must be null or a non-negative number.');
+  }
+  if (item.actualCheckedAt !== null
+    && item.actualCheckedAt !== undefined
+    && (!readText(item.actualCheckedAt) || Number.isNaN(Date.parse(item.actualCheckedAt)))) {
+    errors.push('Cost item actualCheckedAt must be null or a valid date.');
+  }
   if (item.inventoryLink !== null && item.inventoryLink !== undefined) {
     if (!isObject(item.inventoryLink)) {
       errors.push('Cost item inventoryLink must be null or an object.');
@@ -114,6 +132,12 @@ export function validateCostItem(item) {
       if (!readText(item.inventoryLink.id)) {
         errors.push('Cost item inventoryLink id is required.');
       }
+    }
+  }
+  if (item.supplierSnapshot !== null && item.supplierSnapshot !== undefined) {
+    const snapshotValidation = validateSupplierSnapshot(item.supplierSnapshot);
+    if (!snapshotValidation.valid) {
+      errors.push(...snapshotValidation.errors.map(error => `Cost item supplierSnapshot: ${error}`));
     }
   }
 
@@ -142,6 +166,14 @@ export function createCostItem(input = {}, options = {}) {
     createdAt: options.createdAt ?? source.createdAt ?? now,
     updatedAt: options.updatedAt ?? now,
   };
+
+  if (source.supplierSnapshot !== undefined) {
+    item.supplierSnapshot = source.supplierSnapshot === null
+      ? null
+      : createSupplierSnapshot(source.supplierSnapshot);
+  }
+  if (source.actualCost !== undefined) item.actualCost = readNumber(source.actualCost);
+  if (source.actualCheckedAt !== undefined) item.actualCheckedAt = readDate(source.actualCheckedAt);
 
   const validation = validateCostItem(item);
   if (!validation.valid) throw new Error(validation.errors.join(' '));
@@ -214,16 +246,83 @@ function getSummaryStatus(rows) {
   return 'estimated';
 }
 
-export function getCostingSummary(items = []) {
+function groupValue(value, fallback) {
+  return readText(value).toLowerCase() || fallback;
+}
+
+export function getShoppingListGroups(rows = []) {
+  const sourceRows = Array.isArray(rows) ? rows : [];
+  const groups = new Map();
+
+  sourceRows.forEach(row => {
+    if (!row?.valid || row.item?.status === 'owned') return;
+
+    const item = row.item;
+    const snapshot = getSupplierSnapshotForCostItem(item);
+    const snapshotReview = getSupplierSnapshotReview(item);
+    const supplier = readText(item.supplier) || 'Supplier not recorded';
+    const provider = snapshot?.provider || 'manual';
+    const storeKey = snapshot?.storeId || snapshot?.storeName || '';
+    const key = [
+      groupValue(supplier, 'supplier-not-recorded'),
+      provider,
+      groupValue(storeKey, 'store-not-recorded'),
+    ].join('|');
+
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        key,
+        supplier,
+        provider,
+        providerLabel: snapshotReview.providerLabel,
+        storeLabel: snapshotReview.storeLabel,
+        rows: [],
+        itemCount: 0,
+        pricedItemCount: 0,
+        knownTotal: 0,
+        unknownPriceCount: 0,
+        reviewCount: 0,
+      };
+      groups.set(key, group);
+    }
+
+    group.rows.push(row);
+    group.itemCount += 1;
+    if (row.lineTotal === null) {
+      group.unknownPriceCount += 1;
+    } else {
+      group.pricedItemCount += 1;
+      group.knownTotal += row.lineTotal;
+    }
+    if (snapshotReview.needsReview) group.reviewCount += 1;
+  });
+
+  return [...groups.values()].sort((left, right) => (
+    left.supplier.localeCompare(right.supplier)
+    || left.storeLabel.localeCompare(right.storeLabel)
+    || left.providerLabel.localeCompare(right.providerLabel)
+  ));
+}
+
+export function getCostingSummary(items = [], budget = null) {
   const sourceItems = Array.isArray(items) ? items : [];
   const rows = sourceItems.map((item, index) => {
     const validation = validateCostItem(item);
+    const lineTotal = validation.valid ? getLineTotal(item) : null;
+    const actualCost = validation.valid && Number.isFinite(item?.actualCost)
+      ? item.actualCost
+      : null;
     return {
       id: item?.id ?? `invalid_cost_item_${index + 1}`,
       item,
       valid: validation.valid,
       reason: validation.valid ? '' : validation.errors.join(' '),
-      lineTotal: validation.valid ? getLineTotal(item) : null,
+      lineTotal,
+      actualCost,
+      actualVariance: actualCost !== null && lineTotal !== null
+        ? actualCost - lineTotal
+        : null,
     };
   });
   const ownedRows = rows.filter(row => row.valid && row.item.status === 'owned');
@@ -238,6 +337,18 @@ export function getCostingSummary(items = []) {
     0,
   );
   const unknownPriceRows = shoppingRows.filter(row => row.lineTotal === null);
+  const supplierReviewRows = rows.filter(
+    row => row.valid && getSupplierSnapshotReview(row.item).needsReview,
+  );
+  const shoppingGroups = getShoppingListGroups(shoppingRows);
+  const actualRows = rows.filter(row => row.valid && row.actualCost !== null);
+  const actualPurchaseRows = actualRows.filter(row => row.item.status !== 'owned');
+  const actualTotal = actualRows.reduce((total, row) => total + row.actualCost, 0);
+  const actualPurchaseTotal = actualPurchaseRows.reduce(
+    (total, row) => total + row.actualCost,
+    0,
+  );
+  const actualPendingRows = shoppingRows.filter(row => row.actualCost === null);
   const status = getSummaryStatus(rows);
 
   return {
@@ -249,6 +360,7 @@ export function getCostingSummary(items = []) {
     }[status],
     rows,
     shoppingRows,
+    shoppingGroups,
     ownedRows,
     totalItems: rows.length,
     ownedItems: ownedRows.length,
@@ -260,6 +372,18 @@ export function getCostingSummary(items = []) {
     estimatedTotal: purchaseTotal + ownedValue,
     supplierNames: [...new Set(shoppingRows.map(row => row.item.supplier).filter(Boolean))],
     missingItems: shoppingRows.filter(row => row.item.status === 'missing').length,
+    supplierReviewCount: supplierReviewRows.length,
+    shoppingGroupCount: shoppingGroups.length,
+    actualTotal,
+    actualPurchaseTotal,
+    actualItemCount: actualRows.length,
+    actualPurchaseItemCount: actualPurchaseRows.length,
+    actualPendingCount: actualPendingRows.length,
+    budgetComparison: getBudgetComparison(
+      budget,
+      purchaseTotal,
+      actualPurchaseRows.length > 0 ? actualPurchaseTotal : null,
+    ),
   };
 }
 
@@ -305,15 +429,35 @@ export function buildCostingCsv(summary = {}) {
     'Checked at',
     'Unit cost (AUD)',
     'Line total (AUD)',
+    'Actual cost (AUD)',
+    'Actual checked at',
+    'Variance (AUD)',
     'List',
     'Review note',
     'Product URL',
+    'Supplier source',
+    'Store',
+    'Availability',
+    'Snapshot freshness',
+    'Purchase group',
+    'Group known total (AUD)',
+    'Group price review',
+    'Group snapshot review',
   ];
   const lines = [header.map(csvValue).join(',')];
+  const shoppingGroups = Array.isArray(summary.shoppingGroups)
+    ? summary.shoppingGroups
+    : getShoppingListGroups(rows);
+  const groupByRowId = new Map(
+    shoppingGroups.flatMap(group => group.rows.map(row => [row.id, group])),
+  );
 
   rows.forEach(row => {
     const item = row.item ?? {};
     const valid = row.valid === true;
+    const snapshotReview = valid ? getSupplierSnapshotReview(item) : null;
+    const snapshot = valid ? getSupplierSnapshotForCostItem(item) : null;
+    const group = valid ? groupByRowId.get(row.id) : null;
     lines.push([
       item.name,
       valid ? item.category : '',
@@ -325,9 +469,20 @@ export function buildCostingCsv(summary = {}) {
       valid ? item.checkedAt : '',
       valid && item.unitCost !== null ? item.unitCost : '',
       valid && row.lineTotal !== null ? row.lineTotal : '',
+      valid && row.actualCost !== null ? row.actualCost : '',
+      valid ? (item.actualCheckedAt ?? '') : '',
+      valid && row.actualVariance !== null ? row.actualVariance : '',
       valid ? (item.status === 'owned' ? 'Owned' : 'Shopping list') : 'Review',
       valid ? '' : row.reason,
       valid ? item.url : '',
+      valid && snapshot ? snapshotReview.providerLabel : '',
+      valid && snapshot ? snapshotReview.storeLabel : '',
+      valid && snapshot ? snapshotReview.availabilityLabel : '',
+      valid && snapshot ? snapshotReview.freshness.label : '',
+      group ? `${group.supplier} / ${group.storeLabel}` : '',
+      group ? group.knownTotal : '',
+      group ? group.unknownPriceCount : '',
+      group ? group.reviewCount : '',
     ].map(csvValue).join(','));
   });
 

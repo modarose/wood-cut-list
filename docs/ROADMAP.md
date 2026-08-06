@@ -1,8 +1,8 @@
 # BenchMate Roadmap
 
 **Foundation:** Existing WoodCut Studio application  
-**Roadmap status:** Phase 4 manual costing slice in progress
-**Date:** 2026-08-03
+**Roadmap status:** Phase 5 supplier integration foundation in progress
+**Date:** 2026-08-06
 
 ## Product strategy
 
@@ -162,6 +162,7 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 - Manual cost items are stored in the project envelope as costItems[] and referenced through project.costItemIds. The optional field keeps older schema version 1 records compatible.
 - Each item records a category, name, positive quantity, explicit unit, owned/planned/missing status, optional AUD unit cost, supplier, product reference, URL, checked-at date and notes.
 - The first summary reports purchase estimate, owned value, estimated total, unknown prices and a shopping list. Missing items and non-owned items without prices remain review conditions.
+- Costing also supports an optional AUD purchase budget plus per-line actual spend and checked-at dates. Budget variance compares planned purchases only; owned inventory value remains separate.
 - Costing can print a separate estimate/shopping-list report or export the same rows to CSV for workshop or purchasing use.
 - Cost items are project-specific manual snapshots. The slice does not call live supplier APIs, confirm availability, reserve inventory or infer costs from optimizer output.
 - Cost items can now link explicitly to compatible material or supply records. A compatible supply may be created from Costing; materials still require a deliberate Inventory entry because dimensions are mandatory.
@@ -188,6 +189,14 @@ Build the smallest useful workshop planner around the existing WoodCut Studio en
 
 - The connector works in the approved environment.
 - API failure or unavailable access falls back gracefully to manual product records.
+
+### Phase 5 initial implementation notes
+
+- Costing now supports an optional provider-neutral `supplierSnapshot` with a source provider, external item number, store name, store/location ID and explicit availability state.
+- Manual records remain the default fallback. Selecting Bunnings records the intended provider without pretending that a live request or stock confirmation occurred.
+- Supplier snapshot freshness is derived from the existing checked-at timestamp. Snapshots older than the default 14-day review window, with no checked date, or with unknown availability are surfaced for review.
+- The Shopping List derives supplier/source/store groups with known totals, unpriced-item counts and snapshot-review counts; the grouping does not change inventory or reserve stock.
+- The current repository has no backend, serverless function or supplier credentials. OAuth, API calls, store lookup and live snapshot refresh remain the next Phase 5 slice.
 
 ## Phase 6 — SketchUp Desktop bridge
 

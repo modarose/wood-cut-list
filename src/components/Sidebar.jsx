@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Calculator,
+  BookOpen,
   ClipboardList,
   FolderOpen,
   HelpCircle,
@@ -54,6 +55,16 @@ export default function Sidebar({ activeSection, projectName, onNavigate }) {
       </nav>
 
       <div className="ws-sidebar-footer">
+        <button
+          type="button"
+          className={`ws-nav-item${activeSection === 'user-guide' ? ' active' : ''}`}
+          onClick={() => onNavigate('user-guide')}
+          aria-current={activeSection === 'user-guide' ? 'page' : undefined}
+          title="Open User Guide"
+        >
+          <BookOpen size={18} />
+          <span>User Guide</span>
+        </button>
         <button type="button" className="ws-nav-item" disabled title="Settings are coming soon">
           <Settings size={18} />
           <span>Settings</span>
